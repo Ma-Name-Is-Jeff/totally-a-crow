@@ -3523,15 +3523,23 @@ function cameraTarget(outPos, outLook) {
   const p = camParams(crow.pos.y);
   const zf = clamp((camZ - 1) / 1.3, 0, 1), hiT = smooth(40, 50, crow.pos.y);   // far modes: pull back AND up so pursuers behind/beside stay in view
   p.dist *= camZ * 1.08; p.pitch = Math.min(84, p.pitch + (camZ < 1 ? -11 * (1 - camZ) : 15 * zf) * (1 - 0.8 * hiT)); p.ahead *= 1 - 0.35 * zf;
+  // v7g2: when braking / hovering near the ground, sit a little higher and look down so Kro and the drop reticle / target stay in frame
+  const agl = crow.pos.y - groundAt(crow.pos.x, crow.pos.z);
+  const lowHold = !!(typeof hover !== 'undefined' && (hover.on || (typeof input !== 'undefined' && input.brake && !input.dive))) && agl < 16;
+  if (lowHold) { p.pitch = Math.max(p.pitch, 34); p.dist = Math.max(p.dist, 13); p.lookDown = Math.max(p.lookDown, 1.8); p.ahead = clamp(p.ahead, 2, 5); }
   forward(camYaw, _f);
   outLook.copy(crow.pos).addScaledVector(_f, p.ahead); outLook.y -= p.lookDown;
   if (camThreatK > 0.01) outLook.lerp(_thr.set(camThreat.x, outLook.y, camThreat.z), 0.25 * camThreatK);
+  if (lowHold && typeof aim !== 'undefined' && aim && aim.on) {
+    const ay = Math.max(aim.pos.y, groundAt(aim.pos.x, aim.pos.z)) + 0.8;
+    outLook.lerp(_thr.set(aim.pos.x, ay, aim.pos.z), 0.55);
+  }
   const pr = THREE.MathUtils.degToRad(p.pitch);
   outPos.copy(outLook).addScaledVector(_f, -Math.cos(pr) * p.dist); outPos.y += Math.sin(pr) * p.dist;
-  // tier3: keep the camera a bit above the crow's back so the ground ahead is visible
-  outPos.y = Math.max(outPos.y, crow.pos.y + 1.9 * (1 - smooth(10, 20, crow.pos.y)) + 0.6);
+  const minAbove = lowHold ? 3.4 : 1.9 * (1 - smooth(10, 20, crow.pos.y)) + 0.6;
+  outPos.y = Math.max(outPos.y, crow.pos.y + minAbove);
   occludeCam(outPos);
-  const gh = groundAt(outPos.x, outPos.z) + 0.8; if (outPos.y < gh) outPos.y = gh;
+  const gh = groundAt(outPos.x, outPos.z) + (lowHold ? 2.4 : 0.8); if (outPos.y < gh) outPos.y = gh;
 }
 function snapCamera() { camYaw = crow.yaw; cameraTarget(camPos, camLook); camera.position.copy(camPos); camera.lookAt(camLook); }
 // v5m dogfight chase camera: one tight camera at ANY altitude, close behind the crow, pulled back just enough to frame the hawk on your tail
@@ -3569,7 +3577,7 @@ function updateCamera(rdt) {
   const k = damp(lerp(3.0, 6.0, fast), rdt);
   camPos.lerp(_cp, k); camLook.lerp(_cl, damp(lerp(4, 9, fast), rdt));
   // hard guarantee: never leave the camera behind a wall
-  if (occludeCam(camPos)) { const gh2 = groundAt(camPos.x, camPos.z) + 0.8; if (camPos.y < gh2) camPos.y = gh2; }
+  if (occludeCam(camPos)) { const lowHold = !!(typeof hover !== 'undefined' && (hover.on || (typeof input !== 'undefined' && input.brake && !input.dive))); const gh2 = groundAt(camPos.x, camPos.z) + (lowHold ? 2.4 : 0.8); if (camPos.y < gh2) camPos.y = gh2; }
   camera.position.copy(camPos);
   if (camShake > 0) { camShake -= rdt; const a = camShake * 1.4; camera.position.x += rand(-a, a); camera.position.y += rand(-a, a); camera.position.z += rand(-a, a); }
   camera.lookAt(camLook);
@@ -5653,8 +5661,15 @@ const taggerG = (() => {
   const sh = new THREE.Mesh(shadowGeo, shadowMat); sh.scale.setScalar(0.9); sh.position.y = 0.04; g.add(sh);
   g.scale.setScalar(1.12); g.position.set(TAG.x, 0, (TAG.z0 + TAG.z1) / 2); scene.add(g); return { g, body, legs, arms, nozzle, sh };
 })();
-const tagger = { state: 'paint', hp: TAG.hpMax, x: TAG.x, z: 60, yaw: Math.PI / 2, paint: 0, stun: 0, hitCd: 0, sprayCd: 2, aim: 0, run: 0, respawnT: 0, mistT: 0, hissT: 0, squash: 0, engaged: false, alerted: false, t: 0, noReward: false,
-  stats: { hits: 0, megaHits: 0, gusts: 0, sprays: 0, crowHits: 0, defeats: 0, finished: 0 } };
+function rudyMuralCue() {
+  const T = tagger;
+  if (T.muralTold || T.state !== 'paint' || !started || ko.on || dfActive || dialogOpen || tutCalm() || tutCardOpen || (typeof upgOpen !== 'undefined' && upgOpen)) return false;
+  T.muralTold = true; T.stats.cues = (T.stats.cues || 0) + 1;
+  showMsg('🎨 Rattlecan Rudy started a mural behind the gas station', 2.4);
+  return true;
+}
+const tagger = { state: 'paint', hp: TAG.hpMax, x: TAG.x, z: 60, yaw: Math.PI / 2, paint: 0, stun: 0, hitCd: 0, sprayCd: 2, aim: 0, run: 0, respawnT: 0, mistT: 0, hissT: 0, squash: 0, engaged: false, alerted: false, t: 0, noReward: false, muralTold: false, muralCueT: 1.2,
+  stats: { hits: 0, megaHits: 0, gusts: 0, sprays: 0, crowHits: 0, defeats: 0, finished: 0, cues: 0 } };
 // paint clouds he sprays at the crow
 const clouds = Array.from({ length: 3 }, () => { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: blobTex, transparent: true, depthWrite: false })); s.visible = false; scene.add(s); return { s, on: false, v: new THREE.Vector3(), life: 0, col: 0xffffff, hit: false }; });
 let cloudI = 0;
@@ -5699,7 +5714,7 @@ function defeatTagger() {
   sparkBurst(new THREE.Vector3(T.x, 2, T.z), 22, 0xffd0f4); achAdvance('tagger');
 }
 function respawnTagger() {
-  const T = tagger; Object.assign(T, { state: 'paint', hp: TAG.hpMax, x: TAG.x, z: rand(TAG.z0 + 2, TAG.z1 - 2), yaw: Math.PI / 2, paint: 0, stun: 0, sprayCd: 3, alerted: false, run: 0, noReward: false });
+  const T = tagger; Object.assign(T, { state: 'paint', hp: TAG.hpMax, x: TAG.x, z: rand(TAG.z0 + 2, TAG.z1 - 2), yaw: Math.PI / 2, paint: 0, stun: 0, sprayCd: 3, alerted: false, run: 0, noReward: false, muralTold: false, muralCueT: 0.8 });
   mural.clean(); taggerG.g.visible = true; taggerG.g.rotation.set(0, 0, 0);
 }
 function gustTagger(d) { const T = tagger; if (T.state !== 'paint') return; T.stats.gusts++; T.x = clamp(T.x + d.x * 1.5, TAG.x - 0.5, TAG.x + 4); T.z = clamp(T.z + d.z * 1.5, TAG.z0 - 2, TAG.z1 + 2); taggerHit(1, 'gust'); }
@@ -5708,6 +5723,7 @@ function taggerProjectile(m, mega) {
   if (dx * dx + dz * dz < 2.1 * 2.1 && y < 2.9 && y > -1) return taggerHit(mega ? 3 : 1, mega ? 'mega' : 'drop'); return false;
 }
 function updateTagger(dt, time) {
+  if (tagger.state === 'paint' && !tagger.muralTold) { tagger.muralCueT = (tagger.muralCueT || 0) - dt; if (tagger.muralCueT <= 0) rudyMuralCue(); }
   const T = tagger, V = taggerG; T.hitCd -= dt; T.stun -= dt; T.sprayCd -= dt; T.mistT -= dt; T.hissT -= dt; T.squash = Math.max(0, T.squash - dt * 4);
   if (T.state === 'gone') { V.g.visible = false; T.engaged = false; bossClaim('tagger', false); T.respawnT -= dt; if (T.respawnT <= 0) respawnTagger(); return; }
   const cdx = crow.pos.x - T.x, cdz = crow.pos.z - T.z, cd = Math.hypot(cdx, cdz), far = camera.position.distanceToSquared(V.g.position) > 220 * 220;
@@ -5756,8 +5772,9 @@ function drawV6cMap(g, tm, k, W) {
     g.fillStyle = ready ? '#4fc3ff' : '#8aa0ad'; g.strokeStyle = '#fff'; g.lineWidth = 0.8 * k; g.beginPath(); g.arc(u, v, 3 * k, 0, 7); g.fill(); g.stroke();
     if (!ready) { g.strokeStyle = '#4fc3ff'; g.lineWidth = 1.2 * k; g.beginPath(); g.arc(u, v, 3 * k, -Math.PI / 2, -Math.PI / 2 + (1 - B.cd / BATH.cool) * Math.PI * 2); g.stroke(); }
     g.font = `${3.8 * k}px system-ui`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('💧', u, v + 0.3 * k); g.textBaseline = 'alphabetic'; }
-  if (dfActive || tagger.state === 'gone') return; const [u, v] = tm(tagger.x, tagger.z); if (u < 0 || v < 0 || u > W || v > W) return;
-  const pu = tagger.engaged ? 0.5 + 0.5 * Math.sin(performance.now() / 160) : 0;
+  if (dfActive || tagger.state === 'gone') return; let [u, v] = tm(tagger.x, tagger.z);
+  { const R = W / 2 - 6 * k, dx = u - W / 2, dy = v - W / 2, L = Math.hypot(dx, dy); if (L > R) { u = W / 2 + dx / L * R; v = W / 2 + dy / L * R; } } // v7g2: pin to the rim so a mural in progress is always findable
+  const pu = tagger.engaged || tagger.state === 'paint' ? 0.5 + 0.5 * Math.sin(performance.now() / 180) : 0;
   if (tagger.engaged) { g.fillStyle = `rgba(255,80,200,${0.25 + 0.3 * pu})`; g.beginPath(); g.arc(u, v, (5 + 3 * pu) * k, 0, 7); g.fill(); }
   g.fillStyle = '#7b4fd0'; g.strokeStyle = '#fff'; g.lineWidth = 0.8 * k; g.beginPath(); g.arc(u, v, 3.4 * k, 0, 7); g.fill(); g.stroke();
   g.font = `${4.4 * k}px system-ui`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('🎨', u, v + 0.3 * k); g.textBaseline = 'alphabetic';
@@ -5768,7 +5785,7 @@ function resetV6c() {
   for (const C of clouds) { C.on = false; C.s.visible = false; } elPaint.classList.remove('go');
 }
 function updateV6c(dt, time) { updateBaths(dt, time); updateTagger(dt, time); updateClouds(dt); updatePuffs(dt); bossRender(); }
-const v6c = { BATHS, BATH, bathStats, tagger, TAG, taggerG, mural, clouds, sprayCloud, paintHit, taggerHit, defeatTagger, respawnTagger, gustTagger, bossClaims, FLOCKS };
+const v6c = { BATHS, BATH, bathStats, tagger, TAG, taggerG, mural, clouds, sprayCloud, paintHit, taggerHit, defeatTagger, respawnTagger, gustTagger, rudyMuralCue, bossClaims, FLOCKS };
 function resetV6b() {
   resetPond(); resetV6c(); heist.state = 'idle'; heist.cd = 75; heistRac.g.visible = false; heistRac.fries.visible = false; for (const s of HEIST_SITES) { s.cool = 0; s.prop.visible = true; }
   gust.on = false; gust.cd = 0; gust.pend.length = 0; for (const D of gdrops) scene.remove(D.obj); gdrops.length = 0;
@@ -6077,7 +6094,7 @@ const HEAT = {
   copToss: { range: 17, maxAlt: 24, cd: [6, 8.5], wind: 0.9, speed: 17, lead: 0.12, life: 2.6 },
   carToss: { range: 40, cd: [9, 12], cdFast: [7, 9.5], wind: 1.1, speed: 18, lead: 0.12, life: 3.6 },
   puffR: 1.1, tossGap: 1.6, maxPuffs: 3,
-  drone: { arm: 6.5, fuse: 0.5, blastR: 1.5, hitR: 2.0, orbit: [8, 13], speed: 17, swarmSpeed: 19, catchup: 34, recharge3: 4.2, recharge4: 3.0, strikers3: 1, strikers4: 3 },
+  drone: { arm: 6.5, fuse: 0.5, blastR: 1.5, hitR: 2.0, orbit: [8, 13], speed: 17, swarmSpeed: 19, catchup: 34, recharge3: 4.2, recharge4: 3.0, strikers3: 1, strikers4: 3, recover: 1.35 },
   donut: { first: [10, 16], next: [28, 42], r: 3.2, low: 5.5 },
 };
 const heat = { tossGate: 0, cv: new THREE.Vector3(), lastP: new THREE.Vector3(), lvl: 0, t: 0, incT: 0, droneT: 0, wave: '', waveBlasted: false, donutT: rand(...HEAT.donut.first), carrying: false, flashT: 0,
@@ -6126,6 +6143,27 @@ const _hv7 = new THREE.Vector3(), _hw7 = new THREE.Vector3();
 const heatOn = () => enemiesOn() && started;
 function groundY(x, z) { return hillAt(x, z); }
 function blockedAt(x, z, top = 0.8) { if (Math.abs(x) > 395 || Math.abs(z) > 395) return true; const c = colliderAt(x, z); if (c && c.top > top) return true; return inPond(x, z); }
+const MAP_EDGE = 380;
+function clipLane(L, m = MAP_EDGE) { return [clamp(L[0], -m, m), clamp(L[1], -m, m), clamp(L[2], -m, m), clamp(L[3], -m, m), L[4], L[5]]; }
+function clampWorld(x, z, m = MAP_EDGE) { return [clamp(x, -m, m), clamp(z, -m, m)]; }
+function heatSpawnSpot(R0 = 80, R1 = 120) {
+  for (let k = 0; k < 40; k++) { const a = rand(0, Math.PI * 2), R = rand(R0, R1), x = crow.pos.x + Math.cos(a) * R, z = crow.pos.z + Math.sin(a) * R; if (!blockedAt(x, z, 0.3) && Math.abs(x) < MAP_EDGE && Math.abs(z) < MAP_EDGE) return [x, z]; }
+  return clampWorld(crow.pos.x + 90, crow.pos.z);
+}
+function recoverCopCar(car) {
+  heat.stats.carUnstuck = (heat.stats.carUnstuck || 0) + 1;
+  const onScreen = camera.position.distanceToSquared(car.g.position) < 130 * 130;
+  car.stuckIdle = 0; car.stuckT = 0; car.spin = 0; car.sp = 8;
+  if (!onScreen && (car.stuckTries | 0) >= 1) {
+    const [x, z] = heatSpawnSpot(); car.x = x; car.z = z; car.ry = Math.atan2(crow.pos.x - x, crow.pos.z - z); car.stuckTries = 0; car.stuckX = x; car.stuckZ = z; return 'respawn';
+  }
+  car.stuckTries = (car.stuckTries | 0) + 1;
+  const [ix, iz] = clampWorld(car.x - Math.sign(car.x || 1) * 14, car.z - Math.sign(car.z || 1) * 14, 370);
+  if (!blockedAt(ix, iz, 0.6) && (Math.abs(car.x) > 360 || Math.abs(car.z) > 360 || car.stuckTries > 1)) { car.x = ix; car.z = iz; }
+  car.ry = Math.atan2((Math.abs(car.x) > 360 ? 0 : crow.pos.x) - car.x, (Math.abs(car.z) > 360 ? 0 : crow.pos.z) - car.z);
+  car.stuckX = car.x; car.stuckZ = car.z;
+  return car.stuckTries > 1 ? 'repath' : 'reverse';
+}
 function steerFree(u, tx, tz, sp, dt, probe, top) { // move a ground unit toward (tx,tz) anywhere on the ground, sliding around obstacles
   let dx = tx - u.x, dz = tz - u.z; const L = Math.hypot(dx, dz); if (L < 0.05) return 0;
   dx /= L; dz /= L; let ang = Math.atan2(dx, dz), ok = false;
@@ -6230,7 +6268,7 @@ function updateCops(dt, time) {
       yaw = Math.atan2(-(b2[0] - a2[0]) * c.dir, -(b2[1] - a2[1]) * c.dir);
     }
     c.g.position.set(c.x, groundY(c.x, c.z) + 0.1, c.z);
-    const far = camera.position.distanceToSquared(c.g.position) > cull; c.g.visible = !far; if (far) continue;
+    const far = !chase && camera.position.distanceToSquared(c.g.position) > cull; c.g.visible = !far; if (far) continue;
     c.yaw = angLerp(c.yaw, yaw, damp(10, dt)); c.g.rotation.y = c.yaw;
     c.phase += dt * sp * 3.0; const sw = Math.sin(c.phase) * (sp > 3 ? 0.9 : 0.45);
     c.legs[0].rotation.x = sw; c.legs[1].rotation.x = -sw;
@@ -6261,9 +6299,9 @@ function addCopCar(L, extra) {
   const sh = new THREE.Mesh(shadowGeo, shadowMat); sh.scale.set(1.35, 1, 2.7); sh.position.set(0.4, 0.05, 0.3); g.add(sh);
   const tell = addTell(g, 3.6);
   scene.add(g);
-  const len = Math.hypot(L[2] - L[0], L[3] - L[1]);
-  const car = { g, tell, r, b, L, len, t: Math.random(), x: 0, z: 0, ry: Math.atan2(L[2] - L[0], L[3] - L[1]), sp: 0, st: 'patrol', side: 1, spin: 0, spinV: 0, slide: new THREE.Vector3(), tossCd: rand(2, 4), wind: 0, hitCd: 0, extra: !!extra, active: !extra, retT: 0, stuckT: 0 };
-  car.x = lerp(L[0], L[2], car.t); car.z = lerp(L[1], L[3], car.t);
+  L = clipLane(L); const len = Math.hypot(L[2] - L[0], L[3] - L[1]);
+  const car = { g, tell, r, b, L, len, t: Math.random(), x: 0, z: 0, ry: Math.atan2(L[2] - L[0], L[3] - L[1]), sp: 0, st: 'patrol', side: 1, spin: 0, spinV: 0, slide: new THREE.Vector3(), tossCd: rand(2, 4), wind: 0, hitCd: 0, extra: !!extra, active: !extra, retT: 0, stuckT: 0, stuckIdle: 0, stuckTries: 0, stuckX: 0, stuckZ: 0 };
+  car.x = lerp(L[0], L[2], car.t); car.z = lerp(L[1], L[3], car.t); car.stuckX = car.x; car.stuckZ = car.z;
   if (extra) g.visible = false;
   copCars.push(car); return car;
 }
@@ -6282,17 +6320,26 @@ function updateCopCars(dt, time) {
       if (Math.random() < dt * 12) sparkBurst(new THREE.Vector3(car.x + rand(-1, 1), 0.4, car.z + rand(-1, 1)), 2, 0xdddddd);
     } else if (chase) {
       car.st = 'chase'; const top = car.extra ? HEAT.carChase * HEAT.fast : HEAT.carChase;
-      const tx = crow.pos.x, tz = crow.pos.z, d = Math.hypot(tx - car.x, tz - car.z);
-      // car-like steering: turn-rate limited toward the shadow, around obstacles
+      const [tx, tz] = clampWorld(crow.pos.x, crow.pos.z), d = Math.hypot(tx - car.x, tz - car.z);
+      // car-like steering: turn-rate limited toward the (in-bounds) shadow, around obstacles; at the map rim prefer the interior
       let want = Math.atan2(tx - car.x, tz - car.z); const probe = 5.5;
+      const nearRim = Math.abs(car.x) > 360 || Math.abs(car.z) > 360;
+      if (nearRim) want = Math.atan2((Math.abs(car.x) > 360 ? 0 : tx) - car.x, (Math.abs(car.z) > 360 ? 0 : tz) - car.z);
       if (blockedAt(car.x + Math.sin(want) * probe, car.z + Math.cos(want) * probe, 0.6) || blockedAt(car.x + Math.sin(car.ry) * probe, car.z + Math.cos(car.ry) * probe, 0.6)) {
-        for (const off of [0.6, -0.6, 1.2, -1.2, 1.9, -1.9, 2.6, -2.6]) { const a = car.ry + off * car.side; if (!blockedAt(car.x + Math.sin(a) * probe, car.z + Math.cos(a) * probe, 0.6)) { want = a; break; } } }
+        let found = false;
+        for (const off of [0.6, -0.6, 1.2, -1.2, 1.9, -1.9, 2.6, -2.6, 3.1, -3.1]) { const a = (nearRim ? Math.atan2(-car.x, -car.z) : car.ry) + off * car.side; if (!blockedAt(car.x + Math.sin(a) * probe, car.z + Math.cos(a) * probe, 0.6)) { want = a; found = true; break; } }
+        if (!found && nearRim) want = Math.atan2(-car.x, -car.z);
+      }
       const dy = Math.atan2(Math.sin(want - car.ry), Math.cos(want - car.ry));
       car.ry += clamp(dy, -1.9 * dt, 1.9 * dt);
       const tSp = d < 9 ? 6 : top * (Math.abs(dy) > 1.2 ? 0.55 : 1);
       car.sp = lerp(car.sp, tSp, damp(1.6, dt));
       const nx = car.x + Math.sin(car.ry) * car.sp * dt, nz = car.z + Math.cos(car.ry) * car.sp * dt;
-      if (!blockedAt(nx, nz, 0.6)) { car.x = nx; car.z = nz; car.stuckT = 0; } else { car.sp *= 0.3; car.stuckT += dt; if (car.stuckT > 0.6) { car.side *= -1; car.ry += car.side * 1.2; car.stuckT = 0; } }
+      if (!blockedAt(nx, nz, 0.6) && Math.abs(nx) <= 395 && Math.abs(nz) <= 395) { car.x = nx; car.z = nz; } else { car.sp *= 0.3; car.stuckT += dt; if (car.stuckT > 0.7) { car.side *= -1; car.ry = nearRim ? Math.atan2(-car.x, -car.z) : car.ry + car.side * 0.9; car.stuckT = 0; } }
+      { const [cx, cz] = clampWorld(car.x, car.z); car.x = cx; car.z = cz; }
+      const moved = Math.hypot(car.x - (car.stuckX || 0), car.z - (car.stuckZ || 0));
+      if (moved > 5) { car.stuckX = car.x; car.stuckZ = car.z; car.stuckIdle = 0; car.stuckTries = 0; }
+      else { car.stuckIdle = (car.stuckIdle || 0) + dt; if (car.stuckIdle > 2.6) recoverCopCar(car); }
       car.tossCd -= dt;
       if (car.wind > 0) { car.wind -= dt; if (car.wind <= 0) tossPuff(car.x, groundY(car.x, car.z) + 2.6, car.z, HEAT.carToss); }
       else if (car.tossCd <= 0 && d < HEAT.carToss.range && canToss()) { car.wind = netWind(HEAT.carToss.wind); car.tossCd = rand(...(car.extra || heat.lvl >= 2 ? HEAT.carToss.cdFast : HEAT.carToss.cd)); heat.tossGate = HEAT.tossGap; }
@@ -6311,6 +6358,7 @@ function updateCopCars(dt, time) {
       car.sp = HEAT.carPatrol; car.t += car.sp * dt / car.len; if (car.t > 1) car.t -= 1;
       car.x = lerp(car.L[0], car.L[2], car.t); car.z = lerp(car.L[1], car.L[3], car.t); car.ry = Math.atan2(car.L[2] - car.L[0], car.L[3] - car.L[1]);
     }
+    { const [cx, cz] = clampWorld(car.x, car.z); car.x = cx; car.z = cz; }
     car.g.visible = true; car.g.position.set(car.x, groundY(car.x, car.z), car.z); car.g.rotation.set(0, car.ry, 0);
     if (car.wind > 0) car.g.position.y += Math.sin(time * 40) * 0.04;
   }
@@ -6330,13 +6378,14 @@ for (let i = 0; i < 10; i++) {
   const fl = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xff2020, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 })); fl.scale.setScalar(4); g.add(fl);
   g.scale.setScalar(1.6); g.visible = false; scene.add(g); // v7c: a bit bigger so the trio reads clearly
   const sh = new THREE.Mesh(shadowGeo, shadowMat); sh.scale.setScalar(0.9); sh.visible = false; scene.add(sh);
-  drones.push({ g, fl, sh, i, st: 'off', p: new THREE.Vector3(), v: new THREE.Vector3(), t: 0, ang: rand(0, 6.28), orbitR: rand(...HEAT.drone.orbit), hOff: rand(-4, 2), cd: 0, swarm: false });
+  drones.push({ g, fl, sh, i, st: 'off', p: new THREE.Vector3(), v: new THREE.Vector3(), t: 0, ang: rand(0, 6.28), orbitR: rand(...HEAT.drone.orbit), hOff: rand(-4, 2), cd: 0, swarm: false, lockDir: new THREE.Vector3(), lockSp: 0, beepN: 0, fuseOn: false });
 }
 const _dv = new THREE.Vector3(), _dwant = new THREE.Vector3(); // v7c: own vector for the steering target (was aliased with _hw7)
 function droneSpawn(D, swarm) {
   forward(crow.yaw, _f); const a = rand(0, Math.PI * 2), R = rand(55, 75); // v7c: closer, and at Kro's own height (any altitude)
   { const x = crow.pos.x + Math.cos(a) * R, z = crow.pos.z + Math.sin(a) * R; D.p.set(x, Math.max(crow.pos.y + rand(3, 10), groundAt(x, z) + 8), z); } D.v.set(0, 0, 0);
   D.st = 'in'; D.t = 0; D.cd = rand(1.5, 3.5); D.swarm = swarm; D.orbitR = rand(...HEAT.drone.orbit); D.hOff = rand(-4.5, 2.5); D.ang = rand(0, 6.28);
+  D.beepN = 0; D.fuseOn = false; if (D.lockDir) D.lockDir.set(0, 0, 0);
   D.g.visible = true; D.sh.visible = true; D.g.rotation.set(0, 0, 0); D.fl.material.opacity = 0;
 }
 function activeDrones() { return drones.filter(D => D.st !== 'off' && D.st !== 'down' && D.st !== 'leave'); }
@@ -6363,6 +6412,15 @@ function droneBlast(D) {
   D.st = 'recover'; D.t = 0; D.cd = heat.lvl >= 4 ? HEAT.drone.recharge4 : HEAT.drone.recharge3;
   _dv.copy(D.p).sub(crow.pos).normalize(); D.v.copy(_dv).multiplyScalar(14); D.v.y = Math.abs(D.v.y) + 5; D.fl.material.opacity = 0;
 }
+function tickDroneFuse(D, u, F) {
+  // visual: pulse with each beep, then a solid bright flash in the last beat
+  const solid = u >= 0.82;
+  const pulse = solid ? 1 : 0.35 + 0.65 * Math.max(0, Math.sin((0.15 + u * 2.4) * Math.PI * 2 * (2 + u * 5)));
+  D.fl.material.opacity = solid ? 1 : pulse; D.fl.scale.setScalar(solid ? 8 : 3.2 + u * 5);
+  const steps = 5, thresh = (D.beepN + 1) / (steps + 1);
+  if (!solid && D.beepN < steps && u >= thresh) { D.beepN++; const pitch = 880 + D.beepN * 140; sfx.droneFuseBeep && sfx.droneFuseBeep(pitch, 0.07, false); }
+  if (solid && D.beepN < steps + 1) { D.beepN = steps + 1; sfx.droneFuseBeep && sfx.droneFuseBeep(1680, Math.max(0.08, F * 0.18), true); }
+}
 function updateDrones(dt, time) {
   const H = HEAT.drone, swarmOn = heat.lvl >= 4, cs = crow.curSpeed || 13;
   forward(crow.yaw, _f);
@@ -6383,21 +6441,35 @@ function updateDrones(dt, time) {
         _hw7.y = Math.max(_hw7.y, groundAt(_hw7.x, _hw7.z) + 2);
         const gap = _hw7.distanceTo(D.p); want = _dwant.subVectors(_hw7, D.p).normalize(); sp = clamp(cs + gap * 0.9, 6, dist > 40 ? H.catchup : sp + 8);
         D.cd -= dt;
-        if (D.st === 'recover' && D.t > 1.2) D.st = 'hunt';
-        if (D.st === 'hunt' && D.cd <= 0 && strikers < maxStr && !ko.on && dist < 30) { D.st = 'strike'; D.t = 0; strikers++; }
-      } else if (D.st === 'strike') { // dart at where Kro is going
-        _dwant.copy(crow.pos).addScaledVector(_f, cs * 0.25); want = _dwant.sub(D.p).normalize(); sp = cs + 9;
-        if (dist < droneArm()) { D.st = 'fuse'; D.t = 0; sfx.droneBeep && sfx.droneBeep(); }
-        else if (D.t > 5 || (D.t > 0.8 && dist > 20)) { D.st = 'hunt'; D.cd = 1.5; } // v7c: missed dart -> back to the orbit
-      } else if (D.st === 'fuse') { // telegraph: beeping + flashing red. It matches Kro's velocity with a lag, so holding still or flying
-        // straight gets you zapped, while a sharp turn, dive, brake or barrel roll in that 0.5 s opens the gap past ~1.5 m
-        _hw7.copy(heat.cv); const close = Math.min(dist * 2.2, 7);
-        _hw7.addScaledVector(toC.normalize(), close); D.v.lerp(_hw7, damp(3.2, dt));
-        D.fl.material.opacity = 0.55 + 0.45 * Math.sin(D.t * 50); D.fl.scale.setScalar(3 + D.t * 6);
-        if (D.t >= droneFuse()) droneBlast(D);
+        if (D.st === 'recover' && D.t > (H.recover || 1.35)) { D.st = 'hunt'; D.fl.material.opacity = 0; }
+        if (D.st === 'hunt' && D.cd <= 0 && strikers < maxStr && !ko.on && dist < 30) {
+          D.st = 'strike'; D.t = 0; D.fuseOn = false; D.beepN = 0; strikers++;
+          _dwant.copy(crow.pos).addScaledVector(_f, cs * 0.3).addScaledVector(heat.cv, 0.12);
+          if (!D.lockDir) D.lockDir = new THREE.Vector3();
+          D.lockDir.copy(_dwant).sub(D.p); if (D.lockDir.lengthSq() < 0.01) D.lockDir.copy(_f);
+          D.lockDir.normalize(); D.lockSp = cs + 11;
+        }
+      } else if (D.st === 'strike' || D.st === 'fuse') { // v7g2: committed dash along a locked line — no last-moment homing
+        const locked = D.lockDir && D.lockDir.lengthSq() > 0.01 ? D.lockDir : toC.clone().normalize();
+        D.v.copy(locked).multiplyScalar(D.lockSp || (cs + 11));
+        if (D.st === 'strike' && (dist < droneArm() || D.t > 0.7)) { D.st = 'fuse'; D.t = 0; D.beepN = 0; }
+        else if (D.st === 'strike' && (D.t > 5 || (D.t > 0.9 && dist > 28))) { D.st = 'hunt'; D.cd = 1.5; D.fl.material.opacity = 0; }
+        if (D.st === 'fuse') {
+          const F = droneFuse(), u = clamp(D.t / F, 0, 1);
+          tickDroneFuse(D, u, F);
+          if (D.t >= F) {
+            const hit = dist < H.blastR && !roll.on && !ko.on;
+            if (hit) droneBlast(D);
+            else { // overshoot: keep going on the locked path, then a 1–1.5 s slow recover (Gust window)
+              D.st = 'recover'; D.t = 0; D.cd = H.recover; D.v.copy(locked).multiplyScalar((D.lockSp || 16) * 0.4); D.fl.material.opacity = 0;
+              if (roll.on) popup('🌀 OVERSHOT!', crow.pos.clone().add(new THREE.Vector3(0, 2, 0)), 'gold');
+              else if (dist < 4) popup('NEAR MISS!', crow.pos.clone().add(new THREE.Vector3(0, 2, 0)), 'gold');
+            }
+          }
+        }
       }
-      if (want) { const vsp = D.v.length() || 0.01; _hw7.copy(D.v).divideScalar(vsp); const turn = D.st === 'fuse' ? 2.6 : 3.4, ang = _hw7.angleTo(want), k = ang > 1e-4 ? Math.min(1, turn * dt / ang) : 1;
-        const spT = ang > 1.1 ? Math.min(sp, 7 + cs * 0.5) : sp; // v7c: brake into tight turns instead of flying off in a wide arc
+      if (want && D.st !== 'strike' && D.st !== 'fuse') { const vsp = D.v.length() || 0.01; _hw7.copy(D.v).divideScalar(vsp); const turn = 3.4, ang = _hw7.angleTo(want), k = ang > 1e-4 ? Math.min(1, turn * dt / ang) : 1;
+        const spT = ang > 1.1 ? Math.min(sp, 7 + cs * 0.5) : sp;
         _hw7.lerp(want, k).normalize(); D.v.copy(_hw7).multiplyScalar(lerp(vsp, spT, damp(ang > 1.1 ? 4 : 2.5, dt))); }
       D.p.addScaledVector(D.v, dt);
       const gy = groundAt(D.p.x, D.p.z) + 1.2; if (D.p.y < gy) { D.p.y = gy; D.v.y = Math.max(D.v.y, 0); }
@@ -6464,11 +6536,10 @@ function updateDonut(dt, time) {
   }
 }
 // ---- heat level changes
-function spawnExtras() {
+function spawnExtras() { // only activates idle extras — never relocates or despawns a unit that is already chasing
   const lowQ = gfxLevel() === 'low', nC = lowQ ? 2 : 3, nK = lowQ ? 1 : 2; let i = 0, j = 0;
-  const spot = () => { for (let k = 0; k < 40; k++) { const a = rand(0, Math.PI * 2), R = rand(80, 120), x = crow.pos.x + Math.cos(a) * R, z = crow.pos.z + Math.sin(a) * R; if (!blockedAt(x, z, 0.3) && Math.abs(x) < 380 && Math.abs(z) < 380) return [x, z]; } return [crow.pos.x + 90, crow.pos.z]; };
-  for (const c of cops) if (c.extra && !c.active && i < nC) { const [x, z] = spot(); c.x = x; c.z = z; c.active = true; c.st = 'chase'; c.knock = 0; c.retT = 0; i++; heat.stats.extraSpawns++; }
-  for (const car of copCars) if (car.extra && !car.active && j < nK) { const [x, z] = spot(); car.x = x; car.z = z; car.ry = Math.atan2(crow.pos.x - x, crow.pos.z - z); car.active = true; car.st = 'chase'; car.spin = 0; car.retT = 0; j++; heat.stats.extraSpawns++; }
+  for (const c of cops) if (c.extra && !c.active && i < nC) { const [x, z] = heatSpawnSpot(); c.x = x; c.z = z; c.active = true; c.st = 'chase'; c.knock = 0; c.retT = 0; i++; heat.stats.extraSpawns++; }
+  for (const car of copCars) if (car.extra && !car.active && j < nK) { const [x, z] = heatSpawnSpot(); car.x = x; car.z = z; car.ry = Math.atan2(crow.pos.x - x, crow.pos.z - z); car.active = true; car.st = 'chase'; car.spin = 0; car.retT = 0; j++; heat.stats.extraSpawns++; }
 }
 function setHeat(n, why) {
   n = clamp(Math.round(n), 0, HEAT.max); if (n > 0 && !heatOn()) return;
@@ -6479,7 +6550,10 @@ function setHeat(n, why) {
     if (prev === 0) { showMsg('🚨 HEAT 1: the cops are after you!', 2, true); hawkRetreat(20); if (dogfight.on) endDogfight('', 0); }
     if (n >= 2 && prev < 2) { spawnExtras(); showMsg('🚨 HEAT 2: more cops, and faster!', 2, true); }
     if (n >= 3 && prev < 3) { heat.droneT = 3; heat.wave = 'pending3'; bigBanner('🚨 HEAT 3', '3 drones incoming! Gust or drop to knock them down', '#ff6a6a'); }
-    if (n >= 4) { heat.droneT = 2.5; heat.wave = 'pending4'; bigBanner('🚨 HEAT 4: DRONE SWARM!', '10 drones · beeping + red flash = dodge!', '#ff4a4a'); }
+    if (n >= 4 && prev < 4) { heat.droneT = 2.5; heat.wave = 'pending4'; bigBanner('🚨 HEAT 4: DRONE SWARM!', '10 drones · beeping + red flash = dodge!', '#ff4a4a'); }
+    // v7g2: a level-up never despawns or resets pursuers already in the chase — they keep going, extras only add on
+    for (const c of cops) if (c.active) { c.st = 'chase'; c.g.visible = true; }
+    for (const car of copCars) if (car.active) { if (car.spin <= 0) car.st = 'chase'; car.g.visible = true; }
   } else {
     if (n < 3) for (const D of drones) if (D.st !== 'off' && D.st !== 'down') { D.st = 'leave'; D.t = 0; D.fl.material.opacity = 0; }
     if (n === 3) { heat.wave = 'pending3'; heat.droneT = 12; for (const D of drones) if (D.st !== 'off' && D.st !== 'down') { D.st = 'leave'; D.t = 0; D.fl.material.opacity = 0; } }
@@ -6560,7 +6634,15 @@ function heatLoops(dt = 0.016) {
     if (humV <= 0.002 && Hm.g.gain.value < 0.003) { Hm.o1.stop(); Hm.o2.stop(); Hm.o1.disconnect(); Hm.o2.disconnect(); heatAudio.hum = null; } }
 }
 Object.assign(sfx, {
-  droneBeep() { if (!this.ok()) return; const t = actx.currentTime; for (const dt of [0, 0.17, 0.34]) { const o = actx.createOscillator(), g = actx.createGain(); o.type = 'square'; o.frequency.value = 2100; o.connect(g); g.connect(master); env(g, t + dt, 0.004, 0.16, 0.08); o.start(t + dt); o.stop(t + dt + 0.1); } },
+  droneBeep() { this.droneFuseBeep(1100, 0.08, false); },
+  droneFuseBeep(pitch, dur, solid) { // v7g2: distinct rising beeps (triangle, not a harsh square), then a short solid tone
+    if (!this.ok()) return; const t = actx.currentTime, p = pitch || 1100, d = dur || 0.08;
+    const o = actx.createOscillator(), f = actx.createBiquadFilter(), g = actx.createGain();
+    o.type = 'triangle'; f.type = 'bandpass'; f.frequency.value = p; f.Q.value = solid ? 2.2 : 5;
+    o.frequency.setValueAtTime(p, t); if (solid) o.frequency.linearRampToValueAtTime(p * 1.12, t + d);
+    o.connect(f); f.connect(g); g.connect(master);
+    const peak = solid ? 0.28 : 0.22; env(g, t, 0.006, peak, d); o.start(t); o.stop(t + d + 0.04);
+  },
   droneWarn() { if (!this.ok()) return; const t = actx.currentTime; for (let i = 0; i < 4; i++) { const o = actx.createOscillator(), g = actx.createGain(); o.type = 'triangle'; o.frequency.setValueAtTime(880, t + i * 0.22); o.frequency.linearRampToValueAtTime(1320, t + i * 0.22 + 0.18); o.connect(g); g.connect(master); env(g, t + i * 0.22, 0.01, 0.2, 0.18); o.start(t + i * 0.22); o.stop(t + i * 0.22 + 0.22); } },
   heatUp(n) { if (!this.ok()) return; const t = actx.currentTime; [0, 0.12].forEach((d, i) => { const o = actx.createOscillator(), g = actx.createGain(); o.type = 'sawtooth'; o.frequency.value = (i ? 784 : 587) * (1 + n * 0.06); o.connect(g); g.connect(master); env(g, t + d, 0.01, 0.18, 0.22); o.start(t + d); o.stop(t + d + 0.26); }); },
   pigCoo(a = 1) { if (!this.ok()) return; const t = actx.currentTime + 0.01, o = actx.createOscillator(), f = actx.createBiquadFilter(), g = actx.createGain(), lfo = actx.createOscillator(), lg = actx.createGain();
@@ -6622,7 +6704,7 @@ function updateHeat(dt, rdt, time) {
   heatLoops(dt);
   drawHeatHud();
 }
-const v7 = { HEAT, heat, cops, copCars, drones, puffs, donut, setHeat, addHeat, resetHeat, placeDonut, eatDonut, droneDown, droneBlast, launchWave, spinOut, knockCop, heatProjectile, activeDrones, heatIconURL, heatAudio, SIREN };
+const v7 = { HEAT, heat, cops, copCars, drones, puffs, donut, setHeat, addHeat, resetHeat, placeDonut, eatDonut, droneDown, droneBlast, launchWave, spinOut, knockCop, heatProjectile, activeDrones, heatIconURL, heatAudio, SIREN, recoverCopCar, clipLane, clampWorld, MAP_EDGE, heatSpawnSpot, updateCops, updateCopCars, updateDrones, updateHeat, tickDroneFuse, spawnExtras };
 // ================================================================ v7b: CASH (world pickup, banked at the nest) + CAGED / bail
 // Cash: generic green bill bundles and plain gold coins (our own look: no real banknote art, symbols or portraits).
 // Kro only *carries* picked-up cash; it is banked when he brings it home to the nest. Caught by the cops (knocked out
@@ -6994,11 +7076,11 @@ function updateHoverInput(airHigh) {
   if (hover.on && (!down || input.dive || gust.on || ko.on || crow.stun > 0 || crow.stamina <= 0)) endHover(crow.stamina <= 0 && down);
 }
 
-sfx.brakeGust = function () { // short backward whoosh (not a combat Gust)
+sfx.brakeGust = function () { // v7g2: gentle, quiet air whoosh when braking starts (Web Audio synth)
   if (!this.ok()) return; const t = actx.currentTime;
-  { const s = noiseSrc(), f = actx.createBiquadFilter(), g = actx.createGain(); f.type = 'bandpass'; f.Q.value = 0.9; f.frequency.setValueAtTime(1600, t); f.frequency.exponentialRampToValueAtTime(280, t + 0.28);
-    s.connect(f); f.connect(g); g.connect(master); env(g, t, 0.008, 0.4, 0.26); s.start(t, Math.random()); s.stop(t + 0.32); }
-  { const o = actx.createOscillator(), g = actx.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(48, t + 0.16); o.connect(g); g.connect(master); env(g, t, 0.003, 0.28, 0.14); o.start(t); o.stop(t + 0.2); }
+  { const s = noiseSrc(), f = actx.createBiquadFilter(), g = actx.createGain(); f.type = 'bandpass'; f.Q.value = 0.7; f.frequency.setValueAtTime(900, t); f.frequency.exponentialRampToValueAtTime(320, t + 0.34);
+    s.connect(f); f.connect(g); g.connect(master); env(g, t, 0.02, 0.11, 0.32); s.start(t, Math.random()); s.stop(t + 0.4); }
+  { const o = actx.createOscillator(), g = actx.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(220, t); o.frequency.exponentialRampToValueAtTime(90, t + 0.22); o.connect(g); g.connect(master); env(g, t, 0.01, 0.05, 0.2); o.start(t); o.stop(t + 0.26); }
 };
 
 // ---- Grandma Wren + "Lost Glasses" (roadmap: look-alikes, right pair rewards, wrong pair broom swat)
@@ -7319,7 +7401,7 @@ function drawGmaMap(g, tm, k, W) {
 const RAC_BEFORE = { ambient: 8, minSpace: 8.0, heistFirst: 45, heistCd: [55, 90], heistMin: 40, heistMax: 260, siteCool: 30, rummage: [3, 9], noFries: [6, 12], afterReturn: [7, 14], stealSp: 3.4, fryRespawn: [8, 14], stealR: 34 };
 const RAC_AFTER  = { ambient: 8, minSpace: 28, heistFirst: 75, heistCd: [90, 150], heistMin: 70, heistMax: 280, siteCool: 50, rummage: [12, 22], noFries: [16, 28], afterReturn: [18, 32], stealSp: 2.8, fryRespawn: [22, 36], stealR: 28, playerFryClear: 18 };
 const v7g = {
-  hover, HOVER, tryStartHover, endHover, updateHoverInput, hoverDrainRate, stamMax, soarMinY, updateCrow,
+  hover, HOVER, tryStartHover, endHover, updateHoverInput, hoverDrainRate, stamMax, soarMinY, updateCrow, updateCamera, cameraTarget,
   UPG_TREE, upgState, upgHas, upgCan, buyUpg, saveUpg, openUpg, closeUpg, get upgOpen() { return upgOpen; }, upgCoins,
   GMA, gmaState, grandma, gmaPickups, gmaClueObj, talkToGrandma, updateGrandma, finishGma, startGmaSwat, doGmaSwat, gmaSwatHurt, applyGmaHers, gmaStats, gmaActive, saveGma, poseGustWings,
   RAC_BEFORE, RAC_AFTER,
