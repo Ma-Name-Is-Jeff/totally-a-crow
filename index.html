@@ -3605,9 +3605,8 @@ function updateCrow(dt, time) {
   if (input.flap && !stunned && !hover.on && crow.stamina > 0) { targetVy = Math.max(targetVy, 0) + 13; crow.stamina -= flapStam(dt); flapping = true; }
   else if (input.flap) { targetVy = Math.max(targetVy, 2); }
   if (input.dive) targetVy = Math.min(targetVy, -26);
-  else if (hover.on) { targetVy = Math.sin(gameTime * 3.4) * HOVER.bob; flapping = true; }
-  else if (braking) targetVy = Math.max(targetVy, -0.6); // flared wings: almost no sink
-  crow.vy = lerp(crow.vy, targetVy, damp(hover.on ? 8 : input.dive ? 2.2 : 3, dt));
+  else if (braking && !hover.on) targetVy = Math.max(targetVy, -0.6); // flared wings: almost no sink
+  crow.vy = lerp(crow.vy, targetVy, damp(input.dive ? 2.2 : 3, dt));
   // SOAR (hold button / double-tap flap / E): stamina-draining speed, only up high
   const highEnough = crow.pos.y >= soarMinY(); // v6e: SOAR from 15m; Early Rise upgrade: 12m
   crow.soaring = soarHeld() && highEnough && crow.stamina > 1 && !braking && !hover.on;
@@ -3626,11 +3625,10 @@ function updateCrow(dt, time) {
   tSpeed *= mult;
   crow.inAir = updateAirstream(dt, jx, braking);
   if (crow.inAir) tSpeed = Math.max(tSpeed, AIR_SPEED);                          // airstream carry (~2.6x)
-  if (hover.on) tSpeed = 0; // v7g: hold BRAKE to stop and hover
+  if (hover.on || gust.on) tSpeed = 0.8; // v7g1: brake uses the same stop-and-hover as Gust
   else if (braking && !input.dive) tSpeed = 5.5; // near the ground: flare and glide slowly
-  if (gust.on && !hover.on) tSpeed = 0.8; // v6b gust: stop and hover for the clap
-  crow.speed = lerp(crow.speed, tSpeed, damp(gust.on && !hover.on ? 9 : (hover.on || hover.gustT > 0) ? 14 : braking ? 3 : 2, dt));
-  if (gust.on && !hover.on) crow.vy = lerp(crow.vy, 0.4, damp(10, dt));
+  crow.speed = lerp(crow.speed, tSpeed, damp((gust.on || hover.on) ? 9 : braking ? 3 : 2, dt));
+  if (gust.on || hover.on) crow.vy = lerp(crow.vy, 0.4, damp(10, dt));
   crow.curSpeed = crow.speed;
   forward(crow.yaw, _f);
   const px0 = crow.pos.x, pz0 = crow.pos.z, py0 = crow.pos.y;
@@ -3686,30 +3684,42 @@ function updateCrow(dt, time) {
 
   // visuals: banking, pitch, flapping
   crow.bank = lerp(crow.bank, (crow.yawRate / 1.15) * 0.75, damp(5, dt));
-  crow.pitchVis = lerp(crow.pitchVis, Math.atan2(crow.vy, crow.speed) * 0.9, damp(6, dt));
+  const pitchSp = (gust.on || hover.on) ? Math.max(crow.speed, 0.8) : crow.speed;
+  crow.pitchVis = lerp(crow.pitchVis, Math.atan2(crow.vy, pitchSp) * 0.9, damp(6, dt));
   crow.group.position.copy(crow.pos);
   const rollAng = roll.on ? -roll.dir * Math.PI * 2 * smooth(0, 1, roll.t / ROLL.dur) : 0;
   crow.group.rotation.set(crow.pitchVis, crow.yaw, crow.bank + rollAng);
-  const wantFlap = hover.on ? 0.9 : flapping ? 1 : (crow.vy > 1 ? 0.45 : 0.12);
+  const wantFlap = hover.on ? 0 : flapping ? 1 : (crow.vy > 1 ? 0.45 : 0.12);
   crow.flapRate = lerp(crow.flapRate, wantFlap, damp(4, dt));
   const diving = input.dive || crow.vy < -12;
   crow.flapPhase += dt * (6 + crow.flapRate * 12);
-  for (const w of crow.wings) {
-    let a, tip;
-    if (hover.on) { a = Math.sin(crow.flapPhase) * 0.7; tip = Math.sin(crow.flapPhase - 0.6) * 0.45; w.pivot.rotation.y = lerp(w.pivot.rotation.y, 0, 0.25); }
-    else if (braking && !diving) { a = 0.35 + Math.sin(crow.flapPhase) * 0.12; tip = 0.5; w.pivot.rotation.y = lerp(w.pivot.rotation.y, 0.35 * w.s, 0.2); }
-    else if (diving) { a = -0.25; tip = -0.9; w.pivot.rotation.y = -0.6 * w.s; } // tuck wings
-    else { a = Math.sin(crow.flapPhase) * (0.15 + crow.flapRate * 0.75); tip = Math.sin(crow.flapPhase - 0.8) * 0.4 * crow.flapRate; w.pivot.rotation.y = lerp(w.pivot.rotation.y, 0, 0.2); }
-    w.pivot.rotation.z = lerp(w.pivot.rotation.z, a * w.s, 0.5);
-    w.tipPivot.rotation.z = lerp(w.tipPivot.rotation.z, tip * w.s, 0.5);
+  if (hover.on) {
+    hover.clapT += dt;
+    if (hover.clapT < GUST.dur) poseGustWings(hover.clapT);
+    else {
+      for (const w of crow.wings) {
+        w.pivot.rotation.z = lerp(w.pivot.rotation.z, 0.28 * w.s, 0.25);
+        w.pivot.rotation.y = lerp(w.pivot.rotation.y, 0, 0.25);
+        w.tipPivot.rotation.z = lerp(w.tipPivot.rotation.z, 0.15 * w.s, 0.25);
+      }
+    }
+  } else {
+    for (const w of crow.wings) {
+      let a, tip;
+      if (braking && !diving) { a = 0.35 + Math.sin(crow.flapPhase) * 0.12; tip = 0.5; w.pivot.rotation.y = lerp(w.pivot.rotation.y, 0.35 * w.s, 0.2); }
+      else if (diving) { a = -0.25; tip = -0.9; w.pivot.rotation.y = -0.6 * w.s; } // tuck wings
+      else { a = Math.sin(crow.flapPhase) * (0.15 + crow.flapRate * 0.75); tip = Math.sin(crow.flapPhase - 0.8) * 0.4 * crow.flapRate; w.pivot.rotation.y = lerp(w.pivot.rotation.y, 0, 0.2); }
+      w.pivot.rotation.z = lerp(w.pivot.rotation.z, a * w.s, 0.5);
+      w.tipPivot.rotation.z = lerp(w.tipPivot.rotation.z, tip * w.s, 0.5);
+    }
   }
-  crow.tail.rotation.x = -crow.pitchVis * 0.6 + (braking ? 0.5 : 0); crow.tail.rotation.z = crow.bank * 0.4;
+  crow.tail.rotation.x = -crow.pitchVis * 0.6 + (braking && !hover.on ? 0.5 : 0); crow.tail.rotation.z = crow.bank * 0.4;
   // legs: tucked back in flight, lowered with talons out when braking or close to the ground
-  const legsDown = (braking && !diving) || crow.pos.y - groundAt(crow.pos.x, crow.pos.z) < 2.5;
+  const legsDown = (braking && !diving && !hover.on) || crow.pos.y - groundAt(crow.pos.x, crow.pos.z) < 2.5;
   crow.legT = lerp(crow.legT, legsDown ? 1 : 0, damp(6, dt));
   crow.legs.rotation.x = lerp(-1.5, 0.12, crow.legT); crow.legs.scale.setScalar(lerp(0.6, 1, crow.legT)); crow.legs.visible = crow.legT > 0.12;
   flapSoundCd -= dt;
-  if ((flapping || hover.on) && flapSoundCd <= 0) { sfx.flap(); flapSoundCd = hover.on ? 0.36 : 0.28; }
+  if (flapping && !hover.on && flapSoundCd <= 0) { sfx.flap(); flapSoundCd = 0.28; }
 
   // blob shadow
   const gh = groundAt(crow.pos.x, crow.pos.z);
@@ -5104,12 +5114,15 @@ function collectDrop(D) {
   else if (D.type === 'coin') { addScore(50); ach.coins += 10; saveAch(); popup('🪙 +10 coins', at, 'gold'); sfx.pickup(true); }
   else { addScore(20); crow.ammo = Math.min(MAX_AMMO, crow.ammo + 2); popup('🍟 +2 AMMO', at, 'gold'); sfx.pickup(false); }
 }
+function poseGustWings(t) { // shared clap pose for combat Gust and the brake (brake never fires the attack)
+  const up = smooth(0, 0.26, t) * (1 - smooth(0.26, 0.36, t)), clap = smooth(0.26, 0.36, t) * (1 - smooth(0.55, GUST.dur, t));
+  for (const w of crow.wings) { w.pivot.rotation.z = w.s * (1.15 * up + 0.12 * clap); w.pivot.rotation.y = w.s * (-0.55 * up + 1.3 * clap); w.tipPivot.rotation.z = w.s * (0.5 * up - 0.35 * clap); }
+  crow.group.rotation.x = crow.pitchVis - 0.32 * (up + clap);
+}
 function updateGust(dt) {
   gust.cd = Math.max(0, gust.cd - dt);
   if (gust.on) { gust.t += dt; const t = gust.t;
-    const up = smooth(0, 0.26, t) * (1 - smooth(0.26, 0.36, t)), clap = smooth(0.26, 0.36, t) * (1 - smooth(0.55, GUST.dur, t));
-    for (const w of crow.wings) { w.pivot.rotation.z = w.s * (1.15 * up + 0.12 * clap); w.pivot.rotation.y = w.s * (-0.55 * up + 1.3 * clap); w.tipPivot.rotation.z = w.s * (0.5 * up - 0.35 * clap); }
-    crow.group.rotation.x = crow.pitchVis - 0.32 * (up + clap);
+    poseGustWings(t);
     if (!gust.fired && t >= GUST.fire) { gust.fired = true; fireGust(); }
     if (t >= GUST.dur) gust.on = false; }
   for (let i = gust.pend.length - 1; i >= 0; i--) { const P = gust.pend[i]; P.t -= dt; if (P.t <= 0) { gust.pend.splice(i, 1); P.fn(); } }
@@ -6734,7 +6747,7 @@ const TUT_CARDS = {
   down: { t: 'Dive down', art: () => tScene(tArrow(34, 30, 64, 66, '#8c5fff') + tCrow(26, 22, 40)) + tBtn('down'), glow: 'btnDive',
     p: 'Hold <b>▼ DIVE</b> to swoop down fast. Diving builds speed.', s: 'Fly low to scoop up fries, shiny trinkets and cash.' },
   brake: { t: 'Brake & hover', art: () => tScene(tCrow(56, 50, 0) + '<path d="M20 50 h20 M92 50 h-20" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M36 50 l-8 -6 M36 50 l-8 6 M76 50 l8 -6 M76 50 l8 6" stroke="#fff" stroke-width="4" stroke-linecap="round"/>') + tBtn('brake'), glow: 'btnBrake',
-    p: 'Hold <b>◇ BRAKE</b> (or <b>Q</b>) to throw a little backward gust, stop fast, and hover.', s: 'Hovering uses 🪶 stamina. Let go to fly again. Don’t park in a chase — you’ll be an easy target.' },
+    p: 'Hold <b>◇ BRAKE</b> (or <b>Q</b>) to clap-stop like a Gust (no attack) and hover in place.', s: 'Hovering uses 🪶 stamina. Let go to fly again. Don’t park in a chase — you’ll be an easy target.' },
   soar: { t: 'Soar (15 m and up)', art: () => tScene('<line x1="0" y1="64" x2="112" y2="64" stroke="#fff" stroke-width="2" stroke-dasharray="5 4"/><text x="6" y="78" font-size="11" font-weight="800" fill="#4a3a36">15 m</text><path d="M8 34 h18 M12 42 h14 M10 50 h16" stroke="#ffb020" stroke-width="3" stroke-linecap="round"/>' + tCrow(52, 42, 0, 1.1) + tArrow(72, 42, 102, 42, '#ffb020')) + tBtn('soar'), glow: 'btnSoar',
     p: 'Once you are <b>15 m or higher</b>, hold <b>➶ SOAR</b> for a burst of speed.', s: 'Soaring drains stamina fast. Below 15 m the button is dimmed.' },
   gust: { t: 'Gust', art: () => tScene(tCrow(30, 52, 0) + '<path d="M52 36 q14 16 0 32 M64 30 q18 22 0 44 M76 24 q22 28 0 56" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M52 36 q14 16 0 32 M64 30 q18 22 0 44 M76 24 q22 28 0 56" fill="none" stroke="#5ec8ea" stroke-width="2" stroke-linecap="round"/>') + tBtn('gust'), glow: 'btnGust',
@@ -6867,7 +6880,7 @@ const v7d = { get quest() { return quest; }, items, cashItems, raccoons, goose, 
 
 // ================================================================ v7g: brake hover, raccoon pacing, Nest Upgrades, Grandma "Lost Glasses"
 const UPG_KEY = 'totallyACrow.upgrades.v1', GMA_KEY = 'totallyACrow.grandma.v1';
-var hover = hover || { on: false, held: false, t: 0, gustT: 0, count: 0, lastDrain: 0 };
+var hover = hover || { on: false, held: false, t: 0, clapT: 0, gustT: 0, count: 0, lastDrain: 0 };
 function stamMax() { return upgHas('bigBreath') ? 125 : 100; }
 function soarMinY() { return upgHas('earlyRise') ? 11.5 : SOAR_MIN_Y; }
 function flapStam(dt) { return (upgHas('easyFlap') ? 11 : 16) * dt; }
@@ -6960,21 +6973,18 @@ function updateNestUpgBtn() {
   el.classList.toggle('show', !!(near && d2 < 12 * 12 && crow.pos.y < NEST.y + 12));
 }
 
-// ---- Brake hover: a backward gust that stops Kro, then a stamina-draining hover until release
-const HOVER = { minStam: 6, stopK: 0.22, bob: 0.7 };
+// ---- Brake hover: same stop-and-clap as Gust (no attack), then a steady stamina-draining hover until release
+const HOVER = { minStam: 6 };
 function tryStartHover(airHigh) {
   if (hover.on || !airHigh || gust.on || crow.stun > 0 || ko.on || !started) return false;
   if (crow.stamina < HOVER.minStam) { showMsg('Too tired to hover', 1.1); return false; }
-  hover.on = true; hover.t = 0; hover.gustT = 0.32; hover.count++;
-  crow.speed *= HOVER.stopK; crow.vy *= 0.4; crow.soaring = false;
-  forward(crow.yaw, _f);
-  const o = crow.pos.clone(), d = new THREE.Vector3(-_f.x, 0.05, -_f.z).normalize();
-  if (typeof gustVfx === 'function') gustVfx(o, d);
+  hover.on = true; hover.t = 0; hover.clapT = 0; hover.gustT = 0; hover.count++;
+  crow.soaring = false;
   sfx.brakeGust();
   return true;
 }
 function endHover(tired) {
-  if (!hover.on) return; hover.on = false; hover.gustT = 0;
+  if (!hover.on) return; hover.on = false; hover.gustT = 0; hover.clapT = 0;
   if (tired) showMsg('Too tired to hover', 1.2);
 }
 function updateHoverInput(airHigh) {
@@ -6992,42 +7002,40 @@ sfx.brakeGust = function () { // short backward whoosh (not a combat Gust)
 };
 
 // ---- Grandma Wren + "Lost Glasses" (roadmap: look-alikes, right pair rewards, wrong pair broom swat)
-const GMA = { x: 170, z: 264, ry: 0 }; // east neighborhood gap at the x=170 road, south of street 280, outside hawk turf
-const gmaState = { stage: 'new', wrong: [], clues: [], carry: '', done: false };
-try { const v = JSON.parse(localStorage.getItem(GMA_KEY) || '{}'); if (v && typeof v === 'object') { if (v.stage) gmaState.stage = v.stage; if (Array.isArray(v.wrong)) gmaState.wrong = v.wrong; if (Array.isArray(v.clues)) gmaState.clues = v.clues; if (typeof v.carry === 'string') gmaState.carry = v.carry; gmaState.done = !!v.done || v.stage === 'done'; } } catch (_) {}
-function saveGma() { try { localStorage.setItem(GMA_KEY, JSON.stringify({ stage: gmaState.stage, wrong: gmaState.wrong, clues: gmaState.clues, carry: gmaState.carry, done: gmaState.done })); } catch (_) {} }
-const GMA_WHO = { ava: '👵', name: 'Grandma Wren', sub: 'porch on the east street' };
+const GMA = { x: 155.5, z: 264, ry: 0, talkR: 12, talkY: 10, awayR: 22 }; // south lot of street 280, between the last house (x≈142) and east avenue (x=170)
+const gmaState = { stage: 'new', wrong: [], clues: [], carry: '', done: false, hersId: '' };
+try { const v = JSON.parse(localStorage.getItem(GMA_KEY) || '{}'); if (v && typeof v === 'object') { if (v.stage) gmaState.stage = v.stage; if (Array.isArray(v.wrong)) gmaState.wrong = v.wrong; if (Array.isArray(v.clues)) gmaState.clues = v.clues; if (typeof v.carry === 'string') gmaState.carry = v.carry; if (typeof v.hersId === 'string') gmaState.hersId = v.hersId; gmaState.done = !!v.done || v.stage === 'done'; } } catch (_) {}
+function saveGma() { try { localStorage.setItem(GMA_KEY, JSON.stringify({ stage: gmaState.stage, wrong: gmaState.wrong, clues: gmaState.clues, carry: gmaState.carry, done: gmaState.done, hersId: gmaState.hersId })); } catch (_) {} }
+const GMA_WHO = { ava: '👵', name: 'Grandma Wren', sub: 'porch by the east avenue' };
 const gmaStats = { talks: 0, clues: 0, wrongs: 0, done: 0, swats: 0 };
 
-function makeGlassesMesh(kind) {
+function makeGlassesMesh() {
   const g = new THREE.Group();
-  const col = kind === 'hers' ? 0xc9a227 : kind === 'thin' ? 0xb8c0c8 : kind === 'thick' ? 0x5a3a22 : 0x3d7a4a;
   const lens = M(0x9fd4ea, { accent: true, transparent: true, opacity: 0.35 });
-  const rim = M(col);
+  const rim = M(0x6b5a45); // every pair is identical, nothing marks the real one
   for (const s of [-1, 1]) {
     const r = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.035, 6, 14), rim); r.position.set(s * 0.26, 0, 0); g.add(r);
     const l = new THREE.Mesh(new THREE.CircleGeometry(0.18, 12), lens); l.position.set(s * 0.26, 0, 0.01); g.add(l);
   }
   const br = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.03, 0.03), rim); g.add(br);
-  if (kind === 'hers') { const rib = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.1, 0.02), M(0xd62828, { accent: true })); rib.position.set(0.42, 0.12, 0); g.add(rib); }
   return g;
 }
 
-// unique porch house in the x=170 street gap (houses skip this column)
+// unique porch house on the south lot of street 280, between the last house and the east avenue
 const gmaHouse = (() => {
   const x = GMA.x, z = GMA.z, gy = groundAt(x, z);
   const g = new THREE.Group(); g.position.set(x, gy, z); g.rotation.y = GMA.ry; scene.add(g);
   g.add(new THREE.Mesh(propGeo([
-    [G.box(11, 5.4, 8.0), 0xf3e4c4, [0, 2.7, -1.6]], // front face at z=2.4, so the porch stays clear
-    [G.box(12.2, 0.2, 4.0), 0xd8c4a0, [0, 0.18, 4.0]], // porch deck
-    [G.box(0.22, 2.8, 0.22), 0xf7f5ef, [-5.2, 1.5, 5.7]], [G.box(0.22, 2.8, 0.22), 0xf7f5ef, [5.2, 1.5, 5.7]],
-    [G.box(11.6, 0.16, 4.2), 0x6b4f3a, [0, 2.95, 4.0]], // porch roof slab
+    [G.box(10.4, 5.4, 8.0), 0xf3e4c4, [0, 2.7, -1.6]], // front face at z=2.4, so the porch stays clear
+    [G.box(11.4, 0.2, 4.0), 0xd8c4a0, [0, 0.18, 4.0]], // porch deck
+    [G.box(0.22, 2.8, 0.22), 0xf7f5ef, [-4.8, 1.5, 5.7]], [G.box(0.22, 2.8, 0.22), 0xf7f5ef, [4.8, 1.5, 5.7]],
+    [G.box(10.8, 0.16, 4.2), 0x6b4f3a, [0, 2.95, 4.0]], // porch roof slab
     [G.box(1.4, 2.5, 0.2), 0x6a4c93, [-1.6, 1.45, 2.52]], // purple door on the front wall
     [G.box(1.8, 1.3, 0.16), 0x2a4a63, [1.6, 2.2, 2.52]],
     [G.box(2.2, 0.45, 0.7), 0x7a2e6a, [1.6, 1.4, 2.9]], // flower box
   ]), propMat));
-  const roof = new THREE.Mesh(roofGeo, M(0x6b4f3a)); roof.position.set(0, 6.8, -1.6); roof.scale.set(13, 3.2, 10); g.add(roof);
-  addCollider(x, z - 1.6, 12.2, 10, gy + 8.2, 'house');
+  const roof = new THREE.Mesh(roofGeo, M(0x6b4f3a)); roof.position.set(0, 6.8, -1.6); roof.scale.set(12.2, 3.2, 10); g.add(roof);
+  addCollider(x, z - 1.6, 11.2, 10, gy + 8.2, 'house');
   // rocking chair out on the porch
   const chair = new THREE.Group(); chair.position.set(1.1, 0.2, 4.35); g.add(chair);
   chair.add(new THREE.Mesh(propGeo([
@@ -7075,32 +7083,36 @@ const grandma = (() => {
 })();
 
 const GMA_GLASSES = [
-  { id: 'plaza', kind: 'thin', name: 'thin silver frames', hers: false, x: 18, z: 22, clue: 'Not these, dear. I was at the bird bath this morning.' },
-  { id: 'westbath', kind: 'thick', name: 'thick brown frames', hers: false, x: -52, z: 250, clue: 'Goodness, these are the old ones! Try the park after the bath.' },
-  { id: 'fountain', kind: 'round', name: 'round green frames', hers: false, x: -244, z: -88, clue: 'These are the spare pair! After the bath I sat by the big oak.' },
-  { id: 'oak', kind: 'hers', name: 'gold frames with a red ribbon', hers: true, x: -352, z: -96, clue: '' },
+  { id: 'plaza', name: 'a pair of glasses', hers: false, x: 18, z: 22 },
+  { id: 'westbath', name: 'a pair of glasses', hers: false, x: -52, z: 250 },
+  { id: 'fountain', name: 'a pair of glasses', hers: false, x: -244, z: -88 },
+  { id: 'oak', name: 'a pair of glasses', hers: false, x: -352, z: -96 },
 ];
-const GMA_CLUES = [
-  { id: 'cloth', x: 62, z: 328, name: 'a folded lens cloth', msg: 'A soft cloth by the bird bath. She walked on toward the park.' },
-  { id: 'list', x: -360, z: -88, name: 'a little shopping list', msg: 'A list in looping handwriting: “oak shade — don’t forget glasses.”' },
-];
+function applyGmaHers() {
+  const ids = GMA_GLASSES.map(d => d.id);
+  let id = gmaState.hersId;
+  if (!ids.includes(id)) {
+    const opts = GMA_GLASSES.filter(d => !gmaState.wrong.includes(d.id));
+    const pool = opts.length ? opts : GMA_GLASSES;
+    id = pool[(Math.random() * pool.length) | 0].id;
+    gmaState.hersId = id;
+    saveGma();
+  }
+  for (const d of GMA_GLASSES) d.hers = d.id === id;
+  if (typeof gmaPickups !== 'undefined') for (const p of gmaPickups) p.hers = p.id === id;
+  return id;
+}
 
 const gmaPickups = GMA_GLASSES.map(d => {
-  const g = new THREE.Group(); const m = makeGlassesMesh(d.kind); m.rotation.x = -0.4; g.add(m);
-  const gl = new THREE.Sprite(new THREE.SpriteMaterial({ map: (typeof glowTex !== 'undefined' ? glowTex : sparkTex), color: d.hers ? 0xffd24a : 0xcfe8ff, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
-  gl.scale.setScalar(d.hers ? 2.4 : 1.8); g.add(gl);
+  const g = new THREE.Group(); const m = makeGlassesMesh(); m.rotation.x = -0.4; g.add(m);
+  const gl = new THREE.Sprite(new THREE.SpriteMaterial({ map: (typeof glowTex !== 'undefined' ? glowTex : sparkTex), color: 0xcfe8ff, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+  gl.scale.setScalar(1.8); g.add(gl);
   const gy = groundAt(d.x, d.z) + 0.55; g.position.set(d.x, gy, d.z); scene.add(g);
   return { ...d, g, m, gl, gy, got: false, ph: rand(0, 6) };
 });
-const gmaClueObj = GMA_CLUES.map(d => {
-  const g = new THREE.Group();
-  g.add(new THREE.Mesh(propGeo([[G.box(0.36, 0.04, 0.28), 0xf3e6c8, [0, 0, 0]], [G.box(0.3, 0.01, 0.22), 0xe8d5a9, [0, 0.03, 0]]]), propMat));
-  const gl = new THREE.Sprite(new THREE.SpriteMaterial({ map: (typeof glowTex !== 'undefined' ? glowTex : sparkTex), color: 0xfff1b0, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
-  gl.scale.setScalar(1.6); g.add(gl);
-  g.position.set(d.x, groundAt(d.x, d.z) + 0.12, d.z); scene.add(g);
-  return { ...d, g, gl, got: gmaState.clues.includes(d.id), ph: rand(0, 6) };
-});
-const gmaCarryMesh = makeGlassesMesh('hers'); gmaCarryMesh.position.set(0, -0.55, -0.55); gmaCarryMesh.scale.setScalar(0.7); gmaCarryMesh.visible = false; crow.group.add(gmaCarryMesh);
+const gmaClueObj = []; // v7g1: no trail / description clues — players guess
+applyGmaHers();
+const gmaCarryMesh = makeGlassesMesh(); gmaCarryMesh.position.set(0, -0.55, -0.55); gmaCarryMesh.scale.setScalar(0.7); gmaCarryMesh.visible = false; crow.group.add(gmaCarryMesh);
 
 function gmaActive() { return gmaState.stage === 'asked' && !gmaState.done; }
 function gmaVisibleWorld() { return gmaState.stage !== 'new' || true; } // house is always there
@@ -7127,62 +7139,65 @@ function talkToGrandma() {
   gmaStats.talks++;
   const closeTalk = (fn) => { grandma.talkCd = 1.2; grandma.away = true; if (fn) fn(); };
   if (gmaState.done) {
-    openDialog([{ t: pick(['Thank you again, little bird. I can see the whole street!', 'The red ribbon pair is just right. Fly safe, dear.']), e: 'happy', btn: 'Anytime!' }], () => closeTalk(), 'happy', GMA_WHO);
+    openDialog([{ t: pick(['Thank you again, little bird. I can see the whole street!', 'These are just right. Fly safe, dear.']), e: 'happy', btn: 'Anytime!' }], () => closeTalk(), 'happy', GMA_WHO);
     return;
   }
   if (gmaState.stage === 'new') {
     openDialog([
       { t: 'Oh! A crow! Or… almost a crow? Come closer, dear, I can hardly see a thing.', e: 'idle' },
-      { t: 'I’ve lost my glasses. Not the spare ones — mine have a little red ribbon on the side.', e: 'sad' },
-      { t: 'I had them this morning when I filled the east bird bath. After that I wandered. Everything is a blur!', e: 'idle' },
+      { t: 'I’ve lost my glasses. There are a few pairs around town, and I can’t tell them apart anymore.', e: 'sad' },
+      { t: 'I had them this morning, and then I wandered. Everything is a blur!', e: 'idle' },
       { t: 'If you find a pair, bring it to my porch. I’ll know mine when I see them.', e: 'happy', btn: 'I’ll look!' },
-    ], () => { gmaState.stage = 'asked'; saveGma(); closeTalk(); showMsg('👓 Quest: Lost Glasses. Bring Grandma her pair', 2.4); sfx.pickup(true); gmaBanner('Find Grandma’s glasses', 'Kro can help a neighbor. Real crows look out for the flock — and the porch next door.', 'Search for glasses around town. Hers have a red ribbon. Bring them back to this porch.', '+80 coins · +$30'); drawGmaHud(); }, 'happy', GMA_WHO);
+    ], () => { gmaState.stage = 'asked'; saveGma(); closeTalk(); showMsg('👓 Quest: Lost Glasses. Bring Grandma her pair', 2.4); sfx.pickup(true); gmaBanner('Find Grandma’s glasses', 'Kro can help a neighbor. Real crows look out for the flock — and the porch next door.', 'Search for glasses around town. All the pairs look alike — bring them back and Grandma will know hers.', '+80 coins · +$30'); drawGmaHud(); }, 'happy', GMA_WHO);
     return;
   }
   if (gmaState.carry) {
     const pack = gmaPickups.find(p => p.id === gmaState.carry);
     if (pack && pack.hers) {
       openDialog([
-        { t: 'Wait — the red ribbon! These are mine! Oh, you wonderful bird.', e: 'wow' },
+        { t: 'Wait — these are mine! Oh, you wonderful bird.', e: 'wow' },
         { t: 'I can see the flower box again. Here: a little thank-you from the jar on the shelf.', e: 'happy', btn: 'You’re welcome!' },
       ], () => { finishGma(); closeTalk(); }, 'happy', GMA_WHO);
     } else {
-      const clue = (pack && pack.clue) || 'These aren’t mine, dear. Keep looking.';
-      // broom telegraph happens in update; if already close we swat then talk
-      startGmaSwat(clue);
+      startGmaSwat();
     }
     return;
   }
   const n = gmaState.wrong.length;
-  openDialog([{ t: n ? `Still no ribbon pair… ${clueHint()} Don’t give up, little one.` : 'No luck yet? Try the east bird bath, then the park. Mine have a red ribbon.', e: 'idle', btn: 'On it' }], () => closeTalk(), 'idle', GMA_WHO);
+  openDialog([{ t: n ? 'Still not the right pair… Don’t give up, little one.' : 'No luck yet? Keep looking around town, dear.', e: 'idle', btn: 'On it' }], () => closeTalk(), 'idle', GMA_WHO);
 }
-function clueHint() {
-  if (!gmaState.clues.includes('cloth')) return 'I filled the east bird bath this morning.';
-  if (!gmaState.clues.includes('list')) return 'After the bath I walked toward the big oak.';
-  return 'Look around the oak for the ribbon pair.';
+function gmaSwatHurt() {
+  // Lose 1 heart, but never drop to 0 / knock out (even from 1 heart, and never a game over from full health).
+  if (!started || ko.on) return;
+  if (crow.hp > 1) crow.hp -= 1;
+  crow.lastHurt = gameTime; crow.regenT = 0;
+  ens.hits.gma = (ens.hits.gma || 0) + 1;
+  camShake = Math.max(camShake, 0.4);
+  if (typeof sfx.hurt === 'function') sfx.hurt();
+  buzz([50, 40, 70]);
+  try { restartAnim($('hurtFx'), 'go'); restartAnim(elHpRow, 'hit'); } catch (_) {}
+  drawHearts();
 }
-function startGmaSwat(clue) {
+function startGmaSwat() {
   if (grandma.swat >= 0 || grandma.swatCd > 0) return;
-  grandma.swat = 0; grandma.mode = 'swat'; grandma.pendingClue = clue; gmaStats.swats++;
+  grandma.swat = 0; grandma.mode = 'swat'; gmaStats.swats++;
 }
 function doGmaSwat() {
   gmaStats.wrongs++;
   const pack = gmaPickups.find(p => p.id === gmaState.carry);
   if (pack) { pack.got = true; gmaState.wrong.push(pack.id); }
   gmaState.carry = ''; saveGma(); drawGmaHud();
-  // knockback away from the porch, no heart loss (charming, not mean)
   const dx = crow.pos.x - GMA.x, dz = crow.pos.z - (GMA.z + 4.35), L = Math.hypot(dx, dz) || 1;
   crow.speed = 10; crow.vy = 6; crow.yaw = Math.atan2(-dx / L, -dz / L) + Math.PI;
   crow.pos.x += dx / L * 2; crow.pos.z += dz / L * 2;
-  camShake = Math.max(camShake, 0.22); sfx.bonk();
-  popup('🧹 Whoops! Wrong pair', crow.pos.clone().add(new THREE.Vector3(0, 2, 0)));
-  // a few seed bits as she flusters (roadmap flavor, broom is the hit)
-  if (typeof spawnDrop === 'function') { /* no item drop */ }
+  gmaSwatHurt();
+  sfx.bonk();
+  popup('Wrong pair! Keep trying.', crow.pos.clone().add(new THREE.Vector3(0, 2, 0)));
+  showMsg('Wrong pair! Keep trying.', 2.2);
   for (let i = 0; i < 8 && typeof emit === 'function'; i++) {
     try { emit(leafPool, leafI++, new THREE.Vector3(GMA.x + 1.1, gmaHouse.gy + 1.4, GMA.z + 3.8), new THREE.Vector3(rand(-3, 3), rand(2, 5), rand(-1, 4)), rand(0.6, 1.1), 0.2, 0, rand(-6, 6), 0xe8c96a); } catch (_) {}
   }
-  const clue = grandma.pendingClue || clueHint();
-  openDialog([{ t: clue, e: 'sad', btn: 'I’ll keep looking' }], () => { grandma.talkCd = 1.6; grandma.away = true; grandma.swatCd = 2; }, 'sad', GMA_WHO);
+  grandma.talkCd = 1.6; grandma.away = true; grandma.swatCd = 2;
 }
 function finishGma() {
   if (gmaState.done) return;
@@ -7204,9 +7219,9 @@ function gmaCanTalk() {
 function updateGrandma(dt, time) {
   const G = grandma, dx = crow.pos.x - G.g.position.x, dz = crow.pos.z - G.g.position.z, d2 = dx * dx + dz * dz, d3 = Math.sqrt(d2 + (crow.pos.y - (G.g.position.y + 1.2)) ** 2);
   G.talkCd -= dt; G.swatCd -= dt;
-  G.look = lerp(G.look, d2 < 18 * 18 ? 1 : 0, damp(3, dt));
+  G.look = lerp(G.look, d2 < (GMA.talkR + 6) ** 2 ? 1 : 0, damp(3, dt));
   const yawTo = Math.atan2(-dx, -dz);
-  if (G.mode !== 'swat') G.g.rotation.y = angLerp(G.g.rotation.y, d2 < 22 * 22 ? yawTo : Math.PI, damp(2, dt));
+  if (G.mode !== 'swat') G.g.rotation.y = angLerp(G.g.rotation.y, d2 < (GMA.talkR + 10) ** 2 ? yawTo : Math.PI, damp(2, dt));
   G.head.rotation.y = G.look * clamp(Math.atan2(Math.sin(yawTo - G.g.rotation.y), Math.cos(yawTo - G.g.rotation.y)), -0.7, 0.7);
   G.head.rotation.x = Math.sin(time * 0.8) * 0.04;
   // idle rock
@@ -7222,8 +7237,8 @@ function updateGrandma(dt, time) {
     G.arm.rotation.z = lerp(G.arm.rotation.z, 0.15, damp(5, dt));
   }
   // talk / return trigger
-  if (gmaCanTalk() && d3 < 8 && crow.pos.y < G.g.position.y + 6 && !G.away) { G.away = true; talkToGrandma(); }
-  if (d3 > 16) G.away = false;
+  if (gmaCanTalk() && d3 < GMA.talkR && crow.pos.y < G.g.position.y + GMA.talkY && !G.away) { G.away = true; talkToGrandma(); }
+  if (d3 > GMA.awayR) G.away = false;
 
   // pickups
   const looking = gmaActive();
@@ -7236,9 +7251,9 @@ function updateGrandma(dt, time) {
     const dd = (crow.pos.x - p.g.position.x) ** 2 + (crow.pos.z - p.g.position.z) ** 2;
     if (looking && !gmaState.carry && crow.pos.y < p.gy + 3.2 && dd < 3.2 * 3.2) {
       gmaState.carry = p.id; saveGma(); sfx.pickup(true);
-      popup(p.hers ? '👓 A red ribbon!' : '👓 A pair of glasses', p.g.position.clone().add(new THREE.Vector3(0, 1.4, 0)), 'gold');
-      showMsg(p.hers ? 'These have a red ribbon. Back to Grandma!' : 'A pair of glasses. Take them to Grandma’s porch.', 2.2);
-      gmaBanner('Return the glasses to Grandma', 'Kro found a pair. Time to see if they are hers.', 'Fly back to the east-street porch.', p.hers ? 'a thank-you' : 'she’ll tell you if they are hers');
+      popup('👓 A pair of glasses', p.g.position.clone().add(new THREE.Vector3(0, 1.4, 0)), 'gold');
+      showMsg('A pair of glasses. Take them to Grandma’s porch.', 2.2);
+      gmaBanner('Return the glasses to Grandma', 'Kro found a pair. Time to see if they are hers.', 'Fly back to Grandma’s porch by the east avenue.', 'she’ll know if they are hers');
       drawGmaHud();
     }
   }
@@ -7294,7 +7309,7 @@ function drawGmaMap(g, tm, k, W) {
   for (const p of gmaPickups) {
     if (!p.g.visible) continue;
     const near = Math.hypot(p.x - crow.pos.x, p.z - crow.pos.z) < 55;
-    if (near) pin(p.x, p.z, p.hers ? '#ffd24a' : '#cfe8ff', 2.6, '👓');
+    if (near) pin(p.x, p.z, '#cfe8ff', 2.6, '👓');
     else { const [u, v] = tm(p.x, p.z); if (!inMap(u, v)) continue;
       g.strokeStyle = 'rgba(232,196,255,.7)'; g.lineWidth = 1.1 * k; g.setLineDash([2 * k, 2 * k]); g.beginPath(); g.arc(u, v, 16 * (W / 300), 0, 7); g.stroke(); g.setLineDash([]); }
   }
@@ -7304,9 +7319,9 @@ function drawGmaMap(g, tm, k, W) {
 const RAC_BEFORE = { ambient: 8, minSpace: 8.0, heistFirst: 45, heistCd: [55, 90], heistMin: 40, heistMax: 260, siteCool: 30, rummage: [3, 9], noFries: [6, 12], afterReturn: [7, 14], stealSp: 3.4, fryRespawn: [8, 14], stealR: 34 };
 const RAC_AFTER  = { ambient: 8, minSpace: 28, heistFirst: 75, heistCd: [90, 150], heistMin: 70, heistMax: 280, siteCool: 50, rummage: [12, 22], noFries: [16, 28], afterReturn: [18, 32], stealSp: 2.8, fryRespawn: [22, 36], stealR: 28, playerFryClear: 18 };
 const v7g = {
-  hover, HOVER, tryStartHover, endHover, updateHoverInput, hoverDrainRate, stamMax, soarMinY,
+  hover, HOVER, tryStartHover, endHover, updateHoverInput, hoverDrainRate, stamMax, soarMinY, updateCrow,
   UPG_TREE, upgState, upgHas, upgCan, buyUpg, saveUpg, openUpg, closeUpg, get upgOpen() { return upgOpen; }, upgCoins,
-  GMA, gmaState, grandma, gmaPickups, gmaClueObj, talkToGrandma, finishGma, startGmaSwat, doGmaSwat, gmaStats, gmaActive, saveGma,
+  GMA, gmaState, grandma, gmaPickups, gmaClueObj, talkToGrandma, updateGrandma, finishGma, startGmaSwat, doGmaSwat, gmaSwatHurt, applyGmaHers, gmaStats, gmaActive, saveGma, poseGustWings,
   RAC_BEFORE, RAC_AFTER,
 };
 
