@@ -496,6 +496,28 @@
     #upgGrid{gap:6px} .upgCol{padding:4px 6px} .upgCol h3{margin:0 0 4px;font-size:12px} .upgTier{padding:3px 6px;margin-bottom:3px} .upgTier p{margin:0 0 2px;font-size:11px} .upgTier button{padding:3px 6px;font-size:12px} }
   body.portrait #upgGrid{grid-template-columns:1fr}
 
+  /* v7i: class picker (Kro graffiti colorway) */
+  #clsPick{position:fixed;inset:0;z-index:23;display:none;align-items:center;justify-content:center;background:rgba(16,5,30,.82);backdrop-filter:blur(4px);padding:max(8px,var(--st)) max(10px,var(--sr)) max(8px,var(--sb)) max(10px,var(--sl));font-family:system-ui,sans-serif}
+  #clsPick.show{display:flex}
+  #clsPick .panel{background:linear-gradient(165deg,#331257 0%,#210a3b 100%);color:#fff9f0;border:3px solid #160526;border-radius:20px;padding:12px 14px;width:min(860px,97vw);max-height:96vh;overflow:auto;box-shadow:0 7px 0 #160526,0 0 0 2px #ff2d95,0 18px 42px rgba(8,2,20,.65);text-align:center}
+  #clsPick h2{margin:0 0 2px;font:900 22px system-ui,sans-serif;color:#ffe229;text-shadow:0 2px 0 #160526;letter-spacing:.03em}
+  #clsPick .sub{margin:0 0 8px;font-size:12.5px;color:#cbb8e8}
+  #clsGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+  .clsCard{position:relative;background:#3c1666;border:2.5px solid #160526;border-radius:14px;padding:8px 7px 9px;text-align:left;cursor:pointer;box-shadow:0 4px 0 #160526;color:#fff9f0;font:inherit;display:flex;flex-direction:column;gap:3px}
+  .clsCard .ci{font-size:26px;line-height:1;text-align:center}
+  .clsCard b{display:block;font:900 15px system-ui,sans-serif;text-align:center;color:var(--cc,#ffe229)}
+  .clsCard i{display:block;font-style:normal;font-size:11px;text-align:center;color:#cbb8e8;min-height:2.4em}
+  .clsCard .cp{font-size:11.5px;line-height:1.28;color:#d9ffb0}
+  .clsCard .ct{font-size:11.5px;line-height:1.28;color:#ffb3cf}
+  .clsCard .cs{font-size:10.5px;line-height:1.25;color:#9ff4ff;opacity:.9}
+  .clsCard.sel{border-color:var(--cc,#ffe229);box-shadow:0 4px 0 #160526,0 0 0 2px var(--cc,#ffe229),0 0 16px var(--cc,#ffe229);background:#4a1c7d}
+  .clsCard.sel::after{content:'✓ PICKED';position:absolute;top:-9px;right:6px;background:var(--cc,#ffe229);color:#160526;font:900 9.5px system-ui;padding:2px 6px;border-radius:8px;border:2px solid #160526}
+  #clsPick .cbar{display:flex;justify-content:center;gap:10px;margin-top:10px}
+  #clsPick .note{font-size:11px;color:#cbb8e8;margin-top:6px}
+  #start .clsBtn{margin-top:12px;font:800 15px system-ui,sans-serif;padding:10px 18px;border-radius:30px;border:2.5px solid #9cff2e;background:#3a1564;color:#fff9f0;box-shadow:0 4px 0 #160526;cursor:pointer}
+  @media (max-height:470px){#start .clsBtn{margin-top:6px;padding:7px 14px;font-size:13px}}
+  @media (max-width:760px),(max-height:470px){#clsGrid{grid-template-columns:repeat(5,minmax(118px,1fr));overflow-x:auto}.clsCard{padding:6px 6px 7px}.clsCard .ci{font-size:20px}.clsCard b{font-size:13px}.clsCard i{min-height:0}#clsPick h2{font-size:18px}#clsPick .sub{display:none}}
+  body.portrait #clsGrid{grid-template-columns:1fr 1fr}
 </style>
 </head>
 <body>
@@ -554,6 +576,7 @@
     <button class="mbtn mcat" data-go="friends">🐦 Friends<small>Crow family visitors</small></button>
     <button class="mbtn mtop" id="mGuide">📘 How to Play</button>
     <button class="mbtn mtop" id="mUpg">🌿 Nest Upgrades</button>
+    <button class="mbtn mtop" id="mCls">🎭 Class</button>
     <button class="mbtn mtop" id="mRestart">↻ Restart</button>
     <div class="msub" id="subSound"><div class="msubHead"><button class="mbtn mback">◂ Back</button><b>🔊 Sound</b></div>
     <button class="mbtn" id="mMusic">🎵 Music: On</button>
@@ -590,8 +613,14 @@
   <div id="menuNote"></div>
   <div class="keys">Keys: WASD steer · Space flap · Shift dive · Q brake (hold to hover) · E soar · F drop · G gust · double-tap A/D or Z/C barrel roll · V camera · Esc menu</div>
 </div></div>
+<div id="clsPick" role="dialog" aria-label="Choose your class"><div class="panel">
+  <h2>🎭 Pick Kro's Class</h2><p class="sub">Each class has a perk, a small tradeoff and its own look. Switch any time at the nest or from the pause menu. Perks stack with Nest Upgrades.</p>
+  <div id="clsGrid"></div>
+  <div class="cbar"><button class="mbtn" id="clsDone" style="min-width:170px">Done</button></div>
+  <div class="note" id="clsNote"></div>
+</div></div>
 <div id="upg"><div class="panel">
-  <div class="upgHead"><b>🌿 Nest Upgrades</b><span class="upgCoins" id="upgCoins">🪙 0</span></div>
+  <div class="upgHead"><b>🌿 Nest Upgrades</b><button class="mbtn" id="upgCls" style="padding:5px 10px;font-size:13px">🎭 Class</button><span class="upgCoins" id="upgCoins">🪙 0</span></div>
   <p class="upgNote">Spend 🪙 coins you earn from heists, achievements and finds. Buy in order down each branch. Opens at the nest or from the pause menu.</p>
   <div id="upgGrid"></div>
   <button class="mbtn mtop" id="upgClose" style="margin-top:8px">Close</button>
@@ -646,7 +675,7 @@
     <p>Ride high <b style="color:#1ee8ff">airstreams</b> (40m+), hold <b style="color:#ffe229">SOAR</b> from 15m up, or bust a <b style="color:#ff9b38">🍟 Raccoon heist</b>. <b style="color:#9cff2e">GUST</b> (G) tips bins, shakes trees and knocks out bots. Splash in <b style="color:#1ee8ff">💧 bird baths</b> to heal ♥; face the pond goose &amp; <b style="color:#ff4fb8">🎨 Rattlecan Rudy</b>.</p>
     <p class="startKeys">Touch: left thumb steers &amp; flicks to barrel roll · buttons Flap / Dive / Brake / Soar / Gust / Drop · ⚙ settings<br>Keys: WASD/Arrows steer · Space flap · Shift dive · Q brake · E soar · F/Enter drop · G gust · V camera · Z/C roll · Esc menu</p>
   </div>
-  <div class="goRow"><button class="go" id="btnGo">TAP TO FLY</button><button class="guideBtn" id="btnGuide">📘 How to Play</button></div>
+  <div class="goRow"><button class="go" id="btnGo">TAP TO FLY</button><button class="clsBtn" id="btnCls">🎭 Class: Classic</button><button class="guideBtn" id="btnGuide">📘 How to Play</button></div>
 </div>
 
 <script>
@@ -2264,7 +2293,7 @@ function updateRaccoons(dt, time) {
 }
 function hitRaccoon(r) {
   if (r.heist) { heistSave('drop'); return; }
-  r.hitCd = 0.8; addScore(150); popup('🦝 +150', r.g.position.clone().add(new THREE.Vector3(0, 2, 0)), 'gold');
+  r.hitCd = 0.8; const rpt = clsPts(150, 'pest'); addScore(rpt); popup('🦝 +' + rpt, r.g.position.clone().add(new THREE.Vector3(0, 2, 0)), 'gold');
   sfx.splat(); sfx.chitter(); r.fries.visible = false; r.state = 'flee';
   addDecal(r.g.position.x, 0, r.g.position.z, 0.6);
 }
@@ -2652,7 +2681,7 @@ let menuOpen = false, customizing = false, portraitPaused = false;
 var layoutReady = false, tutCardOpen = false, upgOpen = false; // tutCardOpen: v7d tutorial card on screen (pauses the game) // set once the per-orientation layout code below has loaded
 let paused = false;
 function updatePaused() {
-  paused = portraitPaused || menuOpen || customizing || !!dialogOpen || tutCardOpen || !!upgOpen;
+  paused = portraitPaused || menuOpen || customizing || !!dialogOpen || tutCardOpen || !!upgOpen || !!window.__clsOpen;
   if (paused) { input.flap = input.dive = input.brake = input.soarBtn = input.soarTap = false; input.jx = input.jy = 0; setKnob(0, 0); for (const el of document.querySelectorAll('.abtn.down')) el.classList.remove('down'); }
 }
 function checkOrientation() {
@@ -2903,7 +2932,7 @@ function hitPed(p, pos, viaRing = false) {
   if (p.hitCd > 0) return false;
   p.hitCd = 0.6; p.panic = 7; p.dir *= -1; p.splat.visible = true; p.splatT = 10;
   if (p.net) dropNet(p);
-  addScore(100); popup('+100', p.g.position.clone().add(new THREE.Vector3(0, 2.6, 0)));
+  { const pt = clsPts(100, 'ped'); addScore(pt); popup('+' + pt, p.g.position.clone().add(new THREE.Vector3(0, 2.6, 0))); }
   if (!viaRing) sfx.splat();
   questProgress('splat', p.zone);
   return true;
@@ -3009,7 +3038,7 @@ function questProgress(type, zone) {
   if (quest.n >= quest.need) completeQuest(); else { drawQuestBoard(); sfx.pickup(false); }
 }
 function completeQuest() {
-  quest.done = true; questsDone++; addScore(quest.reward);
+  quest.done = true; questsDone++; addScore(clsPts(quest.reward, 'quest'));
   crow.ammo = MAX_AMMO; crow.stamina = stamMax();
   if (quest.type === 'phones') megaTime = Math.max(megaTime, 12);
   if (quest.type === 'deliver') crow.boost = 8;
@@ -3932,7 +3961,7 @@ function updateProjectiles(dt) {
         const dx = m.position.x - c.x, dz = m.position.z - c.z; if (dx * dx + dz * dz > 36) continue;
         const sn = Math.sin(c.ry), cn = Math.cos(c.ry), along = dx * sn + dz * cn, across = dx * cn - dz * sn; // v7d: padded car footprint (was a 2.4 m circle)
         if (Math.abs(along) < c.len / 2 + 1.2 && Math.abs(across) < c.wid / 2 + 1.2 && m.position.y < c.hgt + c.cab + 1.2 && gameTime - (c.dropT ?? -9) > 0.5) {
-          c.dropT = gameTime; lockStats.carHits = (lockStats.carHits || 0) + 1; addScore(50); popup('🚗 +50', new THREE.Vector3(c.x, 3, c.z)); sfx.splat(0.8); sfx.honk();
+          c.dropT = gameTime; lockStats.carHits = (lockStats.carHits || 0) + 1; { const pt = clsPts(50, 'car'); addScore(pt); popup('🚗 +' + pt, new THREE.Vector3(c.x, 3, c.z)); } sfx.splat(0.8); sfx.honk();
           if (pr.mega) { addRing(m.position.x, 0, m.position.z); sfx.boom(); }
           questProgress('cars'); done = true; break;
         }
@@ -4185,7 +4214,7 @@ const DF_DIFF = {
   normal: { fill: 1.0, speedAdd: 7, turn: 2.6, atkEvery: 3.2, tell: 0.8, lungeTurn: 1.15, avoid: 0.35, airEscape: 5, losEscape: 1.6, reward: 300 },
   hard:   { fill: 0.75, speedAdd: 9, turn: 3.1, atkEvery: 2.4, tell: 0.62, lungeTurn: 1.4, avoid: 0.6, airEscape: 7, losEscape: 2.0, reward: 450 },
 };
-const dfd = () => DF_DIFF[gameSet.diff];
+const dfd = () => { const d = DF_DIFF[gameSet.diff]; return clsIs('hunter') ? (d._hunt || (d._hunt = { ...d, fill: d.fill * 1.25 })) : d; };
 const dogfight = { on: false, t: 0, meter: 0, atkT: 0, phase: 'follow', phT: 0, losT: 0, airT: 0, hitCd: 0, camK: 0, fovPunch: 0, side: 1, lockT: 0, close: 0,
   stats: { locks: 0, escapes: 0, attacks: 0, hits: 0, crashes: 0, losEscapes: 0, airEscapes: 0, meterEscapes: 0, nearMiss: 0, screams: 0 }, lastWhy: '' };
 const elDfBanner = $('dfBanner'), elDfMeter = $('dfMeter'), elDfFill = $('dfFill'), elHawkInd = $('hawkInd'), elDfFlash = $('dfFlash');
@@ -4937,11 +4966,95 @@ function setMatLook(m, L) {
   m.userData.rimK = L.k; m.userData.spec = L.s;
   const sh = m.userData.shader; if (sh) { sh.uniforms.uRimK.value = L.k; sh.uniforms.uSpec.value = L.s; }
 }
+// ================================================================ v7i: crow classes (Bran's list: Mayhem, Lovely Friend, Hunter, Scavenger) + Classic default
+const CLS_KEY = 'totallyACrow.class.v1';
+const KCLASSES = [
+  { id: 'classic', icon: '🐦‍⬛', name: 'Classic', col: '#ffe229', tag: 'Balanced all-rounder',
+    perk: 'No perks, no drawbacks.', trade: 'Plain feathers.', skin: 'Glossy blue-black raven (or your unlocked skin).' },
+  { id: 'mayhem', icon: '💥', name: 'Mayhem', col: '#ff2d95', tag: 'Wreak havoc',
+    perk: '+50% points for splatting people and cars. Gust recharges 30% faster.', trade: 'Heat climbs faster.', skin: 'Wild ruffled feathers sticking out, missing one leg.' },
+  { id: 'lovely', icon: '💗', name: 'Lovely Friend', col: '#ffb3e6', tag: 'Help those in need',
+    perk: 'Bird baths heal 2 ♥ and refill twice as fast. Quest rewards +50%.', trade: 'Splatting people scores 40% less.', skin: 'Soft warm feathers, a glowing halo and floating hearts.' },
+  { id: 'hunter', icon: '🏹', name: 'Hunter', col: '#9cff2e', tag: 'Rid the town of pests',
+    perk: 'Double points for raccoons and drones. Hawk EVADE fills 25% faster.', trade: '15 less max stamina.', skin: 'Scar over one eye, quiver and chest strap.' },
+  { id: 'scavenger', icon: '🍂', name: 'Scavenger', col: '#ff8a1f', tag: 'Finders keepers',
+    perk: 'Pickup reach +30%. Cash worth +20%.', trade: 'Soar is 10% slower (full pockets).', skin: 'Grungy feathers with leaves and twigs, a bigger beak.' },
+];
+var kroClass = (() => { try { const v = localStorage.getItem(CLS_KEY); return KCLASSES.some(c => c.id === v) ? v : 'classic'; } catch (_) { return 'classic'; } })();
+function clsIs(id) { return kroClass === id; }
+function clsPts(base, kind) {
+  let k = 1;
+  if (kind === 'ped') k = clsIs('mayhem') ? 1.5 : clsIs('lovely') ? 0.6 : 1;
+  else if (kind === 'car') k = clsIs('mayhem') ? 1.5 : 1;
+  else if (kind === 'pest') k = clsIs('hunter') ? 2 : 1;
+  else if (kind === 'quest') k = clsIs('lovely') ? 1.5 : 1;
+  return Math.round(base * k);
+}
+const CLASS_LOOK = { // body / secondary / edge materials (only when no unlocked cosmetic skin is selected)
+  mayhem: [{ c: 0x241a26, e: 0x0c0008, a: 0xff2d95, b: 0xff8ac8, k: 0.3, s: 0.22 }, { c: 0x2e1d2c, e: 0x000000, a: 0xff2d95, b: 0xffb0d8, k: 0.26, s: 0.18 }, { c: 0x241a26, e: 0x100008, a: 0xff5aa8, b: 0xffd0e8, k: 0.3, s: 0.2 }],
+  lovely: [{ c: 0xcdb6e4, e: 0x2a1426, a: 0xffd6a8, b: 0xfff0dc, k: 0.32, s: 0.3 }, { c: 0xf1cfe0, e: 0x2a1420, a: 0xffd6a8, b: 0xffffff, k: 0.3, s: 0.28 }, { c: 0xcdb6e4, e: 0x241226, a: 0xffe6b8, b: 0xffffff, k: 0.34, s: 0.3 }],
+  hunter: [{ c: 0x22282a, e: 0x000000, a: 0x6fbf4a, b: 0xc8f0a0, k: 0.24, s: 0.18 }, { c: 0x2c3326, e: 0x000000, a: 0x6fbf4a, b: 0xd6f5b8, k: 0.22, s: 0.16 }, { c: 0x22282a, e: 0x040800, a: 0x8fe060, b: 0xe0ffd0, k: 0.26, s: 0.18 }],
+  scavenger: [{ c: 0x3a3024, e: 0x000000, a: 0xa08a50, b: 0xd8c48a, k: 0.2, s: 0.12 }, { c: 0x4a3c28, e: 0x000000, a: 0x9a8040, b: 0xe0d0a0, k: 0.18, s: 0.1 }, { c: 0x3a3024, e: 0x060400, a: 0xb09a60, b: 0xe8d8a8, k: 0.22, s: 0.12 }],
+};
+const clsParts = {};
+{
+  const mk = (geo, mat, pos, rot, par = crow.group, ol = 1.1) => { const m = new THREE.Mesh(geo, mat); m.position.set(...pos); if (rot) m.rotation.set(...rot); par.add(m); if (ol) addOutline(m, ol); return m; };
+  // Mayhem: ruffled feathers sticking out every which way
+  { const g = new THREE.Group(); crow.group.add(g); clsParts.mayhem = g; const fm = crowMat2, tg = new THREE.ConeGeometry(0.06, 0.36, 5);
+    let seed = 7; const rr = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    for (let i = 0; i < 30; i++) { const a = -0.4 + rr() * 3.9, z = -0.85 + rr() * 1.15, r = 0.26 + rr() * 0.05;
+      mk(tg, fm, [Math.cos(a) * r, 0.08 + Math.sin(a) * r * 0.9, z], [rr() * 0.8 - 0.4 + (z > 0 ? 0.5 : -0.3), 0, a - Math.PI / 2 + (rr() - 0.5) * 0.8], g, 1.12); }
+    for (let i = 0; i < 6; i++) mk(tg, fm, [(i - 2.5) * 0.05, 0.56, -1.12 + i * 0.03], [-0.6 + rr() * 0.4, 0, (i - 2.5) * 0.35], g, 1.12); }
+  // Lovely Friend: halo + floating hearts
+  { const g = new THREE.Group(); crow.group.add(g); clsParts.lovely = g;
+    const halo = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.028, 8, 28), M(0xffe9a8, { accent: true, emissive: 0xffc860 })); halo.position.set(0, 0.74, -1.14); halo.rotation.x = Math.PI / 2 - 0.2; g.add(halo);
+    const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: sparkTex, color: 0xffd6a8, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false })); glow.position.copy(halo.position); glow.scale.setScalar(0.75); g.add(glow);
+    const hc = document.createElement('canvas'); hc.width = hc.height = 64; const x = hc.getContext('2d'); x.fillStyle = '#ff5fa8'; x.strokeStyle = '#4a0f2e'; x.lineWidth = 5;
+    x.beginPath(); x.moveTo(32, 56); x.bezierCurveTo(4, 36, 6, 10, 22, 10); x.bezierCurveTo(29, 10, 32, 16, 32, 20); x.bezierCurveTo(32, 16, 35, 10, 42, 10); x.bezierCurveTo(58, 10, 60, 36, 32, 56); x.closePath(); x.fill(); x.stroke();
+    const ht = new THREE.CanvasTexture(hc); ht.colorSpace = THREE.SRGBColorSpace;
+    clsParts.hearts = [0, 1, 2, 3].map(i => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: ht, transparent: true, depthWrite: false })); sp.scale.setScalar(0.22); sp.userData.ph = i / 4; g.add(sp); return sp; });
+    clsParts.halo = halo; }
+  // Hunter: scar over one eye, quiver on the back, strap across the chest
+  { const g = new THREE.Group(); crow.group.add(g); clsParts.hunter = g;
+    const scarM = M(0xe8a3a0, { accent: true }); const sc = mk(new THREE.BoxGeometry(0.026, 0.24, 0.03), scarM, [0.232, 0.4, -1.2], [0.15, 0, 0.55], g, 0);
+    mk(new THREE.BoxGeometry(0.02, 0.1, 0.028), scarM, [0.235, 0.4, -1.19], [0.15, 0, -0.4], g, 0);
+    const leather = sheen(M(0x7a4a22, { accent: true }), 0xc89060, 0xffe0b0, 0.25, 0.3), dark = M(0x4a2a12, { accent: true });
+    const q = mk(new THREE.CylinderGeometry(0.085, 0.07, 0.56, 10), leather, [0.14, 0.5, 0.05], [1.15, 0, -0.35], g, 1.1);
+    for (const [dx, c] of [[-0.03, 0xff2d95], [0.02, 0x1ee8ff], [0.05, 0x9cff2e]]) { const sh = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.3, 5), dark); sh.position.set(dx, 0.36, 0); q.add(sh); const fl = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.1, 4), M(c, { accent: true })); fl.position.set(dx, 0.5, 0); q.add(fl); }
+    const strap = new THREE.Mesh(new THREE.TorusGeometry(0.33, 0.028, 6, 30), leather); strap.position.set(0, 0.1, -0.42); strap.rotation.set(0.15, 0, 0.75); g.add(strap); addOutline(strap, 1.06);
+    const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, 0.03), M(0xe8c45c, { accent: true })); buckle.position.set(-0.2, -0.13, -0.6); g.add(buckle); }
+  // Scavenger: leaves and twigs stuck in the feathers (+ a bigger beak, below)
+  { const g = new THREE.Group(); crow.group.add(g); clsParts.scavenger = g;
+    const leafG = new THREE.SphereGeometry(1, 8, 6), twigG = new THREE.CylinderGeometry(0.012, 0.016, 1, 5), twigM = M(0x6b4a2a, { accent: true });
+    const leafCols = [0x6b8f3a, 0x9a7a30, 0xb05a24, 0x7aa040];
+    [[0.18, 0.4, -0.3, 0.3], [-0.2, 0.36, -0.05, -0.5], [0.05, 0.47, 0.25, 1.2], [-0.26, 0.15, -0.6, 2.2], [0.27, 0.2, 0.1, -1.1], [0.0, 0.52, -0.95, 0.6]].forEach(([x, y, z, r], i) => {
+      const l = new THREE.Mesh(leafG, M(leafCols[i % 4], { accent: true })); l.scale.set(0.12, 0.02, 0.065); l.position.set(x, y, z); l.rotation.set(0.3, r, 0.4 * (i % 2 ? 1 : -1)); g.add(l); addOutline(l, 1.15); });
+    [[0.1, 0.46, 0.0, 0.32, 0.9], [-0.15, 0.42, -0.4, 0.26, -0.7], [0.22, 0.1, 0.35, 0.22, 1.3], [-0.05, 0.55, -1.05, 0.2, 0.4]].forEach(([x, y, z, L, r]) => {
+      const t = new THREE.Mesh(twigG, twigM); t.scale.y = L; t.position.set(x, y, z); t.rotation.set(1.1, 0, r); g.add(t); });
+    clsParts.beaks = []; crow.group.traverse(o => { if (o.isMesh && (o.material === beakMat || o.material === beakLow)) clsParts.beaks.push({ m: o, p: o.position.clone(), s: o.scale.clone(), ol: addOutline(o, 1.06) }); }); }
+  // legs are merged meshes (both sides in one geometry): build left-only copies for Mayhem's missing leg
+  clsParts.legs = crow.legs.children.filter(o => o.isMesh).map(m => { const g = m.geometry, P = g.attributes.position, I = g.index; const keep = [];
+    const nI = I ? I.count : P.count; for (let i = 0; i < nI; i += 3) { const a = I ? I.getX(i) : i, b = I ? I.getX(i + 1) : i + 1, c = I ? I.getX(i + 2) : i + 2; if (P.getX(a) < 0.02 && P.getX(b) < 0.02 && P.getX(c) < 0.02) keep.push(a, b, c); }
+    const g1 = g.clone(); g1.setIndex(keep); return { m, full: g, one: g1 }; });
+}
+function applyClassLook() {
+  for (const k of ['mayhem', 'lovely', 'hunter', 'scavenger']) clsParts[k].visible = kroClass === k;
+  for (const L of clsParts.legs) L.m.geometry = kroClass === 'mayhem' ? L.one : L.full;   // Mayhem lost a leg in some past scrap
+  const bk = kroClass === 'scavenger' ? 1.3 : 1, B = new THREE.Vector3(0, 0.26, -1.31);
+  for (const b of clsParts.beaks) { b.m.scale.copy(b.s).multiplyScalar(bk); b.m.position.copy(b.p).sub(B).multiplyScalar(bk).add(B); b.ol.visible = bk > 1; }
+}
+function updateClassFx(dt, time) {
+  if (kroClass !== 'lovely') return;
+  clsParts.halo.rotation.z = time * 0.6;
+  for (const h of clsParts.hearts) { const u = (time * 0.35 + h.userData.ph) % 1, a = h.userData.ph * 6.283 + time * 0.8;
+    h.position.set(Math.cos(a) * 0.45, 0.3 + u * 1.0, -0.4 + Math.sin(a) * 0.45); h.material.opacity = Math.sin(u * Math.PI); h.scale.setScalar(0.16 + 0.1 * Math.sin(u * Math.PI)); }
+}
 let skinCur = 'default';
 function applySkin(id) {
   if (!SKIN_DEF[id]) id = 'default';
   skinCur = id;
-  SKIN_MATS.forEach((m, i) => setMatLook(m, id === 'default' ? skinDefaults[i] : SKIN_DEF[id][i]));
+  SKIN_MATS.forEach((m, i) => setMatLook(m, id === 'default' ? (CLASS_LOOK[kroClass] ? CLASS_LOOK[kroClass][i] : skinDefaults[i]) : SKIN_DEF[id][i]));
+  applyClassLook();
   if (irisMat) irisMat.color.set(id === 'circuit' ? 0x7dfff2 : irisDefault);
   for (const s of eyeGlows) s.visible = id === 'circuit';
   CIRC_U.uCirc.value = id === 'circuit' ? 1 : 0; circParts.visible = id === 'circuit'; for (const g of circWing) g.visible = id === 'circuit';
@@ -4956,8 +5069,30 @@ applySkin(skins.sel); syncSkinLabel();
 function updateCameo(dt, time) {
   updateBot(dt, time); updateGears(dt, time);
   if (skinCur === 'circuit') { const p = 0.85 + 0.15 * Math.sin(time * 3); for (const s of eyeGlows) s.scale.setScalar(0.3 * p); crowEdge.emissive.setHSL(0.45, 0.9, 0.02 + 0.03 * Math.sin(time * 2.2)); }
-  updateCircuitFx(dt, time); grassFx.update(time);
+  updateCircuitFx(dt, time); grassFx.update(time); updateClassFx(dt, time);
 }
+// v7i: class picker UI
+function setClass(id, quiet) {
+  if (!KCLASSES.some(c => c.id === id)) id = 'classic';
+  kroClass = id; try { localStorage.setItem(CLS_KEY, id); } catch (_) {}
+  applySkin(skinCur); crow.stamina = Math.min(crow.stamina, stamMax());
+  const C = KCLASSES.find(c => c.id === id); $('btnCls').textContent = `${C.icon} Class: ${C.name}`; $('mCls').textContent = `🎭 Class: ${C.name}`;
+  if (!quiet && started) showMsg(`${C.icon} ${C.name} Kro!`, 1.6);
+  renderClsPick();
+}
+function renderClsPick() {
+  $('clsGrid').innerHTML = KCLASSES.map(c => `<button class="clsCard${c.id === kroClass ? ' sel' : ''}" data-cls="${c.id}" style="--cc:${c.col}"><span class="ci">${c.icon}</span><b>${c.name}</b><i>${c.tag}</i><span class="cp">✚ ${c.perk}</span><span class="ct">− ${c.trade}</span><span class="cs">🎨 ${c.skin}</span></button>`).join('');
+  $('clsNote').textContent = skinCur !== 'default' ? `Your ${SKIN_NAMES[skinCur]} skin colors stay on; class gear still shows. Set Skin to Default for the class colors.` : '';
+}
+window.__clsOpen = false;
+function openCls() { window.__clsOpen = true; renderClsPick(); $('clsPick').classList.add('show'); updatePaused(); }
+function closeCls() { window.__clsOpen = false; $('clsPick').classList.remove('show'); updatePaused(); }
+$('clsGrid').addEventListener('click', e => { const b = e.target.closest('button[data-cls]'); if (b) setClass(b.dataset.cls); });
+$('clsPick').addEventListener('pointerdown', e => e.stopPropagation());
+onTap('clsDone', () => closeCls());
+$('btnCls').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); openCls(); });
+onTap('mCls', () => { closeMenu(); openCls(); });
+onTap('upgCls', () => { closeUpg(); openCls(); });
 // test hook helpers
 function grantAllGears() { for (const g of gears) { g.got = true; if (!cameo.found.includes(g.id)) cameo.found.push(g.id); } if (cameo.stage === 'new') cameo.stage = 'active'; saveCameo(); drawGearHud(); }
 function resetCameo() { cameo.stage = 'new'; cameo.found = []; saveCameo(); for (const g of gears) g.got = false; skins.unlocked = ['default']; skins.sel = 'default'; saveSkins(); applySkin('default'); syncSkinLabel(); gearHudKey = ''; drawGearHud(); }
@@ -5146,7 +5281,7 @@ function startGust() {
   if (!started || paused || ko.on || gust.on || gust.cd > 0 || crow.stun > 0) return false;
   if (crow.stamina < 6) { showMsg('Too tired to gust, catch your breath', 1.2); return false; }
   crow.stamina = Math.max(0, crow.stamina - GUST.cost); gust.on = true; gust.t = 0; gust.fired = false; gust.count++; v6b.stats.gusts++;
-  gust.cdMax = dogfight.on ? GUST.cdDf : GUST.cd; gust.cd = gust.cdMax; buzz(15); sfx.gustUp();
+  gust.cdMax = (dogfight.on ? GUST.cdDf : GUST.cd) * (clsIs('mayhem') ? 0.7 : 1); gust.cd = gust.cdMax; buzz(15); sfx.gustUp();
   return true;
 }
 const windTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); x.lineCap = 'round';
@@ -5696,7 +5831,8 @@ Object.assign(sfx, {
     f.type = 'bandpass'; f.frequency.value = 1300; f.Q.value = 2; o.connect(f); f.connect(g); g.connect(master); env(g, t + d, 0.008, 0.28, L); o.start(t + d); o.stop(t + d + L + 0.05); }); }, // "hey-yo!"
 });
 // ---- bird baths: +1 heart (if missing), 90 s refill per bath
-const BATH = { cool: 90, r: 3.1, top: 2.0, s: 1.6 };   // v6e: bigger (scale 1.25 → 1.6) + a light beacon, so both are easy to spot
+const BATH = { cool: 90, r: 3.1, top: 2.0, s: 1.6 };
+function bathCool() { return BATH.cool * (clsIs('lovely') ? 0.5 : 1); }   // v6e: bigger (scale 1.25 → 1.6) + a light beacon, so both are easy to spot
 const BATHS = [{ x: -38, z: 242 }, { x: 62, z: 322 }].map(b => ({ ...b, cd: 0, uses: 0, splashCd: 0, msgCd: 0, key: '' }));
 const bathGeo = propGeo([
   [G.cyl(0.95, 1.15, 0.22, 14), 0xb9b2a4, [0, 0.11, 0], [0, 0, 0]],
@@ -5726,7 +5862,7 @@ function drawBathRing(B) {
   const g = B.cv.getContext('2d'); g.clearRect(0, 0, 128, 128);
   g.fillStyle = 'rgba(20,40,60,.55)'; g.beginPath(); g.arc(64, 64, 50, 0, 7); g.fill();
   g.lineWidth = 10; g.lineCap = 'round'; g.strokeStyle = 'rgba(255,255,255,.25)'; g.beginPath(); g.arc(64, 64, 44, 0, 7); g.stroke();
-  const f = ready ? 1 : 1 - B.cd / BATH.cool; g.strokeStyle = ready ? '#7fe0ff' : '#cfe8f5'; g.beginPath(); g.arc(64, 64, 44, -Math.PI / 2, -Math.PI / 2 + f * Math.PI * 2); g.stroke();
+  const f = ready ? 1 : 1 - B.cd / bathCool(); g.strokeStyle = ready ? '#7fe0ff' : '#cfe8f5'; g.beginPath(); g.arc(64, 64, 44, -Math.PI / 2, -Math.PI / 2 + f * Math.PI * 2); g.stroke();
   g.textAlign = 'center'; g.textBaseline = 'middle';
   if (ready) { g.font = '44px system-ui'; g.fillText('💧', 64, 58); g.font = '900 20px system-ui'; g.fillStyle = '#ff8fa0'; g.fillText('+1 ♥', 64, 92); }
   else { g.font = '900 30px system-ui'; g.fillStyle = '#ffffff'; g.fillText(Math.ceil(B.cd) + 's', 64, 66); }
@@ -5740,13 +5876,13 @@ function updateBaths(dt, time) {
     if (!near) continue;
     const cdist = Math.sqrt(cd2); B.beacon.material.opacity = clamp((cdist - 12) / 30, 0.08, 0.42) * (B.cd > 0 ? 0.45 : 1); // v7b: more see-through
     drawBathRing(B); B.ring.scale.setScalar(clamp(cdist * 0.04, 2.2, 9)); B.ring.position.y = 4.4 + clamp(cdist * 0.02, 0, 4) + Math.sin(time * 2 + B.x) * 0.12;
-    const fill = B.cd > 0 ? 1 - B.cd / BATH.cool : 1; B.water.position.y = 1.08 + 0.13 * fill; B.water.scale.setScalar(0.86 + 0.14 * fill + Math.sin(time * 3 + B.z) * 0.01);
+    const fill = B.cd > 0 ? 1 - B.cd / bathCool() : 1; B.water.position.y = 1.08 + 0.13 * fill; B.water.scale.setScalar(0.86 + 0.14 * fill + Math.sin(time * 3 + B.z) * 0.01);
     if (!started || ko.on) continue;
     const d = Math.hypot(crow.pos.x - B.x, crow.pos.z - B.z);
     if (d < BATH.r && crow.pos.y < BATH.top + 1.4 && B.splashCd <= 0) {
       B.splashCd = 1.2; bathStats.splashes++; splashFx(new THREE.Vector3(B.x, BATH.top, B.z)); sfx.bathSplash();
       const at = new THREE.Vector3(B.x, 4.4, B.z);
-      if (enemiesOn() && crow.hp < dset().hp && B.cd <= 0) { heal(1); B.cd = BATH.cool; B.uses++; bathStats.heals++; sfx.healChime(); popup('💧 +1 ♥ Refreshing dip!', at, 'gold'); }
+      if (enemiesOn() && crow.hp < dset().hp && B.cd <= 0) { const hn = clsIs('lovely') ? 2 : 1; heal(hn); B.cd = bathCool(); B.uses++; bathStats.heals++; sfx.healChime(); popup(`💧 +${hn} ♥ Refreshing dip!`, at, 'gold'); } // v7i GB-2: works at any Heat level
       else if (B.msgCd <= 0) { B.msgCd = 6; popup(!enemiesOn() ? '💦 Splash!' : B.cd > 0 ? `💦 Refilling… ${Math.ceil(B.cd)} s` : '💦 Hearts full: just a splash', at); }
     }
   }
@@ -5912,7 +6048,7 @@ function drawV6cMap(g, tm, k, W) {
   for (const B of BATHS) { let [u, v] = tm(B.x, B.z); const ready = B.cd <= 0;
     { const R = W / 2 - 5 * k, dx = u - W / 2, dy = v - W / 2, L = Math.hypot(dx, dy); if (L > R) { u = W / 2 + dx / L * R; v = W / 2 + dy / L * R; } }   // v6e: pinned to the rim when off-map
     g.fillStyle = ready ? '#4fc3ff' : '#8aa0ad'; g.strokeStyle = '#fff'; g.lineWidth = 0.8 * k; g.beginPath(); g.arc(u, v, 3 * k, 0, 7); g.fill(); g.stroke();
-    if (!ready) { g.strokeStyle = '#4fc3ff'; g.lineWidth = 1.2 * k; g.beginPath(); g.arc(u, v, 3 * k, -Math.PI / 2, -Math.PI / 2 + (1 - B.cd / BATH.cool) * Math.PI * 2); g.stroke(); }
+    if (!ready) { g.strokeStyle = '#4fc3ff'; g.lineWidth = 1.2 * k; g.beginPath(); g.arc(u, v, 3 * k, -Math.PI / 2, -Math.PI / 2 + (1 - B.cd / bathCool()) * Math.PI * 2); g.stroke(); }
     g.font = `${3.8 * k}px system-ui`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('💧', u, v + 0.3 * k); g.textBaseline = 'alphabetic'; }
   if (dfActive || tagger.state === 'gone') return; let [u, v] = tm(tagger.x, tagger.z);
   { const R = W / 2 - 6 * k, dx = u - W / 2, dy = v - W / 2, L = Math.hypot(dx, dy); if (L > R) { u = W / 2 + dx / L * R; v = W / 2 + dy / L * R; } } // v7g2: pin to the rim so a mural in progress is always findable
@@ -6541,7 +6677,7 @@ function droneDown(D, how) {
   if (D.st === 'off' || D.st === 'down') return;
   D.st = 'down'; D.t = 0; D.v.set(D.v.x * 0.3 + rand(-2, 2), 2, D.v.z * 0.3 + rand(-2, 2)); D.fl.material.opacity = 0;
   heat.stats.dronesDown++; if (how === 'gust') heat.stats.gustDowns++;
-  addScore(150); popup(how === 'gust' ? '🌪 DRONE DOWN! +150' : '💥 DRONE DOWN! +150', D.p.clone().add(new THREE.Vector3(0, 1.5, 0)), 'gold');
+  const dpt = clsPts(150, 'pest'); addScore(dpt); popup((how === 'gust' ? '🌪 DRONE DOWN! +' : '💥 DRONE DOWN! +') + dpt, D.p.clone().add(new THREE.Vector3(0, 1.5, 0)), 'gold');
   sfx.bonk(); sparkBurst(D.p, 14, 0xffd070);
 }
 function droneBlast(D) {
@@ -7105,20 +7241,20 @@ const v7d = { get quest() { return quest; }, items, cashItems, raccoons, goose, 
 // ================================================================ v7g: brake hover, raccoon pacing, Nest Upgrades, Grandma "Lost Glasses"
 const UPG_KEY = 'totallyACrow.upgrades.v1', GMA_KEY = 'totallyACrow.grandma.v1';
 var hover = hover || { on: false, held: false, t: 0, clapT: 0, gustT: 0, count: 0, lastDrain: 0 };
-function stamMax() { return upgHas('bigBreath') ? 125 : 100; }
+function stamMax() { return (upgHas('bigBreath') ? 125 : 100) - (clsIs('hunter') ? 15 : 0); }
 function soarMinY() { return upgHas('earlyRise') ? 11.5 : SOAR_MIN_Y; }
 function flapStam(dt) { return (upgHas('easyFlap') ? 11 : 16) * dt; }
 function flapTapCost() { return upgHas('easyFlap') ? 3 : 4; }
 function soarDrain(dt) { return (upgHas('trailWind') ? 9 : 14) * dt; }
-function soarMult() { return upgHas('trailWind') ? 2.45 : 2.2; }
-function heatIncCd() { return upgHas('slowSimmer') ? 1.15 : HEAT.incCd; }
+function soarMult() { return (upgHas('trailWind') ? 2.45 : 2.2) * (clsIs('scavenger') ? 0.9 : 1); }
+function heatIncCd() { return (upgHas('slowSimmer') ? 1.15 : HEAT.incCd) * (clsIs('mayhem') ? 0.65 : 1); }
 function hawkMarg() { return upgHas('watchful') ? 18 : HAWK_TERR.margin; }
 function netWind(base) { return base + (upgHas('wideGlance') ? 0.35 : 0); }
 function droneFuse() { return HEAT.drone.fuse + (upgHas('wideGlance') ? 0.25 : 0); }
 function droneArm() { return HEAT.drone.arm - (upgHas('duskFeathers') ? 1.2 : 0); }
-function pickR2(base) { return base * (upgHas('keenBeak') ? 1.96 : 1); } // radius^2, +40% radius ≈ ×1.96 area
+function pickR2(base) { return base * (upgHas('keenBeak') ? 1.96 : 1) * (clsIs('scavenger') ? 1.69 : 1); } // radius^2, +40% radius ≈ ×1.96 area
 function pickLow(base) { return base + (upgHas('keenBeak') ? 1.4 : 0); }
-function cashVal(v) { return upgHas('fatPouch') ? Math.round(v * 1.25) : v; }
+function cashVal(v) { return Math.round(v * (upgHas('fatPouch') ? 1.25 : 1) * (clsIs('scavenger') ? 1.2 : 1)); }
 function cashRespawn() { const [a, b] = CASH.respawn; return upgHas('oddBits') ? rand(a * 0.65, b * 0.7) : rand(a, b); }
 function hoverDrainRate() {
   let r = 9;
@@ -7543,6 +7679,7 @@ function drawGmaMap(g, tm, k, W) {
 const RAC_BEFORE = { ambient: 8, minSpace: 8.0, heistFirst: 45, heistCd: [55, 90], heistMin: 40, heistMax: 260, siteCool: 30, rummage: [3, 9], noFries: [6, 12], afterReturn: [7, 14], stealSp: 3.4, fryRespawn: [8, 14], stealR: 34 };
 const RAC_AFTER  = { ambient: 8, minSpace: 28, heistFirst: 75, heistCd: [90, 150], heistMin: 70, heistMax: 280, siteCool: 50, rummage: [12, 22], noFries: [16, 28], afterReturn: [18, 32], stealSp: 2.8, fryRespawn: [22, 36], stealR: 28, playerFryClear: 18 };
 const v7g = {
+  KCLASSES, setClass, clsIs, clsPts, openCls, closeCls, soarMult, pickR2, cashVal, heatIncCd, get kroClass() { return kroClass; }, clsParts, bathCool, dfd,
   hover, HOVER, tryStartHover, endHover, updateHoverInput, hoverDrainRate, stamMax, soarMinY, updateCrow, updateCamera, cameraTarget,
   deflectCrow, addCollider, aabbFaceNormal, angDelta,
   UPG_TREE, upgState, upgHas, upgCan, buyUpg, saveUpg, openUpg, closeUpg, get upgOpen() { return upgOpen; }, upgCoins,
@@ -7610,6 +7747,7 @@ function frame() {
   renderInk();
 }
 frame();
+setClass(kroClass, true); // v7i: after upgrade state exists
 window.__crowGame = { v7g, v7e, v7d, v7b, v7, v6d, v6c: { ...v6c, THREE, HILLS, hillAt: (x, z) => hillAt(x, z), groundAt, heal, questHeartReward, DIFF }, v6b: { ach, ACH_TRACKS, achAdvance, achHas, netBust, heist, heistRac, HEIST_SITES, startHeist, heistSave, heistActive, gust, GUST, startGust, trashCans, TREES, gdrops, spawnDrop, FP, onFootpath, parkProps, renderAch, showAch, banQ, stats: v6b.stats, knockPed, megaDur, saveAch, get dogfightOn() { return dogfight.on; }, pond, goose, gooseG, GZ, gooseHit, defeatGoose, respawnGoose, gustGoose, pigeons, flock, FLOCKS, scatterAt, fisher, FISH, crumbs, tossCrumbs, inLeash, crowCrown, syncCrown }, cameo: { state: cameo, gears, bot, skins, cstats, grantAllGears, resetCameo, talkToBot, closeDialog, applySkin, BOT_POS, TOWER, gearCar, get dialogOpen() { return dialogOpen; }, get skinCur() { return skinCur; }, circFx, CIRC_U, circParts }, colliders, colliderAt, groundAt, groundLayers, grassFx, skyDome, enemy: { dogfight, chaseMusic, startDogfight, endDogfight, hawkCrash, losBlocked, DF_DIFF, hitPed, movingCars, hawk, netters, hurt, heal, knockOut, respawn, resetEnemies, gameSet, ens, ko, setHawkWarn, get hp() { return crow.hp; } }, airFx, musStats, get mus() { return mus; }, get megaTime() { return megaTime; }, setMega(v) { megaTime = v; }, fxSet, get actx() { return actx; }, renderer, camera, scene, crow, peds, items, projectiles, input, dropBomb, restart, get score() { return score; }, get phonesHit() { return phonesHit; }, get paused() { return paused; }, get quest() { return quest; }, get carry() { return carry; }, NEST, movingCars, colliders, questProgress, newQuest, get qTarget() { return qTarget; }, air, streams, raccoons, get layout() { return layout; }, applyLayout, openMenu, closeMenu, menuPage, get menuOpen() { return menuOpen; }, get customizing() { return customizing; }, start() { $('start').style.display = 'none'; started = true; }, roll, ROLL, startRoll, flick, FLICK, flickCheck };
 </script>
 </body>
