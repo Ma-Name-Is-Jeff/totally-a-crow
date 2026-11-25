@@ -518,6 +518,25 @@
   @media (max-height:470px){#start .clsBtn{margin-top:6px;padding:7px 14px;font-size:13px}}
   @media (max-width:760px),(max-height:470px){#clsGrid{grid-template-columns:repeat(5,minmax(118px,1fr));overflow-x:auto}.clsCard{padding:6px 6px 7px}.clsCard .ci{font-size:20px}.clsCard b{font-size:13px}.clsCard i{min-height:0}#clsPick h2{font-size:18px}#clsPick .sub{display:none}}
   body.portrait #clsGrid{grid-template-columns:1fr 1fr}
+  /* v7j: Break Out stealth minigame */
+  #btnBreak{margin-top:6px;background:linear-gradient(180deg,#1ee8ff,#0fa3c4)!important;color:#160526!important}
+  #btnBreak:disabled{opacity:.5;filter:grayscale(.6)}
+  #jb{position:fixed;inset:0;z-index:24;display:none;align-items:center;justify-content:center;flex-direction:column;background:#10051e;font-family:system-ui,sans-serif;color:#fff9f0;touch-action:none;user-select:none;-webkit-user-select:none}
+  #jb.show{display:flex}
+  #jbHead{display:flex;align-items:center;gap:10px;font:900 15px system-ui;height:30px;padding:0 10px}
+  #jbHead b{color:#ffe229;letter-spacing:.08em;text-shadow:0 2px 0 #160526}
+  #jbTime{color:#1ee8ff;min-width:54px} #jbSusW{width:120px;height:10px;border-radius:6px;background:#331257;border:2px solid #160526;overflow:hidden}
+  #jbSus{height:100%;width:0;background:linear-gradient(90deg,#9cff2e,#ffe229,#ff2d95)}
+  #jbWrap{position:relative;border:3px solid #160526;border-radius:14px;box-shadow:0 0 0 2px #ff2d95,0 8px 0 #160526;overflow:hidden}
+  #jbCv{display:block;touch-action:none}
+  .jbBtn{position:absolute;bottom:10px;width:74px;height:74px;border-radius:50%;border:3px solid #160526;font:900 14px system-ui;color:#160526;box-shadow:0 5px 0 #160526;touch-action:none;cursor:pointer}
+  #jbHop{right:96px;background:linear-gradient(180deg,#ffe229,#ff8a1f)} #jbCover{right:12px;background:linear-gradient(180deg,#9cff2e,#3fbf2a)}
+  .jbBtn.down{transform:translateY(3px);box-shadow:0 2px 0 #160526}
+  #jbHint{pointer-events:none;transition:opacity .6s;position:absolute;left:50%;top:8px;transform:translateX(-50%);text-align:center;font-size:11.5px;color:#cbb8e8;background:rgba(16,5,30,.6);padding:4px 8px;border-radius:8px;max-width:46%}
+  #jbEnd{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(16,5,30,.55)}
+  #jbEnd.show{display:flex} #jbEnd div{background:linear-gradient(165deg,#331257,#210a3b);border:3px solid #160526;border-radius:16px;padding:12px 20px;text-align:center;box-shadow:0 0 0 2px #1ee8ff}
+  #jbEnd h3{margin:0 0 4px;font:900 22px system-ui;color:#ffe229} #jbEnd p{margin:0;font-size:13px}
+  @media (max-height:470px){.jbBtn{width:62px;height:62px;font-size:12px}#jbHop{right:82px}#jbHead{height:26px;font-size:13px}}
 </style>
 </head>
 <body>
@@ -644,7 +663,10 @@
 <div id="dfBanner"><b></b><small></small></div>
 <div id="ko"><div class="panel"><div class="koStars">💫</div><h2>Knocked out!</h2><p>Your crow needs a little breather. Back to the nest with 4 fresh hearts…</p><p id="koPen"></p><button id="koBtn" class="mbtn primary">Fly again</button></div></div>
 <div id="caged"><div class="panel"><h2>🔒 CAGED!</h2><img id="cageArt" alt="Kro in a bird cage"><p id="cageLvl"></p><p id="cageBank"></p>
-  <button id="btnBail" class="mbtn primary">💵 Pay Bail</button><p id="cageWait"></p><small>Tip: pick up 💵 cash around town and carry it home to the nest to bank it.</small></div></div>
+  <button id="btnBail" class="mbtn primary">💵 Pay Bail</button><button id="btnBreak" class="mbtn">🗝 Break Out (stealth)</button><p id="cageWait"></p><small>Tip: pick up 💵 cash around town and carry it home to the nest to bank it.</small></div></div>
+<div id="jb" role="dialog" aria-label="Break Out"><div id="jbHead"><b>🗝 BREAK OUT</b><span id="jbTime">45s</span><span>👁</span><div id="jbSusW"><div id="jbSus"></div></div></div>
+  <div id="jbWrap"><canvas id="jbCv" width="640" height="360"></canvas><div id="jbHint">Drag or WASD to sneak · HOP over low fences (Space) · hold COVER to hide in a box (Shift). Reach EXIT unseen!</div>
+  <button class="jbBtn" id="jbHop">HOP</button><button class="jbBtn" id="jbCover">COVER</button><div id="jbEnd"><div><h3 id="jbEndT"></h3><p id="jbEndP"></p></div></div></div></div>
 <div id="airBanner"><b>AIRSTREAM!</b><small></small></div>
 <div id="airBadge"><div class="t"><span>🌬</span><b>AIRSTREAM</b><span id="abName"></span></div><div class="bar"><i id="abStr"></i></div><div id="abInfo"></div></div>
 
@@ -7062,13 +7084,14 @@ function syncCagePanel() {
   $('cageBank').textContent = `Bail $${cage.price} · Bank $${cash.bank}`;
   const b = $('btnBail'); b.disabled = !can || cage.t < 0.8; b.textContent = can ? `💵 Pay Bail ($${cage.price})` : `💵 Bail $${cage.price} (need $${cage.price - cash.bank} more)`;
   const lost = []; if (cash.carry > 0) lost.push(`$${cash.carry} carried cash`); if (carry > 0) lost.push(`${carry} trinket${carry > 1 ? 's' : ''}`);
+  const bk = $('btnBreak'); bk.disabled = !!cage.jbUsed || cage.t < 0.8; bk.textContent = cage.jbUsed ? '🗝 Guards are on alert now' : '🗝 Break Out (stealth, keep your stuff)';
   $('cageWait').textContent = `${can ? 'Or wait it out' : 'Can\u2019t afford bail? Sit tight'}: released in ${left}s` + (lost.length ? ` (confiscated: ${lost.join(' + ')})` : '') + '.';
 }
 function cageKro(lvl) { // called from knockOut while heat > 0
-  cage.on = true; cage.lvl = lvl; cage.price = bailPrice(lvl); cage.t = 0; cage.stats.cages++;
+  cage.on = true; cage.lvl = lvl; cage.price = bailPrice(lvl); cage.t = 0; cage.stats.cages++; cage.jbUsed = false;
   $('caged').classList.add('show'); syncCagePanel(); sfx.cageClank();
 }
-function updateCage(dt) { cage.t += dt; syncCagePanel(); if (cage.t >= CASH.wait) releaseCage(false); }
+function updateCage(dt) { if (jb.on || jb.ending) return; cage.t += dt; syncCagePanel(); if (cage.t >= CASH.wait) releaseCage(false); }
 function releaseCage(paid) {
   if (!cage.on) return; cage.on = false; $('caged').classList.remove('show');
   let msg;
@@ -7079,7 +7102,119 @@ function releaseCage(paid) {
   respawn(true); showMsg(msg, 2.4, true); drawCashHud();
 }
 $('btnBail').addEventListener('click', e => { e.preventDefault(); if (cage.on && cash.bank >= cage.price && cage.t >= 0.8) releaseCage(true); });
-const v7b = { setCarry(n) { carry = n; }, nearMissAward, CASH, cash, cashItems, placeCash, saveCash, cage, bailPrice, cageKro, releaseCage, NEAR, nearStats, carGap, hillBumps, pigSnd, HEAT, puffs, tossPuff, setVolume, get volPref() { return volPref; } };
+// ================================================================ v7j: BREAK OUT — original top-down stealth escape from the impound lot behind the station
+const JB = { W: 640, H: 360, time: 45, spd: 88, hopSpd: 165, hopDur: 0.42, hopCd: 1.1, r: 7, range: 112, half: 0.46, grace: 1.2, coverNear: 24, failMul: 1.25 };
+const JB_SOLID = [[12, 12, 196, 92, 'station'], [150, 186, 80, 40, 'car'], [300, 256, 80, 40, 'car'], [420, 118, 40, 80, 'car'], [512, 250, 62, 38, 'bin'], [300, 40, 70, 30, 'car']];
+const JB_LOW = [[556, 12, 12, 196]]; // low chain fence: hop over it (or sneak around the bottom past the bins)
+const JB_EXIT = { x: 612, y: 30, w: 16, h: 70 };
+const jb = { on: false, ending: false, t: 0, x: 48, y: 312, hop: 0, hopCd: 0, cover: false, sus: 0, seen: false, res: '', guards: [], mx: 0, my: 0, stats: { tries: 0, wins: 0, fails: 0 } };
+const jbKeys = {};
+function jbNewGuards() {
+  return [
+    { path: [[262, 330], [262, 132]], i: 1, x: 262, y: 330, a: -Math.PI / 2, spd: 34, sweep: 0.5 },
+    { fixed: true, x: 486, y: 222, base: Math.PI * 1.05, amp: 1.05, w: 0.85, a: Math.PI },
+    { path: [[392, 92], [530, 92], [530, 230]], i: 1, x: 392, y: 92, a: 0, spd: 38, sweep: 0.35 },
+  ];
+}
+const jbHit = (x, y, r, R) => x + r > R[0] && x - r < R[0] + R[2] && y + r > R[1] && y - r < R[1] + R[3];
+const jbBlocked = (x, y, r, low) => x < 12 + r || y < 12 + r || x > JB.W - 12 - r && !(y > JB_EXIT.y && y < JB_EXIT.y + JB_EXIT.h) || y > JB.H - 12 - r || JB_SOLID.some(R => jbHit(x, y, r, R)) || (low && JB_LOW.some(R => jbHit(x, y, r, R)));
+function jbLos(g) { const dx = jb.x - g.x, dy = jb.y - g.y, d = Math.hypot(dx, dy); for (let s = 6; s < d; s += 6) { const px = g.x + dx * s / d, py = g.y + dy * s / d; if (JB_SOLID.some(R => px > R[0] && px < R[0] + R[2] && py > R[1] && py < R[1] + R[3])) return false; } return true; }
+function jbSees(g) {
+  const dx = jb.x - g.x, dy = jb.y - g.y, d = Math.hypot(dx, dy);
+  if (jb.cover) return d < JB.coverNear ? d : -1;
+  if (d > JB.range) return -1; let da = Math.atan2(dy, dx) - g.a; da = Math.atan2(Math.sin(da), Math.cos(da));
+  return Math.abs(da) < JB.half && jbLos(g) ? d : -1;
+}
+function startBreak() {
+  if (!cage.on || cage.jbUsed || jb.on) return;
+  Object.assign(jb, { on: true, ending: false, t: JB.time, x: 48, y: 312, hop: 0, hopCd: 0, cover: false, sus: 0, seen: false, res: '', guards: jbNewGuards(), mx: 0, my: 0, el: 0 });
+  jb.stats.tries++; cage.jbUsed = true; $('jbEnd').classList.remove('show'); $('jb').classList.add('show'); jbFit(); jbLast = performance.now(); requestAnimationFrame(jbLoop);
+}
+function jbFit() { const vw = innerWidth, vh = innerHeight - 40, k = Math.max(0.4, Math.min(vw / JB.W, vh / JB.H) * 0.98); const cv = $('jbCv'); cv.style.width = Math.floor(JB.W * k) + 'px'; cv.style.height = Math.floor(JB.H * k) + 'px'; jb.k = k; }
+addEventListener('resize', () => { if (jb.on) jbFit(); });
+let jbLast = 0;
+function jbLoop(now) { if (!jb.on) return; jb.frames = (jb.frames || 0) + 1; $('jbHint').style.opacity = jb.el > 7 ? 0 : 1; const dt = Math.min(0.05, (now - jbLast) / 1000); jbLast = now; jbStep(dt); jbDraw(); if (jb.on) requestAnimationFrame(jbLoop); }
+function jbStep(dt) {
+  if (!jb.on) return; jb.t -= dt; jb.el += dt; jb.hopCd -= dt;
+  let mx = jb.mx + (jbKeys.r ? 1 : 0) - (jbKeys.l ? 1 : 0), my = jb.my + (jbKeys.d ? 1 : 0) - (jbKeys.u ? 1 : 0); const ml = Math.hypot(mx, my); if (ml > 1) { mx /= ml; my /= ml; }
+  if (ml > 0.05) jb.face = Math.atan2(my, mx);
+  if (jb.hop > 0) { jb.hop -= dt; if (jb.hop <= 0 && jbBlocked(jb.x, jb.y, JB.r, true)) jb.hop = 0.05; }
+  const sp = jb.cover ? 0 : jb.hop > 0 ? JB.hopSpd : JB.spd, hx = jb.hop > 0 ? Math.cos(jb.face || 0) : mx, hy = jb.hop > 0 ? Math.sin(jb.face || 0) : my, low = !(jb.hop > 0);
+  const nx = jb.x + hx * sp * dt, ny = jb.y + hy * sp * dt;
+  if (!jbBlocked(nx, jb.y, JB.r, low)) jb.x = nx; if (!jbBlocked(jb.x, ny, JB.r, low)) jb.y = ny;
+  for (const g of jb.guards) {
+    if (g.fixed) g.a = g.base + Math.sin(jb.el * g.w) * g.amp;
+    else { const [tx, ty] = g.path[g.i], dx = tx - g.x, dy = ty - g.y, d = Math.hypot(dx, dy);
+      if (d < 2) g.i = (g.i + 1) % g.path.length; else { g.x += dx / d * g.spd * dt; g.y += dy / d * g.spd * dt; g.dir = Math.atan2(dy, dx); }
+      g.a = (g.dir ?? g.a) + Math.sin(jb.el * 1.3 + g.x * 0.01) * g.sweep; }
+  }
+  let seen = -1; for (const g of jb.guards) { const d = jbSees(g); g.alert = d >= 0; if (d >= 0) seen = seen < 0 ? d : Math.min(seen, d); }
+  jb.seen = seen >= 0;
+  if (jb.el > JB.grace && seen >= 0) jb.sus += dt * (1.5 + 2.2 * (1 - seen / JB.range)); else jb.sus = Math.max(0, jb.sus - dt * 0.55);
+  $('jbSus').style.width = Math.min(100, jb.sus * 100) + '%'; $('jbTime').textContent = Math.max(0, Math.ceil(jb.t)) + 's';
+  if (jb.x > JB_EXIT.x && jb.y > JB_EXIT.y && jb.y < JB_EXIT.y + JB_EXIT.h) endBreak(true);
+  else if (jb.sus >= 1) endBreak(false, 'spotted');
+  else if (jb.t <= 0) endBreak(false, 'time');
+}
+function endBreak(win, why) {
+  if (!jb.on) return; jb.on = false; jb.ending = true; jb.res = win ? 'win' : why; jb.mx = jb.my = 0; jb.cover = false;
+  $('jbEndT').textContent = win ? '🗝 BROKE OUT!' : why === 'time' ? '⏰ Out of time!' : '🚨 Spotted!';
+  $('jbEndP').textContent = win ? 'Heat cleared. You kept your cash and trinkets.' : `Back in the cage. Bail is now $${Math.ceil(cage.price * JB.failMul / 5) * 5} and the wait restarts.`;
+  $('jbEnd').classList.add('show'); jbDraw();
+  if (win) { jb.stats.wins++; sfx.healChime && sfx.healChime(); } else { jb.stats.fails++; sfx.cageClank(); }
+  setTimeout(() => {
+    $('jb').classList.remove('show'); jb.ending = false;
+    if (!cage.on) return;
+    if (win) { cage.on = false; $('caged').classList.remove('show'); cage.stats.breakouts = (cage.stats.breakouts || 0) + 1; if (heat.lvl > 0) setHeat(0, 'breakout'); respawn(true); showMsg('🗝 Broke out! Heat cleared · kept everything', 2.6, true); drawCashHud(); }
+    else { cage.price = Math.ceil(cage.price * JB.failMul / 5) * 5; cage.t = 0; syncCagePanel(); }
+  }, win ? 1300 : 1600);
+}
+function jbDraw() {
+  const cv = $('jbCv'), x = cv.getContext('2d'), T = jb.el || 0;
+  x.fillStyle = '#2a1440'; x.fillRect(0, 0, JB.W, JB.H);
+  x.strokeStyle = 'rgba(30,232,255,.35)'; x.lineWidth = 2; for (let i = 0; i < 9; i++) { x.beginPath(); x.moveTo(230 + i * 40, 300); x.lineTo(230 + i * 40, 348); x.stroke(); }
+  x.fillStyle = 'rgba(255,45,149,.12)'; x.font = '900 34px system-ui'; x.fillText('KRO WAS HERE', 230, 175);
+  x.fillStyle = '#160526'; x.fillRect(0, 0, JB.W, 12); x.fillRect(0, JB.H - 12, JB.W, 12); x.fillRect(0, 0, 12, JB.H); x.fillRect(JB.W - 12, 0, 12, JB_EXIT.y); x.fillRect(JB.W - 12, JB_EXIT.y + JB_EXIT.h, 12, JB.H);
+  x.fillStyle = `rgba(156,255,46,${0.35 + 0.25 * Math.sin(T * 5)})`; x.fillRect(JB_EXIT.x, JB_EXIT.y, JB_EXIT.w + 12, JB_EXIT.h);
+  x.save(); x.translate(JB.W - 4, JB_EXIT.y + JB_EXIT.h / 2); x.rotate(-Math.PI / 2); x.fillStyle = '#9cff2e'; x.font = '900 13px system-ui'; x.textAlign = 'center'; x.fillText('EXIT', 0, 0); x.restore();
+  for (const g of jb.guards) { // sightline cones
+    x.fillStyle = g.alert ? 'rgba(255,45,149,.38)' : 'rgba(255,226,41,.2)'; x.beginPath(); x.moveTo(g.x, g.y);
+    for (let i = 0; i <= 14; i++) { const a = g.a - JB.half + (2 * JB.half) * i / 14; let L = JB.range; for (let s = 6; s < JB.range; s += 6) { const px = g.x + Math.cos(a) * s, py = g.y + Math.sin(a) * s; if (JB_SOLID.some(R => px > R[0] && px < R[0] + R[2] && py > R[1] && py < R[1] + R[3])) { L = s; break; } } x.lineTo(g.x + Math.cos(a) * L, g.y + Math.sin(a) * L); }
+    x.closePath(); x.fill();
+  }
+  for (const R of JB_SOLID) { const col = R[4] === 'station' ? '#4a1c7d' : R[4] === 'bin' ? '#2e5a3a' : '#22305e'; x.fillStyle = col; x.strokeStyle = '#160526'; x.lineWidth = 3; x.beginPath(); x.roundRect(R[0], R[1], R[2], R[3], 6); x.fill(); x.stroke();
+    if (R[4] === 'car') { x.fillStyle = '#1ee8ff'; x.fillRect(R[0] + R[2] / 2 - 6, R[1] + R[3] / 2 - 3, 5, 6); x.fillStyle = '#ff2d95'; x.fillRect(R[0] + R[2] / 2 + 1, R[1] + R[3] / 2 - 3, 5, 6); }
+    if (R[4] === 'station') { x.fillStyle = '#ffe229'; x.font = '900 18px system-ui'; x.textAlign = 'center'; x.fillText('STATION', R[0] + R[2] / 2, R[1] + R[3] / 2 + 6); x.textAlign = 'left'; } }
+  for (const R of JB_LOW) { x.strokeStyle = '#cbb8e8'; x.lineWidth = 1.5; for (let y = R[1]; y < R[1] + R[3]; y += 8) { x.beginPath(); x.moveTo(R[0], y); x.lineTo(R[0] + R[2], y + 8); x.moveTo(R[0] + R[2], y); x.lineTo(R[0], y + 8); x.stroke(); } }
+  x.strokeStyle = '#ff8a1f'; x.lineWidth = 2; x.strokeRect(30, 292, 36, 36); x.fillStyle = '#ff8a1f'; x.font = '700 9px system-ui'; x.fillText('CAGE', 36, 340);
+  for (const g of jb.guards) { x.fillStyle = '#1b2a6b'; x.strokeStyle = '#160526'; x.lineWidth = 3; x.beginPath(); x.arc(g.x, g.y, 10, 0, 7); x.fill(); x.stroke();
+    x.fillStyle = '#0f173f'; x.beginPath(); x.arc(g.x + Math.cos(g.a) * 4, g.y + Math.sin(g.a) * 4, 6, 0, 7); x.fill();
+    if (g.alert) { x.fillStyle = '#ff2d95'; x.font = '900 16px system-ui'; x.textAlign = 'center'; x.fillText(jb.sus > 0.5 ? '!' : '?', g.x, g.y - 14); x.textAlign = 'left'; } }
+  const hz = jb.hop > 0 ? Math.sin(Math.max(0, jb.hop) / JB.hopDur * Math.PI) * 7 : 0;
+  x.fillStyle = 'rgba(0,0,0,.35)'; x.beginPath(); x.ellipse(jb.x, jb.y + 4, 8, 4, 0, 0, 7); x.fill();
+  if (jb.cover) { x.fillStyle = '#b07a3a'; x.strokeStyle = '#160526'; x.lineWidth = 2.5; x.fillRect(jb.x - 11, jb.y - 11, 22, 22); x.strokeRect(jb.x - 11, jb.y - 11, 22, 22); x.beginPath(); x.moveTo(jb.x - 11, jb.y); x.lineTo(jb.x + 11, jb.y); x.stroke(); }
+  else { const f = jb.face || 0; x.save(); x.translate(jb.x, jb.y - hz); x.rotate(f); x.scale(1.35, 1.35); x.fillStyle = '#111018'; x.strokeStyle = '#ff2d95'; x.lineWidth = 2; x.beginPath(); x.ellipse(0, 0, 9, 7, 0, 0, 7); x.fill(); x.stroke();
+    x.fillStyle = '#3f414b'; x.beginPath(); x.moveTo(8, -3); x.lineTo(15, 0); x.lineTo(8, 3); x.fill(); x.fillStyle = '#fff'; x.beginPath(); x.arc(4, -3, 1.6, 0, 7); x.arc(4, 3, 1.6, 0, 7); x.fill(); x.restore(); }
+}
+// controls: drag anywhere on the lot (virtual stick), Hop/Cover buttons, keyboard
+{ const cv = $('jbCv'); let pid = null, ox = 0, oy = 0;
+  cv.addEventListener('pointerdown', e => { if (!jb.on) return; e.preventDefault(); pid = e.pointerId; ox = e.clientX; oy = e.clientY; cv.setPointerCapture(pid); });
+  cv.addEventListener('pointermove', e => { if (e.pointerId !== pid) return; const dx = e.clientX - ox, dy = e.clientY - oy, d = Math.hypot(dx, dy); if (d < 8) { jb.mx = jb.my = 0; return; } const m = Math.min(1, d / 50); jb.mx = dx / d * m; jb.my = dy / d * m; });
+  const up = e => { if (e.pointerId !== pid) return; pid = null; jb.mx = jb.my = 0; }; cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  const hop = () => { if (jb.on && !jb.cover && jb.hopCd <= 0) { jb.hop = JB.hopDur; jb.hopCd = JB.hopCd; if (!jb.face && jb.face !== 0) jb.face = 0; } };
+  const cover = on => { if (!jb.on) return; jb.cover = on && !(jb.hop > 0); $('jbCover').classList.toggle('down', jb.cover); };
+  $('jbHop').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); $('jbHop').classList.add('down'); hop(); });
+  $('jbHop').addEventListener('pointerup', () => $('jbHop').classList.remove('down'));
+  $('jbCover').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); $('jbCover').setPointerCapture(e.pointerId); cover(true); });
+  for (const ev of ['pointerup', 'pointercancel']) $('jbCover').addEventListener(ev, () => cover(false));
+  const KM = { ArrowLeft: 'l', a: 'l', A: 'l', ArrowRight: 'r', d: 'r', D: 'r', ArrowUp: 'u', w: 'u', W: 'u', ArrowDown: 'd', s: 'd', S: 'd' };
+  addEventListener('keydown', e => { if (!$('jb').classList.contains('show')) return; e.preventDefault(); e.stopImmediatePropagation(); if (KM[e.key]) jbKeys[KM[e.key]] = true; else if (e.key === ' ') hop(); else if (e.key === 'Shift' || e.key === 'c' || e.key === 'C') cover(true); }, true);
+  addEventListener('keyup', e => { if (!$('jb').classList.contains('show')) { for (const k in jbKeys) jbKeys[k] = false; return; } e.stopImmediatePropagation(); if (KM[e.key]) jbKeys[KM[e.key]] = false; else if (e.key === 'Shift' || e.key === 'c' || e.key === 'C') cover(false); }, true);
+  $('jb').addEventListener('pointerdown', e => e.stopPropagation());
+  $('btnBreak').addEventListener('click', e => { e.preventDefault(); if (cage.on && !cage.jbUsed && cage.t >= 0.8) startBreak(); });
+  window.__jbHop = hop; window.__jbCover = cover; }
+const v7j = { JB, jb, startBreak, endBreak, jbStep, jbSees, JB_SOLID, JB_LOW, JB_EXIT, hop: () => window.__jbHop(), cover: on => window.__jbCover(on) };
+const v7b = { v7j, setCarry(n) { carry = n; }, nearMissAward, CASH, cash, cashItems, placeCash, saveCash, cage, bailPrice, cageKro, releaseCage, NEAR, nearStats, carGap, hillBumps, pigSnd, HEAT, puffs, tossPuff, setVolume, get volPref() { return volPref; } };
 
 // ================================================================ v7d: TUTORIAL + ONBOARDING (intro cards, contextual cards, calm enemies, objective banner, phone markers)
 const TUT_KEY = 'totallyACrow.tut.v1', TUT_FREE = 120, TUT_HAWK_HOLD = 120; // seconds of free exploring that also completes it; hawk hold after completion
@@ -7690,6 +7825,7 @@ const v7g = {
 
 function frame() {
   requestAnimationFrame(frame);
+  if (jb.on) { clock.getDelta(); return; } // v7j: the Break Out lot covers the screen; skip the 3D world so the minigame runs smooth on phones
   renderer.info.reset();
   const rdt = paused ? 0 : Math.min(clock.getDelta(), 0.05);
   if (paused) clock.getDelta();
