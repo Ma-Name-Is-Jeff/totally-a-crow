@@ -537,6 +537,19 @@
   #jbEnd.show{display:flex} #jbEnd div{background:linear-gradient(165deg,#331257,#210a3b);border:3px solid #160526;border-radius:16px;padding:12px 20px;text-align:center;box-shadow:0 0 0 2px #1ee8ff}
   #jbEnd h3{margin:0 0 4px;font:900 22px system-ui;color:#ffe229} #jbEnd p{margin:0;font-size:13px}
   @media (max-height:470px){.jbBtn{width:62px;height:62px;font-size:12px}#jbHop{right:82px}#jbHead{height:26px;font-size:13px}}
+  /* v7k: levels */
+  #lvlPill{white-space:nowrap;display:inline-flex;align-items:center;gap:6px;margin:2px 0 4px;padding:2px 8px 2px 3px;border-radius:12px;background:rgba(38,11,61,.72);border:2px solid #160526;font:800 11.5px system-ui,sans-serif;color:#fff9f0;pointer-events:none}
+  #lvlPill b{background:linear-gradient(90deg,#ff2d95,#ff8a1f);color:#fff;padding:1px 6px;border-radius:9px;font-weight:900;letter-spacing:.04em;text-shadow:0 1px 0 #160526}
+  #lvlPill .lb{width:52px;height:5px;border-radius:3px;background:#331257;overflow:hidden} #lvlPill .lb i{display:block;height:100%;width:0;background:linear-gradient(90deg,#1ee8ff,#9cff2e)}
+  #lvlPill span{color:#cbb8e8;font-weight:700}
+  body.dogfight #lvlPill{opacity:0}
+  #lvlUp{position:fixed;left:50%;top:16%;z-index:13;transform:translate(-50%,-10px) scale(.9);opacity:0;pointer-events:none;transition:opacity .35s,transform .35s cubic-bezier(.2,1.6,.4,1);text-align:center;font-family:system-ui,sans-serif;
+    background:linear-gradient(165deg,#331257,#260b3d);border:3px solid #160526;border-radius:18px;padding:10px 22px 12px;box-shadow:0 6px 0 #160526,0 0 0 2px #ff2d95,0 0 26px rgba(255,45,149,.45);min-width:240px;max-width:86vw}
+  #lvlUp.show{opacity:1;transform:translate(-50%,0) scale(1)}
+  #lvlUp .t{font:900 13px system-ui;letter-spacing:.3em;color:#1ee8ff}
+  #lvlUp .n{font:900 34px/1.05 system-ui;color:#ffe229;text-shadow:3px 3px 0 #ff2d95,5px 5px 0 #160526;transform:rotate(-3deg);margin:4px 0 2px}
+  #lvlUp .nm{font:900 15px system-ui;color:#ff8a1f}
+  #lvlUp .u{font:700 12.5px system-ui;color:#9cff2e;margin-top:5px}
 </style>
 </head>
 <body>
@@ -546,6 +559,7 @@
 
 <div id="hud">
   <div id="score">0</div>
+  <div id="lvlPill"><b id="lvlN">LV 1</b><span id="lvlNm">Fledgling</span><div class="lb"><i id="lvlBar"></i></div></div>
   <div id="achBadge" style="display:none"></div>
   <div class="g" id="hpRow"><div id="hearts"></div></div>
   <div class="g" id="heatRow" style="display:none"><span id="heatIcons"></span><span id="heatTxt">HEAT</span><button id="btnDonut" style="display:none">🍩 Eat (−1 heat)</button></div>
@@ -667,6 +681,7 @@
 <div id="jb" role="dialog" aria-label="Break Out"><div id="jbHead"><b>🗝 BREAK OUT</b><span id="jbTime">45s</span><span>👁</span><div id="jbSusW"><div id="jbSus"></div></div></div>
   <div id="jbWrap"><canvas id="jbCv" width="640" height="360"></canvas><div id="jbHint">Drag or WASD to sneak · HOP over low fences (Space) · hold COVER to hide in a box (Shift). Reach EXIT unseen!</div>
   <button class="jbBtn" id="jbHop">HOP</button><button class="jbBtn" id="jbCover">COVER</button><div id="jbEnd"><div><h3 id="jbEndT"></h3><p id="jbEndP"></p></div></div></div></div>
+<div id="lvlUp" aria-live="polite"><div class="t">LEVEL UP!</div><div class="n" id="lvlUpN">LV 2</div><div class="nm" id="lvlUpNm"></div><div class="u" id="lvlUpU"></div></div>
 <div id="airBanner"><b>AIRSTREAM!</b><small></small></div>
 <div id="airBadge"><div class="t"><span>🌬</span><b>AIRSTREAM</b><span id="abName"></span></div><div class="bar"><i id="abStr"></i></div><div id="abInfo"></div></div>
 
@@ -2291,7 +2306,7 @@ function updateRaccoons(dt, time) {
           const pd = (it.obj.position.x - crow.pos.x) ** 2 + (it.obj.position.z - crow.pos.z) ** 2;
           if (pd < 18 * 18) continue; // v7g: don't snatch fries right under the player
           if (d < bd) { bd = d; best = it; } }
-        if (best) { r.state = 'steal'; r.target = best; } else r.t = rand(16, 28);
+        if (best) { r.state = 'steal'; r.target = best; } else r.t = rand(16, 28) * lvlRacK();
       }
     } else if (r.state === 'steal') {
       walking = true;
@@ -2303,7 +2318,7 @@ function updateRaccoons(dt, time) {
       }
     } else if (r.state === 'return' || r.state === 'flee') {
       walking = true;
-      if (racMove(r, r.home.x, r.home.z, r.state === 'flee' ? 7 : 2.8, dt)) { r.state = 'rummage'; r.t = rand(18, 32); r.fries.visible = false; r.g.rotation.y = angLerp(r.g.rotation.y, 0, 0.5); }
+      if (racMove(r, r.home.x, r.home.z, r.state === 'flee' ? 7 : 2.8, dt)) { r.state = 'rummage'; r.t = rand(18, 32) * lvlRacK(); r.fries.visible = false; r.g.rotation.y = angLerp(r.g.rotation.y, 0, 0.5); }
     }
     if (far) continue;
     // little animations: head rummage bob, tail sway, trotting legs
@@ -2890,7 +2905,52 @@ function popup(text, pos, cls = '') {
   if (lg) { d.style.left = clamp((_proj.x * 0.5 + 0.5) * pw, 130, Math.max(130, pw - 130)) + 'px'; d.style.top = clamp((-_proj.y * 0.5 + 0.5) * ph, 70, ph * 0.7) + 'px'; }
   document.body.appendChild(d); setTimeout(() => d.remove(), lg ? 3700 : 1000);
 }
-function addScore(n) { score += n; }
+function addScore(n) { score += n; if (n > 0) lvlGain(n); }
+// ================================================================ v7k: LEVELS (lifetime points → level; hawk only from level 2; gentle ramps after)
+const LVL_KEY = 'totallyACrow.level.v1';
+const LEVELS = [
+  { at: 0, name: 'Fledgling', unlock: '' },
+  { at: 3000, name: 'Rooftop Rookie', unlock: '🦅 The hawk is awake. Watch the skies over his turf!' },
+  { at: 10000, name: 'Alley Ace', unlock: '🦝 Raccoons get bolder and raid snacks more often.' },
+  { at: 25000, name: 'Block Boss', unlock: '🔥 Heat builds a little faster.' },
+  { at: 50000, name: 'Skyline Shade', unlock: '🛸 Drone waves bring an extra drone.' },
+  { at: 90000, name: 'Sky Legend', unlock: '🦅 The hawk rests less after you escape him.' },
+];
+var lvl = (() => {
+  const st = { xp: 0, lv: 1, seeded: '' };
+  try { const v = JSON.parse(localStorage.getItem(LVL_KEY) || 'null'); if (v && isFinite(v.xp)) { st.xp = Math.max(0, +v.xp); st.seeded = v.seeded || ''; } else {
+    // existing saves: credit earlier progress so returning players aren't sent back to the calm level
+    const J = k => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (_) { return null; } };
+    const tutS = J('totallyACrow.tut.v1'), upg = J('totallyACrow.upgrades.v1'), ach = J('crowPatrol.ach.v1'), cashS = J('totallyACrow.cash');
+    const nUpg = upg ? Object.keys(upg.bought || upg).filter(k => (upg.bought || upg)[k] === true || (upg.bought || upg)[k] === 1).length : 0;
+    const nAch = ach && ach.got ? Object.values(ach.got).reduce((a, b) => a + (+b || 0), 0) : 0;
+    const veteran = (tutS && tutS.done) || nUpg > 0 || nAch > 0 || (cashS && cashS.bank > 0);
+    if (veteran) { st.xp = Math.min(25000, 3000 + nUpg * 2500 + nAch * 1000); st.seeded = 'legacy'; }
+  } } catch (_) {}
+  st.lv = lvlFor(st.xp); return st;
+})();
+function lvlFor(xp) { let l = 1; for (let i = 0; i < LEVELS.length; i++) if (xp >= LEVELS[i].at) l = i + 1; return l; }
+function kroLevel() { return lvl.lv; }
+let lvlSaveT = 0;
+function lvlSave(force) { const now = performance.now(); if (!force && now - lvlSaveT < 2000) return; lvlSaveT = now; try { localStorage.setItem(LVL_KEY, JSON.stringify({ xp: Math.round(lvl.xp), lv: lvl.lv, seeded: lvl.seeded })); } catch (_) {} }
+function lvlGain(n) { lvl.xp += n; const L = lvlFor(lvl.xp); if (L > lvl.lv) { const from = lvl.lv; lvl.lv = L; lvlSave(true); lvlUpCard(L, from); } else lvlSave(); lvlHud(); }
+function lvlHud() {
+  const i = lvl.lv - 1, cur = LEVELS[i], nx = LEVELS[i + 1];
+  document.getElementById('lvlN').textContent = 'LV ' + lvl.lv; document.getElementById('lvlNm').textContent = cur.name;
+  document.getElementById('lvlBar').style.width = (nx ? Math.min(100, (lvl.xp - cur.at) / (nx.at - cur.at) * 100) : 100) + '%';
+  document.getElementById('lvlPill').title = nx ? `${Math.round(lvl.xp).toLocaleString()} / ${nx.at.toLocaleString()} pts to LV ${lvl.lv + 1}` : 'Max level';
+}
+let lvlUpTO = 0;
+function lvlUpCard(L) {
+  const el = document.getElementById('lvlUp'); document.getElementById('lvlUpN').textContent = 'LV ' + L; document.getElementById('lvlUpNm').textContent = LEVELS[L - 1].name;
+  document.getElementById('lvlUpU').textContent = LEVELS[L - 1].unlock; el.classList.add('show'); clearTimeout(lvlUpTO); lvlUpTO = setTimeout(() => el.classList.remove('show'), 4200);
+  try { sfx.healChime && sfx.healChime(); } catch (_) {}
+}
+function lvlRacK() { return lvl.lv >= 3 ? 0.75 : 1; }      // L3+: raccoons rummage shorter, raid more often
+function lvlHeatK() { return lvl.lv >= 4 ? 0.9 : 1; }      // L4+: Heat climbs 10% faster
+function lvlDroneN(n) { return lvl.lv >= 5 && n === 3 ? 4 : n; } // L5+: regular drone waves +1
+function lvlHawkRest() { return lvl.lv >= 6 ? 140 : HAWK_TERR.escCd; } // L6: hawk rests 140 s instead of 180
+lvlHud(); lvlSave(true);
 
 function forward(yaw, out) { return out.set(-Math.sin(yaw), 0, -Math.cos(yaw)); }
 const _f = new THREE.Vector3(), _r = new THREE.Vector3();
@@ -4217,7 +4277,7 @@ const _hs = new THREE.Vector3(), _hv = new THREE.Vector3(), _hd = new THREE.Vect
 const HAWK_TERR = { x: -170, z: 190, r: 150, margin: 25, giveDist: 40, giveT: 4, escCd: 180 };
 const hawkTerr = { stats: { escapes: 0, giveUps: 0, last: '' }, enterMsgT: 0, wasIn: false };
 const terrOut = p => Math.hypot(p.x - HAWK_TERR.x, p.z - HAWK_TERR.z) - HAWK_TERR.r; // < 0 inside
-function hawkEscaped(why) { hawk.esc = HAWK_TERR.escCd; hawk.outT = 0; hawk.goHome = true; /* then he flies back home */ hawkTerr.stats.escapes++; hawkTerr.stats.last = why; }
+function hawkEscaped(why) { hawk.esc = lvlHawkRest(); hawk.outT = 0; hawk.goHome = true; /* then he flies back home */ hawkTerr.stats.escapes++; hawkTerr.stats.last = why; }
 function hawkRetreat(cd) { if (hawk.state === 'patrol') { hawk.cd = Math.max(hawk.cd, cd * dset().hawkCd); return; } hawk.state = 'retreat'; hawk.t = 0; hawk.cd = cd * dset().hawkCd; setHawkWarn(false); }
 const elHawkWarn = $('hawkWarn');
 let hawkWarnOn = false;
@@ -4247,6 +4307,7 @@ function hawkScream(force) { // throttled: only near (≤35 m) or on lock/attack
 }
 function dfBanner(big, small, cls) { elDfBanner.className = cls || ''; elDfBanner.firstElementChild.textContent = big; elDfBanner.lastElementChild.textContent = small || ''; restartAnim(elDfBanner, 'go'); }
 function startDogfight() {
+  if (kroLevel() < 2) return; // v7k
   const D = dogfight; D.on = true; dfActive = true; D.t = 0; D.meter = 0; D.phase = 'lock'; D.phT = 0; D.losT = 0; D.airT = 0; D.hitCd = 0; D.atkT = dfd().atkEvery; D.side = Math.random() < 0.5 ? -1 : 1;
   D.stats.locks++; hawk.state = 'chase'; hawk.t = 0;
   document.body.classList.add('dogfight'); setHawkWarn(false);
@@ -4391,7 +4452,7 @@ function updateHawkIndicator() {
   elHawkInd.dataset.d = Math.round(hawk.pos.distanceTo(crow.pos)) + 'm';
 }
 function updateHawk(dt, time) {
-  const H = hawk, on = enemiesOn() && started;
+  const H = hawk, on = enemiesOn() && started && kroLevel() >= 2; // v7k: no hawk at all in level 1
   H.esc = Math.max(0, (H.esc || 0) - dt); // v7e escape cooldown
   H.g.visible = on; H.shadow.visible = on;
   screamCd -= dt;
@@ -6690,7 +6751,7 @@ function droneSpawn(D, swarm) {
 }
 function activeDrones() { return drones.filter(D => D.st !== 'off' && D.st !== 'down' && D.st !== 'leave'); }
 function launchWave(kind) {
-  heat.wave = kind; heat.waveBlasted = false; const n = kind === 'swarm' ? 10 : 3;
+  heat.wave = kind; heat.waveBlasted = false; const n = lvlDroneN(kind === 'swarm' ? 10 : 3);
   const act = activeDrones(); for (const D of act) D.swarm = kind === 'swarm';
   let need = n - act.length; for (const D of drones) { if (need <= 0) break; if (D.st === 'off') { droneSpawn(D, kind === 'swarm'); need--; } }
   sfx.droneWarn && sfx.droneWarn();
@@ -7213,6 +7274,7 @@ function jbDraw() {
   $('jb').addEventListener('pointerdown', e => e.stopPropagation());
   $('btnBreak').addEventListener('click', e => { e.preventDefault(); if (cage.on && !cage.jbUsed && cage.t >= 0.8) startBreak(); });
   window.__jbHop = hop; window.__jbCover = cover; }
+const v7k = { LEVELS, LVL_KEY, get lvl() { return lvl; }, kroLevel, lvlGain, lvlFor, lvlSave, lvlHud, lvlUpCard, lvlRacK, lvlHeatK, lvlDroneN, lvlHawkRest };
 const v7j = { JB, jb, startBreak, endBreak, jbStep, jbSees, JB_SOLID, JB_LOW, JB_EXIT, hop: () => window.__jbHop(), cover: on => window.__jbCover(on) };
 const v7b = { v7j, setCarry(n) { carry = n; }, nearMissAward, CASH, cash, cashItems, placeCash, saveCash, cage, bailPrice, cageKro, releaseCage, NEAR, nearStats, carGap, hillBumps, pigSnd, HEAT, puffs, tossPuff, setVolume, get volPref() { return volPref; } };
 
@@ -7224,7 +7286,7 @@ function loadTut() { try { const v = JSON.parse(localStorage.getItem(TUT_KEY) ||
 const tut = { st: loadTut(), open: '', introI: -1, freeT: 0, moved: 0, scanT: 0, hold: 0, force: '', objShown: false, goAt: 0, stats: { shown: [], finished: '' } };
 function saveTut() { try { localStorage.setItem(TUT_KEY, JSON.stringify(tut.st)); } catch (_) {} }
 function tutCalm() { return started && !tut.st.done; }                 // enemies stay passive until the tutorial is complete
-function tutHawkHold() { return tutCalm() || tut.hold > 0; }           // LEVELS HOOK: once levels exist, also return true while level < 2 (see ROADMAP v7d)
+function tutHawkHold() { return tutCalm() || tut.hold > 0 || kroLevel() < 2; } // v7k: levels hook — hawk held until level 2
 const tutSeen = k => !!(tut.st.all || tut.st.seen[k]);
 // ---- simple original illustrations (inline SVG + replicas of the real on-screen buttons)
 const T_BTN = { up: ['▲', 'FLAP', 'rgba(60,160,255,.9)'], down: ['▼', 'DIVE', 'rgba(140,95,255,.9)'], soar: ['➶', 'SOAR', 'rgba(255,190,40,.95)'], gust: ['≋', 'GUST', 'rgba(120,200,235,.95)'], drop: ['●', 'DROP', 'rgba(255,122,60,.92)'], brake: ['◇', 'BRAKE', 'rgba(40,190,130,.9)'] };
@@ -7382,7 +7444,7 @@ function flapStam(dt) { return (upgHas('easyFlap') ? 11 : 16) * dt; }
 function flapTapCost() { return upgHas('easyFlap') ? 3 : 4; }
 function soarDrain(dt) { return (upgHas('trailWind') ? 9 : 14) * dt; }
 function soarMult() { return (upgHas('trailWind') ? 2.45 : 2.2) * (clsIs('scavenger') ? 0.9 : 1); }
-function heatIncCd() { return (upgHas('slowSimmer') ? 1.15 : HEAT.incCd) * (clsIs('mayhem') ? 0.65 : 1); }
+function heatIncCd() { return (upgHas('slowSimmer') ? 1.15 : HEAT.incCd) * (clsIs('mayhem') ? 0.65 : 1) * lvlHeatK(); }
 function hawkMarg() { return upgHas('watchful') ? 18 : HAWK_TERR.margin; }
 function netWind(base) { return base + (upgHas('wideGlance') ? 0.35 : 0); }
 function droneFuse() { return HEAT.drone.fuse + (upgHas('wideGlance') ? 0.25 : 0); }
@@ -7884,7 +7946,7 @@ function frame() {
 }
 frame();
 setClass(kroClass, true); // v7i: after upgrade state exists
-window.__crowGame = { v7g, v7e, v7d, v7b, v7, v6d, v6c: { ...v6c, THREE, HILLS, hillAt: (x, z) => hillAt(x, z), groundAt, heal, questHeartReward, DIFF }, v6b: { ach, ACH_TRACKS, achAdvance, achHas, netBust, heist, heistRac, HEIST_SITES, startHeist, heistSave, heistActive, gust, GUST, startGust, trashCans, TREES, gdrops, spawnDrop, FP, onFootpath, parkProps, renderAch, showAch, banQ, stats: v6b.stats, knockPed, megaDur, saveAch, get dogfightOn() { return dogfight.on; }, pond, goose, gooseG, GZ, gooseHit, defeatGoose, respawnGoose, gustGoose, pigeons, flock, FLOCKS, scatterAt, fisher, FISH, crumbs, tossCrumbs, inLeash, crowCrown, syncCrown }, cameo: { state: cameo, gears, bot, skins, cstats, grantAllGears, resetCameo, talkToBot, closeDialog, applySkin, BOT_POS, TOWER, gearCar, get dialogOpen() { return dialogOpen; }, get skinCur() { return skinCur; }, circFx, CIRC_U, circParts }, colliders, colliderAt, groundAt, groundLayers, grassFx, skyDome, enemy: { dogfight, chaseMusic, startDogfight, endDogfight, hawkCrash, losBlocked, DF_DIFF, hitPed, movingCars, hawk, netters, hurt, heal, knockOut, respawn, resetEnemies, gameSet, ens, ko, setHawkWarn, get hp() { return crow.hp; } }, airFx, musStats, get mus() { return mus; }, get megaTime() { return megaTime; }, setMega(v) { megaTime = v; }, fxSet, get actx() { return actx; }, renderer, camera, scene, crow, peds, items, projectiles, input, dropBomb, restart, get score() { return score; }, get phonesHit() { return phonesHit; }, get paused() { return paused; }, get quest() { return quest; }, get carry() { return carry; }, NEST, movingCars, colliders, questProgress, newQuest, get qTarget() { return qTarget; }, air, streams, raccoons, get layout() { return layout; }, applyLayout, openMenu, closeMenu, menuPage, get menuOpen() { return menuOpen; }, get customizing() { return customizing; }, start() { $('start').style.display = 'none'; started = true; }, roll, ROLL, startRoll, flick, FLICK, flickCheck };
+window.__crowGame = { v7k, v7g, v7e, v7d, v7b, v7, v6d, v6c: { ...v6c, THREE, HILLS, hillAt: (x, z) => hillAt(x, z), groundAt, heal, questHeartReward, DIFF }, v6b: { ach, ACH_TRACKS, achAdvance, achHas, netBust, heist, heistRac, HEIST_SITES, startHeist, heistSave, heistActive, gust, GUST, startGust, trashCans, TREES, gdrops, spawnDrop, FP, onFootpath, parkProps, renderAch, showAch, banQ, stats: v6b.stats, knockPed, megaDur, saveAch, get dogfightOn() { return dogfight.on; }, pond, goose, gooseG, GZ, gooseHit, defeatGoose, respawnGoose, gustGoose, pigeons, flock, FLOCKS, scatterAt, fisher, FISH, crumbs, tossCrumbs, inLeash, crowCrown, syncCrown }, cameo: { state: cameo, gears, bot, skins, cstats, grantAllGears, resetCameo, talkToBot, closeDialog, applySkin, BOT_POS, TOWER, gearCar, get dialogOpen() { return dialogOpen; }, get skinCur() { return skinCur; }, circFx, CIRC_U, circParts }, colliders, colliderAt, groundAt, groundLayers, grassFx, skyDome, enemy: { dogfight, chaseMusic, startDogfight, endDogfight, hawkCrash, losBlocked, DF_DIFF, hitPed, movingCars, hawk, netters, hurt, heal, knockOut, respawn, resetEnemies, gameSet, ens, ko, setHawkWarn, get hp() { return crow.hp; } }, airFx, musStats, get mus() { return mus; }, get megaTime() { return megaTime; }, setMega(v) { megaTime = v; }, fxSet, get actx() { return actx; }, renderer, camera, scene, crow, peds, items, projectiles, input, dropBomb, restart, get score() { return score; }, get phonesHit() { return phonesHit; }, get paused() { return paused; }, get quest() { return quest; }, get carry() { return carry; }, NEST, movingCars, colliders, questProgress, newQuest, get qTarget() { return qTarget; }, air, streams, raccoons, get layout() { return layout; }, applyLayout, openMenu, closeMenu, menuPage, get menuOpen() { return menuOpen; }, get customizing() { return customizing; }, start() { $('start').style.display = 'none'; started = true; }, roll, ROLL, startRoll, flick, FLICK, flickCheck };
 </script>
 </body>
 </html>
