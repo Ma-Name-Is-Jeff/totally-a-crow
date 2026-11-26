@@ -550,6 +550,13 @@
   #lvlUp .n{font:900 34px/1.05 system-ui;color:#ffe229;text-shadow:3px 3px 0 #ff2d95,5px 5px 0 #160526;transform:rotate(-3deg);margin:4px 0 2px}
   #lvlUp .nm{font:900 15px system-ui;color:#ff8a1f}
   #lvlUp .u{font:700 12.5px system-ui;color:#9cff2e;margin-top:5px}
+  /* v7l: Spirit Squirrel event */
+  #sqHud{position:fixed;left:50%;top:max(8px,var(--st));transform:translateX(-50%);z-index:12;display:none;align-items:center;gap:10px;padding:6px 8px 6px 14px;border-radius:16px;font:800 14px system-ui,sans-serif;color:#fff9f0;
+    background:linear-gradient(165deg,#331257,#260b3d);border:3px solid #160526;box-shadow:0 5px 0 #160526,0 0 0 2px #1ee8ff,0 0 20px rgba(30,232,255,.45);white-space:nowrap}
+  #sqHud.show{display:flex} #sqHud b{color:#1ee8ff;letter-spacing:.06em} #sqT{color:#ffe229;min-width:34px} #sqN{color:#9cff2e} #sqW{color:#ff8a1f}
+  #sqBack{font:900 12px system-ui;padding:6px 10px;border-radius:12px;border:2px solid #160526;background:linear-gradient(180deg,#ff2d95,#ff8a1f);color:#fff;box-shadow:0 3px 0 #160526;cursor:pointer}
+  body.squirrel #quest{opacity:.25} body.squirrel #btnGust,body.squirrel #btnSoar,body.squirrel #btnDrop{opacity:.3;pointer-events:none}
+  @media (max-height:470px){#sqHud{font-size:12px;gap:7px;padding:4px 6px 4px 10px}}
 </style>
 </head>
 <body>
@@ -681,6 +688,7 @@
 <div id="jb" role="dialog" aria-label="Break Out"><div id="jbHead"><b>🗝 BREAK OUT</b><span id="jbTime">45s</span><span>👁</span><div id="jbSusW"><div id="jbSus"></div></div></div>
   <div id="jbWrap"><canvas id="jbCv" width="640" height="360"></canvas><div id="jbHint">Drag or WASD to sneak · HOP over low fences (Space) · hold COVER to hide in a box (Shift). Reach EXIT unseen!</div>
   <button class="jbBtn" id="jbHop">HOP</button><button class="jbBtn" id="jbCover">COVER</button><div id="jbEnd"><div><h3 id="jbEndT"></h3><p id="jbEndP"></p></div></div></div></div>
+<div id="sqHud"><b>🐿 SPIRIT SQUIRREL</b><span id="sqT">60s</span><span id="sqN">🌰 0/10</span><span id="sqW">🪵 0</span><button id="sqBack">🐦‍⬛ Back to Kro</button></div>
 <div id="lvlUp" aria-live="polite"><div class="t">LEVEL UP!</div><div class="n" id="lvlUpN">LV 2</div><div class="nm" id="lvlUpNm"></div><div class="u" id="lvlUpU"></div></div>
 <div id="airBanner"><b>AIRSTREAM!</b><small></small></div>
 <div id="airBadge"><div class="t"><span>🌬</span><b>AIRSTREAM</b><span id="abName"></span></div><div class="bar"><i id="abStr"></i></div><div id="abInfo"></div></div>
@@ -2684,6 +2692,7 @@ const soarHeld = () => input.soarBtn || input.soarTap || keys.has('e');
 const ROLL = { dur: 0.42, cd: 1.0, push: 15 };
 const roll = { t: 0, dir: 0, cd: 0, on: false, dodges: 0, count: 0 };
 function startRoll(dir) {
+  if (sqr.on) return false;
   if (!started || paused || ko.on || roll.on || roll.cd > 0 || crow.stun > 0) return false;
   roll.on = true; roll.t = 0; roll.dir = dir; roll.count++; sfx.roll(dir); buzz(18);
   return true;
@@ -2963,7 +2972,7 @@ function flapImpulse() {
 }
 
 function dropBomb() {
-  if (!started || dropCd > 0) return;
+  if (!started || dropCd > 0 || sqr.on) return; // v7l: squirrels don't drop
   if (crow.ammo < 1) { showMsg('Out of ammo! Fly low through 🍟 fries to refill (+5 each)', 2); if (!tutSeen('fries')) tut.force = 'fries'; return; }
   crow.ammo -= 1; dropCd = megaTime > 0 ? 0.35 : 0.22;
   forward(crow.yaw, _f);
@@ -3819,6 +3828,12 @@ function chaseCamTarget(outPos, outLook) {
   const gh = groundAt(outPos.x, outPos.z) + 0.8; if (outPos.y < gh) outPos.y = gh;
 }
 function updateCamera(rdt) {
+  if (sqr.on) { // v7l: low chase cam for the squirrel run
+    forward(crow.yaw, _f); const cx = crow.pos.x - _f.x * 9, cz = crow.pos.z - _f.z * 9;
+    _cp.set(cx, Math.max(crow.pos.y + 6, groundAt(cx, cz) + 3), cz); _cl.set(crow.pos.x + _f.x * 2.5, crow.pos.y + 0.6, crow.pos.z + _f.z * 2.5);
+    camPos.lerp(_cp, damp(5, rdt)); camLook.lerp(_cl, damp(8, rdt)); camera.position.copy(camPos); camera.lookAt(camLook);
+    const [vw_, vh_] = viewSize(); camera.fov = lerp(camera.fov, vw_ < vh_ ? 72 : 60, damp(3, rdt)); camera.updateProjectionMatrix(); return;
+  }
   const D = dogfight; D.camK = lerp(D.camK, D.on ? 1 : 0, damp(D.on ? 3 : 1.8, rdt)); const ck = smooth(0, 1, D.camK);
   const thr = viewSet.autoFrame && !D.on && started ? threatNow() : null; if (thr) camThreat.copy(thr); camThreatK = lerp(camThreatK, thr ? 1 : 0, damp(2.5, rdt));
   camZ = lerp(camZ, viewSet.zoom * (1 + 0.28 * camThreatK), damp(4, rdt));
@@ -4686,7 +4701,7 @@ function updateEnemies(dt, time) {
   updateHawk(dt, time);
   updateNetters(dt);
   if (crow.invuln > 0) crow.invuln -= dt;
-  crow.group.visible = !(crow.invuln > 0 && !ko.on) || Math.floor(time * 14) % 2 === 0;
+  crow.group.visible = !sqr.on && (!(crow.invuln > 0 && !ko.on) || Math.floor(time * 14) % 2 === 0); // v7l: hidden while Kro is a squirrel
   // v6c: no passive heart regeneration. Hearts come back only from bird baths (and future quest rewards: questHeartReward).
   if (ko.on) {
     ko.t += dt; if (ko.t > 1.6) $('koBtn').disabled = false; if (ko.t > 6 && !cage.on) respawn();
@@ -5361,6 +5376,7 @@ function drawHeistMap(g, tm, k, W) {
 const GUST = { dur: 0.72, fire: 0.3, cd: 4.5, cdDf: 7.5, cost: 12, range: 19, cos: 0.8 };
 const gust = { on: false, t: 0, cd: 0, cdMax: 4.5, fired: false, dir: new THREE.Vector3(), org: new THREE.Vector3(), pend: [], count: 0, hits: { peds: 0, nets: 0, cans: 0, rac: 0, trees: 0, hawk: 0, drops: 0 } };
 function startGust() {
+  if (sqr.on) return false;
   if (!started || paused || ko.on || gust.on || gust.cd > 0 || crow.stun > 0) return false;
   if (crow.stamina < 6) { showMsg('Too tired to gust, catch your breath', 1.2); return false; }
   crow.stamina = Math.max(0, crow.stamina - GUST.cost); gust.on = true; gust.t = 0; gust.fired = false; gust.count++; v6b.stats.gusts++;
@@ -6366,7 +6382,7 @@ function aimTarget(P, rr) {
   return best ? { ...best, kind } : null;
 }
 function updateDropAim(rdt, time) {
-  const show = started && !ko.on;
+  const show = started && !ko.on && !sqr.on;
   const P = show ? predictPath() : null;
   let want = 0;
   if (P) {
@@ -7274,6 +7290,135 @@ function jbDraw() {
   $('jb').addEventListener('pointerdown', e => e.stopPropagation());
   $('btnBreak').addEventListener('click', e => { e.preventDefault(); if (cage.on && !cage.jbUsed && cage.t >= 0.8) startBreak(); });
   window.__jbHop = hop; window.__jbCover = cover; }
+// ================================================================ v7l: SPIRIT SQUIRREL EVENT (Bran: become a squirrel for tree tasks, ground-only until you
+// transform back; nut collection; woodpeckers are enemies — stop them pecking/damaging the trees)
+const SQ_KEY = 'totallyACrow.squirrel.v1';
+const SQ = { every: [240, 360], stay: 75, dur: 60, nuts: 10, touch: 4.2, run: 7.5, hop: 12, shoo: 3.4, peckRate: 9, wpEvery: 7, wpMax: 2, areaR: 135, nutPts: 100, shooPts: 200, savePts: 500 };
+var sqr = { on: false, spirit: null, spawnT: 0, t: 0, nuts: [], got: 0, shoo: 0, lost: 0, wps: [], wpT: 0, hopT: 0, vy: 0, res: null };
+const sqSave = (() => { try { return Object.assign({ runs: 0, nuts: 0, best: 0, shoos: 0, saved: 0 }, JSON.parse(localStorage.getItem(SQ_KEY) || '{}')); } catch (_) { return { runs: 0, nuts: 0, best: 0, shoos: 0, saved: 0 }; } })();
+function sqStore() { try { localStorage.setItem(SQ_KEY, JSON.stringify(sqSave)); } catch (_) {} }
+sqr.spawnT = rand(150, 240); // first one comes a bit sooner than later ones
+const sqParkTrees = () => TREES.filter(t => Math.hypot(t.x - POND.x, t.z - POND.z) < SQ.areaR && !inPond(t.x, t.z));
+// ghostly spirit squirrel model (shared by the park spirit and Kro's squirrel form)
+function sqModel(tint) {
+  const g = new THREE.Group(), m = new THREE.MeshToonMaterial({ color: tint, emissive: tint, emissiveIntensity: 0.55, transparent: true, opacity: 0.86, gradientMap: toonGrad }), dark = M(0x160526, { accent: true });
+  const S = (r, x, y, z, sx = 1, sy = 1, sz = 1, mat = m) => { const o = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 9), mat); o.position.set(x, y, z); o.scale.set(sx, sy, sz); g.add(o); return o; };
+  S(0.32, 0, 0.36, 0, 0.9, 1, 1.25); S(0.22, 0, 0.62, -0.32); S(0.07, 0.11, 0.86, -0.3, 0.8, 1.5, 0.6); S(0.07, -0.11, 0.86, -0.3, 0.8, 1.5, 0.6);
+  S(0.035, 0.09, 0.66, -0.51, 1, 1, 1, dark); S(0.035, -0.09, 0.66, -0.51, 1, 1, 1, dark); S(0.03, 0, 0.58, -0.54, 1, 1, 1, dark);
+  for (const [x, z] of [[0.15, -0.22], [-0.15, -0.22], [0.17, 0.25], [-0.17, 0.25]]) S(0.08, x, 0.08, z, 1, 0.7, 1.3);
+  const tail = new THREE.Group(); tail.position.set(0, 0.35, 0.38); g.add(tail);
+  for (let i = 0; i < 6; i++) { const u = i / 5, o = new THREE.Mesh(new THREE.SphereGeometry(0.2 + 0.08 * Math.sin(u * Math.PI), 10, 8), m); o.position.set(0, u * 0.95, 0.12 + Math.sin(u * 2.6) * 0.32); tail.add(o); }
+  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: sparkTex, color: tint, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false })); glow.scale.setScalar(2.6); glow.position.y = 0.6; g.add(glow);
+  g.userData = { tail, glow, mat: m }; return g;
+}
+const sqSpirit = sqModel(0x7ff6ff); sqSpirit.scale.setScalar(1.7); sqSpirit.visible = false; scene.add(sqSpirit);
+const sqForm = sqModel(0xc58cff); sqForm.scale.setScalar(1.9); sqForm.visible = false; scene.add(sqForm);
+const sqBeacon = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 1.4, 60, 12, 1, true), new THREE.MeshBasicMaterial({ color: 0x1ee8ff, transparent: true, opacity: 0.22, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
+sqBeacon.visible = false; scene.add(sqBeacon);
+const sqNutGeo = new THREE.SphereGeometry(0.32, 10, 8), sqNutMat = new THREE.MeshToonMaterial({ color: 0xffe229, emissive: 0xff8a1f, emissiveIntensity: 0.6, gradientMap: toonGrad }), sqCapMat = M(0x6b4a2a, { accent: true });
+function sqNut() { const g = new THREE.Group(); const b = new THREE.Mesh(sqNutGeo, sqNutMat); b.scale.set(1, 1.2, 1); g.add(b); const c = new THREE.Mesh(new THREE.SphereGeometry(0.34, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), sqCapMat); c.position.y = 0.16; g.add(c);
+  const gl = new THREE.Sprite(new THREE.SpriteMaterial({ map: sparkTex, color: 0xffe229, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false })); gl.scale.setScalar(1.6); g.add(gl); scene.add(g); return g; }
+function sqWoodpecker() { const g = new THREE.Group(), body = M(0x2a2a3a, { accent: true }), wht = M(0xf4f0e6, { accent: true }), red = M(0xff2d95, { accent: true }), bk = M(0xe8c45c, { accent: true });
+  const b = new THREE.Mesh(new THREE.SphereGeometry(0.28, 10, 8), body); b.scale.set(0.85, 1.25, 0.8); g.add(b); addOutline(b, 1.1);
+  const w = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 6), wht); w.position.set(0, -0.05, -0.12); w.scale.set(0.9, 1.3, 0.5); g.add(w);
+  const h = new THREE.Mesh(new THREE.SphereGeometry(0.17, 10, 8), body); h.position.set(0, 0.38, -0.08); g.add(h); addOutline(h, 1.1);
+  const c = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.22, 6), red); c.position.set(0, 0.55, 0.0); c.rotation.x = 0.5; g.add(c);
+  const k = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.3, 6), bk); k.position.set(0, 0.36, -0.3); k.rotation.x = -Math.PI / 2; g.add(k);
+  g.userData.head = h; g.userData.beak = k; g.userData.crest = c; scene.add(g); return g; }
+function sqShowCard(title, name, line, col) {
+  const el = $('lvlUp'); el.querySelector('.t').textContent = title; $('lvlUpN').textContent = name; $('lvlUpNm').textContent = ''; $('lvlUpU').innerHTML = line;
+  el.style.boxShadow = `0 6px 0 #160526,0 0 0 2px ${col},0 0 26px ${col}88`; el.classList.add('show'); clearTimeout(lvlUpTO); lvlUpTO = setTimeout(() => { el.classList.remove('show'); el.style.boxShadow = ''; el.querySelector('.t').textContent = 'LEVEL UP!'; }, 4200);
+}
+function sqCanSpawn() { return started && !paused && !sqr.on && !sqr.spirit && heat.lvl === 0 && !dogfight.on && !ko.on && !cage.on && !jb.on && !tutCalm(); }
+function spawnSpirit(force) {
+  if (!force && !sqCanSpawn()) return false; if (sqr.on || sqr.spirit) return false;
+  const trees = sqParkTrees(); if (!trees.length) return false; const T = trees[Math.floor(Math.random() * trees.length)];
+  const a = rand(0, 6.28), x = T.x + Math.cos(a) * 2.6, z = T.z + Math.sin(a) * 2.6;
+  sqr.spirit = { x, z, t: SQ.stay, tree: T }; sqSpirit.visible = sqBeacon.visible = true; sqSpirit.position.set(x, groundAt(x, z), z); sqBeacon.position.set(x, groundAt(x, z) + 30, z);
+  showMsg('✨ A Spirit Squirrel appeared in the park! Land next to it…', 3, true); return true;
+}
+function despawnSpirit() { sqr.spirit = null; sqSpirit.visible = sqBeacon.visible = false; }
+function startSquirrel(force) {
+  if (sqr.on || (!force && (!sqr.spirit || cage.on || ko.on || jb.on))) return false;
+  const sp = sqr.spirit || { x: crow.pos.x, z: crow.pos.z }; despawnSpirit();
+  if (hover.on) endHover(); if (dogfight.on) endDogfight('', 0);
+  Object.assign(sqr, { on: true, t: SQ.dur, got: 0, shoo: 0, lost: 0, wpT: 3, hopT: 0, vy: 0, res: null });
+  crow.pos.set(sp.x, groundAt(sp.x, sp.z) + 0.05, sp.z); crow.speed = 0; crow.vy = 0; crow.soaring = false;
+  const trees = sqParkTrees().sort((a, b) => Math.hypot(a.x - sp.x, a.z - sp.z) - Math.hypot(b.x - sp.x, b.z - sp.z)).slice(0, 18);
+  sqr.trees = trees.map(t => ({ t, hp: 100, wp: null }));
+  sqr.nuts.forEach(n => scene.remove(n.g)); sqr.nuts = [];
+  for (let i = 0; i < SQ.nuts; i++) { const T = trees[i % trees.length], a = rand(0, 6.28), r = rand(2.2, 3.6), x = T.x + Math.cos(a) * r, z = T.z + Math.sin(a) * r; const g = sqNut(); g.position.set(x, groundAt(x, z) + 0.45, z); sqr.nuts.push({ g, x, z, got: false }); }
+  sqForm.visible = true; document.body.classList.add('squirrel'); showMsg('', 0.01, true); $('sqHud').classList.add('show'); sqHud();
+  sqShowCard('SPIRIT TRANSFORMATION', '🐿 SQUIRREL KRO', 'Grab the glowing nuts 🌰 and chase woodpeckers 🪵 off the trees!<br><small>Ground only · FLAP = hop · steer with the stick</small>', '#1ee8ff');
+  try { sfx.healChime && sfx.healChime(); } catch (_) {}
+  return true;
+}
+function sqHud() { $('sqT').textContent = Math.max(0, Math.ceil(sqr.t)) + 's'; $('sqN').textContent = `🌰 ${sqr.got}/${SQ.nuts}`; $('sqW').textContent = `🪵 ${sqr.shoo}` + (sqr.lost ? ` · 💔${sqr.lost}` : ''); }
+function endSquirrel(reward = true) {
+  if (!sqr.on) return null; sqr.on = false; sqForm.visible = false; document.body.classList.remove('squirrel'); $('sqHud').classList.remove('show');
+  sqr.nuts.forEach(n => scene.remove(n.g)); sqr.nuts = []; for (const W of sqr.wps) scene.remove(W.g); sqr.wps = [];
+  crow.pos.y = groundAt(crow.pos.x, crow.pos.z) + 6; crow.vy = 6; crow.speed = 6; crow.invuln = Math.max(crow.invuln || 0, 1.5);
+  const res = { nuts: sqr.got, shoo: sqr.shoo, lost: sqr.lost, pts: 0, healed: false, reward };
+  if (reward) {
+    res.pts = sqr.got * SQ.nutPts + sqr.shoo * SQ.shooPts + (sqr.lost === 0 && sqr.shoo > 0 ? SQ.savePts : 0);
+    if (res.pts) addScore(res.pts);
+    const hp0 = crow.hp; heal(1); res.healed = crow.hp > hp0;
+    sqSave.runs++; sqSave.nuts += sqr.got; sqSave.best = Math.max(sqSave.best, sqr.got); sqSave.shoos += sqr.shoo; if (sqr.lost === 0) sqSave.saved++; sqStore();
+    sqShowCard('SPIRIT BLESSING', `+${res.pts.toLocaleString()} pts`, `🌰 ${sqr.got} nuts · 🪵 ${sqr.shoo} woodpeckers shooed` + (sqr.lost ? ` · 💔 ${sqr.lost} tree${sqr.lost > 1 ? 's' : ''} pecked` : sqr.shoo ? ' · 🌳 every tree saved +500' : '') + (res.healed ? '<br>💚 +1 ♥ from the spirit' : ''), '#9cff2e');
+  } else showMsg('🐦‍⬛ Back to Kro', 1.6, true);
+  sqr.res = res; sqr.spawnT = rand(SQ.every[0], SQ.every[1]); return res;
+}
+function updateSquirrel(dt, time) { // replaces updateCrow while transformed: ground-only run, steer with the stick, FLAP = hop
+  const [kx] = keyAxes(); const jx = clamp(input.jx + kx, -1, 1);
+  crow.yawRate = lerp(crow.yawRate || 0, -jx * 2.6, damp(8, dt)); crow.yaw += crow.yawRate * dt;
+  const slow = input.dive || input.brake; let sp = slow ? 1.2 : SQ.run; if (sqr.hopT > 0) sp = SQ.hop;
+  if (input.flap && sqr.hopT <= -0.25) { sqr.hopT = 0.5; sqr.vy = 5.5; }
+  sqr.hopT -= dt; crow.speed = lerp(crow.speed, sp, damp(5, dt));
+  forward(crow.yaw, _f); let nx = crow.pos.x + _f.x * crow.speed * dt, nz = crow.pos.z + _f.z * crow.speed * dt;
+  if (inPond(nx, nz) || colliderAt(nx, nz) || Math.hypot(nx - POND.x, nz - POND.z) > SQ.areaR + 10) { nx = crow.pos.x; nz = crow.pos.z; crow.yaw += 2.2 * dt * Math.sign(crow.yawRate || 1); }
+  for (const R of sqr.trees) { const T = R.t, d = Math.hypot(nx - T.x, nz - T.z), r = 0.55 * (T.s || 1) + 0.4; if (d < r) { nx = T.x + (nx - T.x) / (d || 1) * r; nz = T.z + (nz - T.z) / (d || 1) * r; } }
+  const gy = groundAt(nx, nz); sqr.vy -= 18 * dt; let y = crow.pos.y + sqr.vy * dt; if (y <= gy + 0.05) { y = gy + 0.05; sqr.vy = 0; }
+  crow.pos.set(nx, y, nz); crow.vy = 0; crow.soaring = false; crow.inAir = false; crow.curSpeed = crow.speed;
+  crow.stamina = Math.min(stamMax(), crow.stamina + 10 * dt);
+  crow.group.position.copy(crow.pos); crow.group.rotation.set(0, crow.yaw, 0);
+  sqForm.position.copy(crow.pos); sqForm.rotation.set(0, crow.yaw, 0);
+  const run = crow.speed / SQ.run; sqForm.userData.tail.rotation.x = -0.25 + Math.sin(time * 10) * 0.18 * run; sqForm.position.y += Math.abs(Math.sin(time * 12)) * 0.12 * run;
+}
+function updateSquirrelWorld(dt, time) {
+  if (!started) return;
+  if (sqr.spirit) { const S = sqr.spirit; S.t -= dt;
+    sqSpirit.rotation.y = time * 0.8; sqSpirit.position.y = groundAt(S.x, S.z) + 0.25 + Math.abs(Math.sin(time * 3)) * 0.35; sqSpirit.userData.glow.material.opacity = 0.4 + 0.2 * Math.sin(time * 4); sqBeacon.material.opacity = 0.14 + 0.08 * Math.sin(time * 2.5);
+    sqSpirit.userData.tail.rotation.x = Math.sin(time * 5) * 0.25;
+    const d = Math.hypot(crow.pos.x - S.x, crow.pos.z - S.z);
+    if (S.t <= 0 || heat.lvl > 0 || cage.on) { despawnSpirit(); if (S.t <= 0) showMsg('The Spirit Squirrel faded away…', 1.6); }
+    else if (d < SQ.touch && crow.pos.y < groundAt(S.x, S.z) + 6 && !ko.on && !dogfight.on) startSquirrel();
+  } else if (!sqr.on && sqCanSpawn()) { sqr.spawnT -= dt; if (sqr.spawnT <= 0) { if (!spawnSpirit()) sqr.spawnT = 20; } }
+  if (!sqr.on) return;
+  if (ko.on || cage.on || jb.on) { endSquirrel(false); return; }
+  sqr.t -= dt;
+  // nuts (Scavenger's reach and Keen Beak stack through pickR2)
+  const r2 = pickR2(2.0 * 2.0);
+  for (const N of sqr.nuts) { if (N.got) continue; N.g.rotation.y += dt * 2; N.g.position.y = groundAt(N.x, N.z) + 0.45 + Math.sin(time * 3 + N.x) * 0.12;
+    if ((crow.pos.x - N.x) ** 2 + (crow.pos.z - N.z) ** 2 < r2 && crow.pos.y < groundAt(N.x, N.z) + 2.5) { N.got = true; scene.remove(N.g); sqr.got++; popup('🌰 +' + SQ.nutPts, new THREE.Vector3(N.x, 2.4, N.z), 'gold'); } }
+  // woodpeckers land on park trees and peck; run to the trunk to shoo them off
+  sqr.wpT -= dt;
+  if (sqr.wpT <= 0 && sqr.wps.length < SQ.wpMax) { sqr.wpT = SQ.wpEvery;
+    const free = sqr.trees.filter(R => !R.wp && R.hp > 0 && Math.hypot(R.t.x - crow.pos.x, R.t.z - crow.pos.z) > 8 && Math.hypot(R.t.x - crow.pos.x, R.t.z - crow.pos.z) < 55);
+    if (free.length) { const R = free[Math.floor(Math.random() * free.length)], a = rand(0, 6.28), rr = 0.5 * (R.t.s || 1) + 0.25; const g = sqWoodpecker(); const W = { R, g, a, t: 0, leave: 0 }; R.wp = W; sqr.wps.push(W);
+      g.position.set(R.t.x + Math.cos(a) * rr, groundAt(R.t.x, R.t.z) + 2.6 * (R.t.s || 1), R.t.z + Math.sin(a) * rr); g.rotation.y = Math.atan2(Math.cos(a), Math.sin(a));
+      popup('🪵 peck peck!', g.position.clone().add(new THREE.Vector3(0, 1.4, 0)), 'warn'); } }
+  for (let i = sqr.wps.length - 1; i >= 0; i--) { const W = sqr.wps[i], R = W.R; W.t += dt;
+    if (W.leave > 0) { W.leave += dt; W.g.position.y += 9 * dt; W.g.position.x += Math.cos(W.a) * 6 * dt; W.g.position.z += Math.sin(W.a) * 6 * dt; if (W.leave > 1.6) { scene.remove(W.g); sqr.wps.splice(i, 1); } continue; }
+    W.g.userData.head.position.z = -0.08 - Math.max(0, Math.sin(W.t * 18)) * 0.08; W.g.userData.beak.position.z = -0.3 - Math.max(0, Math.sin(W.t * 18)) * 0.08;
+    R.hp -= SQ.peckRate * dt;
+    if (Math.hypot(crow.pos.x - R.t.x, crow.pos.z - R.t.z) < SQ.shoo + 0.5 * (R.t.s || 1)) { W.leave = 0.01; R.wp = null; sqr.shoo++; popup('🪵 Shoo! +' + SQ.shooPts, W.g.position.clone().add(new THREE.Vector3(0, 1, 0)), 'gold'); continue; }
+    if (R.hp <= 0) { W.leave = 0.01; R.wp = null; sqr.lost++; popup('💔 Tree pecked!', W.g.position.clone().add(new THREE.Vector3(0, 1, 0)), 'warn'); }
+  }
+  sqHud();
+  if (sqr.t <= 0 || (sqr.got >= SQ.nuts && !sqr.wps.some(W => !W.leave))) endSquirrel(true);
+}
+onTap('sqBack', () => endSquirrel(true));
+const v7l = { SQ, SQ_KEY, sqr, sqSave, spawnSpirit, startSquirrel, endSquirrel, despawnSpirit, sqParkTrees, sqForm, sqSpirit };
 const v7k = { LEVELS, LVL_KEY, get lvl() { return lvl; }, kroLevel, lvlGain, lvlFor, lvlSave, lvlHud, lvlUpCard, lvlRacK, lvlHeatK, lvlDroneN, lvlHawkRest };
 const v7j = { JB, jb, startBreak, endBreak, jbStep, jbSees, JB_SOLID, JB_LOW, JB_EXIT, hop: () => window.__jbHop(), cover: on => window.__jbCover(on) };
 const v7b = { v7j, setCarry(n) { carry = n; }, nearMissAward, CASH, cash, cashItems, placeCash, saveCash, cage, bailPrice, cageKro, releaseCage, NEAR, nearStats, carGap, hillBumps, pigSnd, HEAT, puffs, tossPuff, setVolume, get volPref() { return volPref; } };
@@ -7286,7 +7431,7 @@ function loadTut() { try { const v = JSON.parse(localStorage.getItem(TUT_KEY) ||
 const tut = { st: loadTut(), open: '', introI: -1, freeT: 0, moved: 0, scanT: 0, hold: 0, force: '', objShown: false, goAt: 0, stats: { shown: [], finished: '' } };
 function saveTut() { try { localStorage.setItem(TUT_KEY, JSON.stringify(tut.st)); } catch (_) {} }
 function tutCalm() { return started && !tut.st.done; }                 // enemies stay passive until the tutorial is complete
-function tutHawkHold() { return tutCalm() || tut.hold > 0 || kroLevel() < 2; } // v7k: levels hook — hawk held until level 2
+function tutHawkHold() { return tutCalm() || tut.hold > 0 || kroLevel() < 2 || sqr.on; } // v7k: levels hook — hawk held until level 2
 const tutSeen = k => !!(tut.st.all || tut.st.seen[k]);
 // ---- simple original illustrations (inline SVG + replicas of the real on-screen buttons)
 const T_BTN = { up: ['▲', 'FLAP', 'rgba(60,160,255,.9)'], down: ['▼', 'DIVE', 'rgba(140,95,255,.9)'], soar: ['➶', 'SOAR', 'rgba(255,190,40,.95)'], gust: ['≋', 'GUST', 'rgba(120,200,235,.95)'], drop: ['●', 'DROP', 'rgba(255,122,60,.92)'], brake: ['◇', 'BRAKE', 'rgba(40,190,130,.9)'] };
@@ -7533,6 +7678,7 @@ function updateNestUpgBtn() {
 // ---- Brake hover: same stop-and-clap as Gust (no attack), then a steady stamina-draining hover until release
 const HOVER = { minStam: 6 };
 function tryStartHover(airHigh) {
+  if (sqr.on) return false;
   if (hover.on || !airHigh || gust.on || crow.stun > 0 || ko.on || !started) return false;
   if (crow.stamina < HOVER.minStam) { showMsg('Too tired to hover', 1.1); return false; }
   hover.on = true; hover.t = 0; hover.clapT = 0; hover.gustT = 0; hover.count++;
@@ -7903,7 +8049,7 @@ function frame() {
       crow.vy = lerp(crow.vy, -4, damp(2, dt)); crow.speed = lerp(crow.speed, 2, damp(2, dt)); forward(crow.yaw, _f); crow.pos.addScaledVector(_f, crow.speed * dt);
       crow.pos.y = Math.max(groundAt(crow.pos.x, crow.pos.z) + 0.9, crow.pos.y + crow.vy * dt); crow.yaw += dt * 2.5;
       crow.group.position.copy(crow.pos); crow.group.rotation.set(0.3, crow.yaw, Math.sin(gameTime * 6) * 0.5);
-    } else updateCrow(dt, gameTime);
+    } else if (sqr.on) updateSquirrel(dt, gameTime); else updateCrow(dt, gameTime);
     checkNestDelivery();
     if (quest && quest.done) { questDoneT -= dt; if (questDoneT <= 0) newQuest(); }
   } else {
@@ -7928,6 +8074,7 @@ function frame() {
   updateHeat(dt, rdt, gameTime); // v7 Heat / police
   updateCash(dt, gameTime); // v7b cash + cage
   if (typeof updateGrandma === 'function') updateGrandma(dt, gameTime);
+  updateSquirrelWorld(dt, gameTime); // v7l
   if (typeof updateNestUpgBtn === 'function') updateNestUpgBtn();
   tutUpdate(dt); updatePhoneMarks(gameTime); // v7d tutorial + phone markers
   updateStreaks(dt);
@@ -7946,7 +8093,7 @@ function frame() {
 }
 frame();
 setClass(kroClass, true); // v7i: after upgrade state exists
-window.__crowGame = { v7k, v7g, v7e, v7d, v7b, v7, v6d, v6c: { ...v6c, THREE, HILLS, hillAt: (x, z) => hillAt(x, z), groundAt, heal, questHeartReward, DIFF }, v6b: { ach, ACH_TRACKS, achAdvance, achHas, netBust, heist, heistRac, HEIST_SITES, startHeist, heistSave, heistActive, gust, GUST, startGust, trashCans, TREES, gdrops, spawnDrop, FP, onFootpath, parkProps, renderAch, showAch, banQ, stats: v6b.stats, knockPed, megaDur, saveAch, get dogfightOn() { return dogfight.on; }, pond, goose, gooseG, GZ, gooseHit, defeatGoose, respawnGoose, gustGoose, pigeons, flock, FLOCKS, scatterAt, fisher, FISH, crumbs, tossCrumbs, inLeash, crowCrown, syncCrown }, cameo: { state: cameo, gears, bot, skins, cstats, grantAllGears, resetCameo, talkToBot, closeDialog, applySkin, BOT_POS, TOWER, gearCar, get dialogOpen() { return dialogOpen; }, get skinCur() { return skinCur; }, circFx, CIRC_U, circParts }, colliders, colliderAt, groundAt, groundLayers, grassFx, skyDome, enemy: { dogfight, chaseMusic, startDogfight, endDogfight, hawkCrash, losBlocked, DF_DIFF, hitPed, movingCars, hawk, netters, hurt, heal, knockOut, respawn, resetEnemies, gameSet, ens, ko, setHawkWarn, get hp() { return crow.hp; } }, airFx, musStats, get mus() { return mus; }, get megaTime() { return megaTime; }, setMega(v) { megaTime = v; }, fxSet, get actx() { return actx; }, renderer, camera, scene, crow, peds, items, projectiles, input, dropBomb, restart, get score() { return score; }, get phonesHit() { return phonesHit; }, get paused() { return paused; }, get quest() { return quest; }, get carry() { return carry; }, NEST, movingCars, colliders, questProgress, newQuest, get qTarget() { return qTarget; }, air, streams, raccoons, get layout() { return layout; }, applyLayout, openMenu, closeMenu, menuPage, get menuOpen() { return menuOpen; }, get customizing() { return customizing; }, start() { $('start').style.display = 'none'; started = true; }, roll, ROLL, startRoll, flick, FLICK, flickCheck };
+window.__crowGame = { v7l, v7k, v7g, v7e, v7d, v7b, v7, v6d, v6c: { ...v6c, THREE, HILLS, hillAt: (x, z) => hillAt(x, z), groundAt, heal, questHeartReward, DIFF }, v6b: { ach, ACH_TRACKS, achAdvance, achHas, netBust, heist, heistRac, HEIST_SITES, startHeist, heistSave, heistActive, gust, GUST, startGust, trashCans, TREES, gdrops, spawnDrop, FP, onFootpath, parkProps, renderAch, showAch, banQ, stats: v6b.stats, knockPed, megaDur, saveAch, get dogfightOn() { return dogfight.on; }, pond, goose, gooseG, GZ, gooseHit, defeatGoose, respawnGoose, gustGoose, pigeons, flock, FLOCKS, scatterAt, fisher, FISH, crumbs, tossCrumbs, inLeash, crowCrown, syncCrown }, cameo: { state: cameo, gears, bot, skins, cstats, grantAllGears, resetCameo, talkToBot, closeDialog, applySkin, BOT_POS, TOWER, gearCar, get dialogOpen() { return dialogOpen; }, get skinCur() { return skinCur; }, circFx, CIRC_U, circParts }, colliders, colliderAt, groundAt, groundLayers, grassFx, skyDome, enemy: { dogfight, chaseMusic, startDogfight, endDogfight, hawkCrash, losBlocked, DF_DIFF, hitPed, movingCars, hawk, netters, hurt, heal, knockOut, respawn, resetEnemies, gameSet, ens, ko, setHawkWarn, get hp() { return crow.hp; } }, airFx, musStats, get mus() { return mus; }, get megaTime() { return megaTime; }, setMega(v) { megaTime = v; }, fxSet, get actx() { return actx; }, renderer, camera, scene, crow, peds, items, projectiles, input, dropBomb, restart, get score() { return score; }, get phonesHit() { return phonesHit; }, get paused() { return paused; }, get quest() { return quest; }, get carry() { return carry; }, NEST, movingCars, colliders, questProgress, newQuest, get qTarget() { return qTarget; }, air, streams, raccoons, get layout() { return layout; }, applyLayout, openMenu, closeMenu, menuPage, get menuOpen() { return menuOpen; }, get customizing() { return customizing; }, start() { $('start').style.display = 'none'; started = true; }, roll, ROLL, startRoll, flick, FLICK, flickCheck };
 </script>
 </body>
 </html>
