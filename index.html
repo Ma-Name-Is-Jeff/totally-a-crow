@@ -306,7 +306,7 @@
   .mcat[data-go="sound"]{border-color:#1ee8ff}
   .mcat[data-go="gameplay"]{border-color:#9cff2e}
   .mcat[data-go="display"]{border-color:#ffe229}
-  .mcat[data-go="friends"]{border-color:#ff2d95}
+  #mStory{border-color:#ff2d95}
   .mbtn.mwide{grid-column:1/-1}
   .msub{display:none;grid-column:1/-1;grid-template-columns:1fr 1fr;gap:8px}
   .msubHead{grid-column:1/-1;display:flex;align-items:center;gap:10px;margin-bottom:2px}
@@ -513,7 +513,31 @@
   .clsCard.sel{border-color:var(--cc,#ffe229);box-shadow:0 4px 0 #160526,0 0 0 2px var(--cc,#ffe229),0 0 16px var(--cc,#ffe229);background:#4a1c7d}
   .clsCard.sel::after{content:'✓ PICKED';position:absolute;top:-9px;right:6px;background:var(--cc,#ffe229);color:#160526;font:900 9.5px system-ui;padding:2px 6px;border-radius:8px;border:2px solid #160526}
   #clsPick .cbar{display:flex;justify-content:center;gap:10px;margin-top:10px}
-  #clsPick .note{font-size:11px;color:#cbb8e8;margin-top:6px} .clsCard.lockd{filter:saturate(.55) brightness(.85)} .clsCard.lockd i{color:#ffe229;font-style:normal;font-weight:800} #lvlXp{font:800 9.5px system-ui;color:#cbb8e8;margin-left:4px;white-space:nowrap}
+  #clsPick .note{font-size:11px;color:#cbb8e8;margin-top:6px}
+  /* v7o: objective tracker, chapter cards, Nest hub (Kro graffiti palette) */
+  #stHead{display:flex;gap:6px;align-items:center;justify-content:center;white-space:nowrap;font-size:.78em;margin-bottom:1px}
+  #stTag{font:900 1em system-ui;letter-spacing:.12em;color:#1ee8ff;background:#331257;border:2px solid #160526;border-radius:8px;padding:0 6px;text-shadow:none;box-shadow:0 2px 0 #160526}
+  #stName{font-weight:900;color:#ffe229} #stStep{font-weight:800;color:#ff8a1f}
+  #sjRow{margin-top:2px;font-size:.78em;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} #sjRow b{font:900 .85em system-ui;letter-spacing:.1em;color:#9cff2e;margin-right:5px}
+  #stCard,#nestHub{position:fixed;inset:0;z-index:24;display:none;align-items:center;justify-content:center;background:rgba(16,5,30,.78);backdrop-filter:blur(3px);font-family:system-ui,sans-serif;padding:max(8px,var(--st)) max(10px,var(--sr)) max(8px,var(--sb)) max(10px,var(--sl))}
+  #stCard.show,#nestHub.show{display:flex}
+  #stCard .panel,#nestHub .panel{background:linear-gradient(165deg,#331257 0%,#210a3b 100%);color:#fff9f0;border:3px solid #160526;border-radius:20px;padding:14px 18px;width:min(520px,94vw);max-height:94vh;overflow:auto;box-shadow:0 7px 0 #160526,0 0 0 2px #ff2d95,0 0 34px rgba(255,45,149,.4);text-align:center}
+  .stcTag{display:inline-block;font:900 13px system-ui;letter-spacing:.32em;color:#1ee8ff;transform:rotate(-2deg)}
+  #stcName{margin:2px 0 6px;font:900 30px/1.05 system-ui;color:#ffe229;text-shadow:3px 3px 0 #ff2d95,5px 5px 0 #160526;transform:rotate(-2deg)}
+  .stcIntro{margin:0 0 8px;font-size:13.5px;color:#e8dcff;line-height:1.35}
+  #stcList{list-style:none;margin:0 auto 8px;padding:0;text-align:left;max-width:400px}
+  #stcList li{display:flex;gap:8px;align-items:center;background:#3c1666;border:2px solid #160526;border-radius:12px;padding:6px 10px;margin:4px 0;font:800 13.5px system-ui;box-shadow:0 3px 0 #160526}
+  #stcList li span{font-size:18px} #stcList li.u{border-color:#9cff2e;color:#9cff2e}
+  .stcUnlock{font:700 12.5px system-ui;color:#9cff2e;margin-bottom:4px} .stcWho{font:700 12px system-ui;color:#cbb8e8;margin-bottom:8px}
+  #stcGo{min-width:200px;min-height:44px}
+  .nhHead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap} .nhHead b{font:900 22px system-ui;color:#ffe229;text-shadow:2px 2px 0 #ff2d95} #nhStats{font:800 12px system-ui;color:#1ee8ff}
+  .nhNote{font-size:12.5px;color:#e8dcff;margin:4px 0 6px;text-align:left}
+  #nestHub h3{margin:8px 0 4px;font:900 12px system-ui;letter-spacing:.2em;color:#ff8a1f;text-align:left}
+  #nhFam{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+  .nhF{background:#3c1666;border:2px solid #160526;border-radius:12px;padding:5px 3px;display:flex;flex-direction:column;align-items:center;gap:1px} .nhF span{font-size:22px} .nhF b{font-size:11.5px;color:#ffe229} .nhF small{font-size:9.5px;color:#cbb8e8;line-height:1.2} .nhF.off{opacity:.45}
+  .nhC{display:grid;grid-template-columns:26px 1fr;align-items:center;text-align:left;background:#2c0f4c;border:2px solid #160526;border-radius:10px;padding:4px 8px;margin:3px 0} .nhC span{grid-row:span 2;font-size:16px} .nhC b{font-size:12.5px} .nhC small{font-size:11px;color:#cbb8e8} .nhC.cur{border-color:#1ee8ff} .nhC.done b{color:#9cff2e} .nhC.lock{opacity:.55}
+  .nhBtns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px} .nhBtns .mbtn{min-height:44px}
+  @media (max-height:470px){#stcName{font-size:24px}.stcIntro{font-size:12px}#stcList li{padding:4px 8px;font-size:12.5px}#nhFam{grid-template-columns:repeat(5,1fr)}} .clsCard.lockd{filter:saturate(.55) brightness(.85)} .clsCard.lockd i{color:#ffe229;font-style:normal;font-weight:800} #lvlXp{font:800 9.5px system-ui;color:#cbb8e8;margin-left:4px;white-space:nowrap}
   #start .clsBtn{margin-top:12px;font:800 15px system-ui,sans-serif;padding:10px 18px;border-radius:30px;border:2.5px solid #9cff2e;background:#3a1564;color:#fff9f0;box-shadow:0 4px 0 #160526;cursor:pointer}
   @media (max-height:470px){#start .clsBtn{margin-top:6px;padding:7px 14px;font-size:13px}}
   @media (max-width:760px),(max-height:470px){#clsGrid{grid-template-columns:repeat(5,minmax(118px,1fr));overflow-x:auto}.clsCard{padding:6px 6px 7px}.clsCard .ci{font-size:20px}.clsCard b{font-size:13px}.clsCard i{min-height:0}#clsPick h2{font-size:18px}#clsPick .sub{display:none}}
@@ -603,10 +627,10 @@
   <div class="abtn" id="btnDrop"><b>●</b>DROP</div>
   <div class="abtn" id="btnGust"><b>≋</b>GUST</div>
 </div>
-<button id="btnNestUpg">🌿 Nest Upgrades</button>
+<button id="btnNestUpg">🪺 Nest</button>
 
-<div id="quest"><div id="qHead"><span id="qIcon">🍟</span><span id="qText">…</span><span id="qProg"></span></div><div id="qWhy"></div>
-  <div id="qNav"><div id="qArrow"></div><span id="qDist"></span><span id="qCarry"></span></div></div>
+<div id="quest"><div id="stHead"><b id="stTag">PROLOGUE</b><span id="stName">The Odd Egg</span><span id="stStep">1/3</span></div><div id="qHead"><span id="qIcon">🍟</span><span id="qText">…</span><span id="qProg"></span></div><div id="qWhy"></div>
+  <div id="qNav"><div id="qArrow"></div><span id="qDist"></span><span id="qCarry"></span></div><div id="sjRow" style="display:none"><b>SIDE JOB</b><span id="sjTxt"></span></div></div>
 <div id="objCard"><small>NEW OBJECTIVE</small><b id="objTxt"></b><i id="objWhy"></i><em id="objRew"></em></div>
 <div id="tut" role="dialog" aria-modal="true"><div class="tcard"><div class="tart" id="tutArt"></div><div class="tbody"><div class="tstep" id="tutStep"></div><h3 id="tutTitle"></h3><p id="tutText"></p><p class="tsub" id="tutSub"></p>
   <div class="tbtns"><button id="tutSkip">Skip tutorial</button><button id="tutGo">Continue ▸</button></div></div></div></div>
@@ -618,7 +642,7 @@
     <button class="mbtn mcat" data-go="sound">🔊 Sound<small>Music · Volume · Vibration · Airstream</small></button>
     <button class="mbtn mcat" data-go="gameplay">🎮 Gameplay<small>Controls · Difficulty · Camera · Skin</small></button>
     <button class="mbtn mcat" data-go="display">🖼 Display &amp; Extras<small>Graphics · FPS · Intro · Achievements</small></button>
-    <button class="mbtn mcat" data-go="friends">🐦 Friends<small>Crow family visitors</small></button>
+    <button class="mbtn mcat" id="mStory">📖 Story &amp; Family<small>Chapters · Crow family · Nest</small></button>
     <button class="mbtn mtop" id="mGuide">📘 How to Play</button>
     <button class="mbtn mtop" id="mUpg">🌿 Nest Upgrades</button>
     <button class="mbtn mtop" id="mCls">🎭 Class</button>
@@ -652,7 +676,7 @@
     <div id="friendsBox"><div class="fslots"><i></i><i></i><i></i><i></i></div><p>No friends have visited yet.</p><small>Crow family friends will drop by the nest with quests in a future update.</small></div>
     </div>
   </div>
-  <div id="menuConfirm" style="display:none"><p>Restart? Your score and quest progress will be lost.</p>
+  <div id="menuConfirm" style="display:none"><p>Restart this flight? Your score and side job reset. Story, XP and coins are kept.</p>
     <button class="mbtn danger" id="mYes">Yes, restart</button><button class="mbtn" id="mNo">Cancel</button></div>
   <div id="menuAch" style="display:none"></div>
   <div id="menuNote"></div>
@@ -694,6 +718,10 @@
   <div id="jbWrap"><canvas id="jbCv" width="640" height="360"></canvas><div id="jbHint">Drag or WASD to sneak · HOP over low fences (Space) · hold COVER to hide in a box (Shift). Reach EXIT unseen!</div>
   <button class="jbBtn" id="jbHop">HOP</button><button class="jbBtn" id="jbCover">COVER</button><div id="jbEnd"><div><h3 id="jbEndT"></h3><p id="jbEndP"></p></div></div></div></div>
 <div id="sqHud"><b>🐿 SPIRIT SQUIRREL</b><span id="sqT">60s</span><span id="sqN">🌰 0/10</span><span id="sqW">🪵 0</span><button id="sqBack">🐦‍⬛ Back to Kro</button></div>
+<div id="stCard" role="dialog" aria-modal="true"><div class="panel"><div class="stcTag" id="stcTag">PROLOGUE</div><h2 id="stcName">The Odd Egg</h2><p class="stcIntro" id="stcIntro"></p><ul id="stcList"></ul><div class="stcUnlock" id="stcUnlock"></div><div class="stcWho" id="stcWho"></div><button class="mbtn primary" id="stcGo">Let’s fly ▸</button></div></div>
+<div id="nestHub" role="dialog" aria-modal="true"><div class="panel"><div class="nhHead"><b id="nhTitle">🪺 The Nest</b><span id="nhStats"></span></div><p class="nhNote" id="nhNote"></p>
+  <h3>Crow family</h3><div id="nhFam"></div><h3>Story</h3><div id="nhStory"></div>
+  <div class="nhBtns"><button class="mbtn" id="nhUpg">🌿 Nest Upgrades</button><button class="mbtn" id="nhCls">🎭 Class</button><button class="mbtn primary" id="nhClose">Close</button></div></div></div>
 <div id="lvlUp" aria-live="polite"><div class="t">LEVEL UP!</div><div class="n" id="lvlUpN">LV 2</div><div class="nm" id="lvlUpNm"></div><div class="u" id="lvlUpU"></div></div>
 <div id="airBanner"><b>AIRSTREAM!</b><small></small></div>
 <div id="airBadge"><div class="t"><span>🌬</span><b>AIRSTREAM</b><span id="abName"></span></div><div class="bar"><i id="abStr"></i></div><div id="abInfo"></div></div>
@@ -2802,7 +2830,7 @@ let menuOpen = false, customizing = false, portraitPaused = false;
 var layoutReady = false, tutCardOpen = false, upgOpen = false; // tutCardOpen: v7d tutorial card on screen (pauses the game) // set once the per-orientation layout code below has loaded
 let paused = false;
 function updatePaused() {
-  paused = portraitPaused || menuOpen || customizing || !!dialogOpen || tutCardOpen || !!upgOpen || !!window.__clsOpen;
+  paused = portraitPaused || menuOpen || customizing || !!dialogOpen || tutCardOpen || !!upgOpen || !!window.__clsOpen || !!stCardOpen || !!nestHubOpen;
   if (paused) { input.flap = input.dive = input.brake = input.soarBtn = input.soarTap = false; input.jx = input.jy = 0; setKnob(0, 0); for (const el of document.querySelectorAll('.abtn.down')) el.classList.remove('down'); }
 }
 function checkOrientation() {
@@ -3180,10 +3208,7 @@ function drawQuestBoard() {
     g.fillStyle = '#8a5a00'; g.fillText(`Reward +${quest.reward}${quest.bonus ? ' ' + quest.bonus : ''}`, 256, 215);
   }
   qbTex.needsUpdate = true;
-  if (quest) {
-    $('qIcon').textContent = quest.icon; $('qText').textContent = quest.text;
-    $('qProg').textContent = quest.done ? '✅' : `${quest.n}/${quest.need}`;
-  }
+  if (quest) { const sj = document.getElementById('sjTxt'); if (sj) sj.textContent = `${quest.icon} ${quest.text} ${quest.done ? '✅' : quest.n + '/' + quest.need}`; }
 }
 function newQuest(silent) {
   let t; do { t = QUEST_TYPES[(Math.random() * QUEST_TYPES.length) | 0]; } while (quest && t === quest.type);
@@ -3196,9 +3221,11 @@ function newQuest(silent) {
   if (t === 'splat') Object.assign(q, { need: 4, text: `Splat 4 people · ${zone}`, reward: 1200, icon: '🎯', bonus: '+ full stamina' });
   if (t === 'cars') Object.assign(q, { need: 3, text: 'Bomb 3 moving cars', reward: 1000, icon: '🚗', bonus: '+ full ammo' });
   quest = q; drawQuestBoard();
-  if (!silent) { showMsg(`New quest: ${q.text}`, 2.2); sfx.pickup(true); objBanner(q); }
+  if (!silent && (typeof storyHas !== 'function' || storyHas('jobs'))) { showMsg(`New side job: ${q.text}`, 2.2); sfx.pickup(true); if (!stGoal || !stGoal()) objBanner(q); }
 }
 function questProgress(type, zone) {
+  if (typeof storyEv === 'function') storyEv(type, 1);
+  if (typeof storyHas === 'function' && !storyHas('jobs')) return;
   if (!quest || quest.done || quest.type !== type) return;
   if ((type === 'phones' || type === 'splat') && zone !== quest.zone) return;
   quest.n++;
@@ -3233,7 +3260,8 @@ function nearestOf(list) {
   return best;
 }
 function computeQuestTarget() {
-  if (!quest || quest.done) return null;
+  if (typeof storyTarget === 'function') { const t = storyTarget(); if (t !== undefined) return t; }
+  if (!quest || quest.done || (typeof storyHas === 'function' && !storyHas('jobs'))) return null;
   const zc = ZONES[quest.zone];
   switch (quest.type) {
     case 'fries': return nearestOf(items.filter(i => i.alive && i.type === 'fries').map(i => i.obj.position));
@@ -3251,7 +3279,7 @@ const qArrow = $('qArrow'), qDist = $('qDist'), qCarry = $('qCarry');
 function updateCompass(rdt) {
   qTargetT -= rdt; if (qTargetT <= 0) { qTarget = computeQuestTarget(); qTargetT = 0.25; }
   qCarry.textContent = carry > 0 ? `✨×${carry}` : '';
-  if (!qTarget) { qArrow.style.opacity = 0.25; qDist.textContent = quest && quest.done ? 'done!' : '—'; return; }
+  if (!qTarget) { qArrow.style.opacity = 0.25; qDist.textContent = '—'; return; }
   const dx = qTarget.x - crow.pos.x, dz = qTarget.z - crow.pos.z;
   const bearing = Math.atan2(-dx, -dz);
   const rel = bearing - camYaw;
@@ -4381,7 +4409,7 @@ const _hs = new THREE.Vector3(), _hv = new THREE.Vector3(), _hd = new THREE.Vect
 const HAWK_TERR = { x: -170, z: 190, r: 150, margin: 25, giveDist: 40, giveT: 4, escCd: 180 };
 const hawkTerr = { stats: { escapes: 0, giveUps: 0, last: '' }, enterMsgT: 0, wasIn: false };
 const terrOut = p => Math.hypot(p.x - HAWK_TERR.x, p.z - HAWK_TERR.z) - HAWK_TERR.r; // < 0 inside
-function hawkEscaped(why) { hawk.esc = lvlHawkRest(); hawk.outT = 0; hawk.goHome = true; /* then he flies back home */ hawkTerr.stats.escapes++; hawkTerr.stats.last = why; }
+function hawkEscaped(why) { if (typeof storyEv === 'function') storyEv('hawk'); hawk.esc = lvlHawkRest(); hawk.outT = 0; hawk.goHome = true; /* then he flies back home */ hawkTerr.stats.escapes++; hawkTerr.stats.last = why; }
 function hawkRetreat(cd) { if (hawk.state === 'patrol') { hawk.cd = Math.max(hawk.cd, cd * dset().hawkCd); return; } hawk.state = 'retreat'; hawk.t = 0; hawk.cd = cd * dset().hawkCd; setHawkWarn(false); }
 const elHawkWarn = $('hawkWarn');
 let hawkWarnOn = false;
@@ -5275,7 +5303,7 @@ function setClass(id, quiet) {
   renderClsPick();
 }
 function renderClsPick() {
-  $('clsGrid').innerHTML = KCLASSES.map(c => `<button class="clsCard${c.id === kroClass ? ' sel' : ''}${clsHas(c.id) ? '' : ' lockd'}" data-cls="${c.id}" style="--cc:${c.col}"><span class="ci">${c.icon}</span><b>${c.name}</b><i>${clsHas(c.id) ? c.tag : `🔒 Unlock · ${CLS_COST[c.id]} 🪙`}</i><span class="cp">✚ ${c.perk}</span><span class="ct">− ${c.trade}</span><span class="cs">🎨 ${c.skin}</span></button>`).join('');
+  $('clsGrid').innerHTML = KCLASSES.map(c => `<button class="clsCard${c.id === kroClass ? ' sel' : ''}${clsHas(c.id) ? '' : ' lockd'}" data-cls="${c.id}" style="--cc:${c.col}"><span class="ci">${c.icon}</span><b>${c.name}</b><i>${clsHas(c.id) ? c.tag : clsLockLabel(c)}</i><span class="cp">✚ ${c.perk}</span><span class="ct">− ${c.trade}</span><span class="cs">🎨 ${c.skin}</span></button>`).join('');
   $('clsNote').textContent = skinCur !== 'default' ? `Your ${SKIN_NAMES[skinCur]} skin colors stay on; class gear still shows. Set Skin to Default for the class colors.` : '';
 }
 window.__clsOpen = false;
@@ -5417,7 +5445,7 @@ function startHeist(site) {
 function heistSave(how) {
   if (!heistActive()) return false; const r = heistRac, s = heist.site;
   heist.state = 'flee'; heist.t = 0; r.fries.visible = false; s.prop.visible = true; s.cool = 0; r.hitCd = 1;
-  ach.saved++; heist.stats.saved++; if (how === 'gust') heist.stats.gustSaves++;
+  storyEv('heist'); ach.saved++; heist.stats.saved++; if (how === 'gust') heist.stats.gustSaves++;
   const pts = 300; addScore(pts); ach.coins += 15; crow.ammo = Math.min(MAX_AMMO, crow.ammo + 3);
   popup((how === 'gust' ? '🌪' : '🍟') + ' FRIES SAVED! +' + pts, r.g.position.clone().add(new THREE.Vector3(0, 2.6, 0)), 'big');
   bigBanner('FRIES SAVED!', `+${pts} · +15 🪙 · +3 🍟 · ${ach.saved} saved`, '#ffc93c', 'saved');
@@ -5885,7 +5913,7 @@ function gooseHit(dmg, how) {
   if (Gs.hp <= 0) defeatGoose(); return true;
 }
 function defeatGoose() {
-  const Gs = goose; Gs.state = 'down'; Gs.t = 0; Gs.stats.defeats++; ach.geese++; Gs.respawnT = GZ.respawn;
+  storyEv('goose'); const Gs = goose; Gs.state = 'down'; Gs.t = 0; Gs.stats.defeats++; ach.geese++; Gs.respawnT = GZ.respawn;
   const R = 2500, C = 150; addScore(R); ach.coins += C; saveAch(); camShake = Math.max(camShake, 0.35); sfx.gooseDown(); sfx.fanfare();
   bigBanner('REIGN OF TERROR ENDED!', `+${R} · +${C} 🪙 · ${GZ.name} flees the pond!`, '#7fd0ff');
   sparkBurst(new THREE.Vector3(Gs.x, 2.5, Gs.z), 22, 0xfff0b0); achAdvance('goose');
@@ -6180,7 +6208,7 @@ function taggerHit(dmg, how) {
   if (T.hp <= 0) defeatTagger(); return true;
 }
 function defeatTagger() {
-  const T = tagger; T.state = 'run'; T.t = 0; T.noReward = false; T.stats.defeats++; ach.tags = (ach.tags || 0) + 1; T.respawnT = TAG.respawn;
+  storyEv('tagger'); const T = tagger; T.state = 'run'; T.t = 0; T.noReward = false; T.stats.defeats++; ach.tags = (ach.tags || 0) + 1; T.respawnT = TAG.respawn;
   const saved = Math.round((1 - T.paint) * 100), R = 3000 + Math.round(2000 * (1 - T.paint)), C = 200;
   addScore(R); ach.coins += C; saveAch(); camShake = Math.max(camShake, 0.3); sfx.fanfare();
   bigBanner('TAGGER TAMED!', `+${R} · +${C} 🪙 · Rattlecan Rudy bolts! ${saved}% of the wall saved`, '#ff8fe0');
@@ -6196,6 +6224,7 @@ function taggerProjectile(m, mega) {
   if (dx * dx + dz * dz < 2.1 * 2.1 && y < 2.9 && y > -1) return taggerHit(mega ? 3 : 1, mega ? 'mega' : 'drop'); return false;
 }
 function updateTagger(dt, time) {
+  if (typeof storyHas === 'function' && !storyHas('rudy')) { if (tagger.state !== 'gone') { tagger.state = 'gone'; tagger.respawnT = 1; } taggerG.g.visible = false; tagger.engaged = false; bossClaim('tagger', false); return; } // v7o: Rudy arrives in Chapter 4
   if (tagger.state === 'paint' && !tagger.muralTold) { tagger.muralCueT = (tagger.muralCueT || 0) - dt; if (tagger.muralCueT <= 0) rudyMuralCue(); }
   const T = tagger, V = taggerG; T.hitCd -= dt; T.stun -= dt; T.sprayCd -= dt; T.mistT -= dt; T.hissT -= dt; T.squash = Math.max(0, T.squash - dt * 4);
   if (T.state === 'gone') { V.g.visible = false; T.engaged = false; bossClaim('tagger', false); T.respawnT -= dt; if (T.respawnT <= 0) respawnTagger(); return; }
@@ -6876,7 +6905,7 @@ function launchWave(kind) {
   let need = n - act.length; for (const D of drones) { if (need <= 0) break; if (D.st === 'off') { droneSpawn(D, kind === 'swarm'); need--; } }
   sfx.droneWarn && sfx.droneWarn();
 }
-function droneDown(D, how) {
+function droneDown(D, how) { if (typeof storyEv === 'function') storyEv('drone');
   if (D.st === 'off' || D.st === 'down') return;
   D.st = 'down'; D.t = 0; D.v.set(D.v.x * 0.3 + rand(-2, 2), 2, D.v.z * 0.3 + rand(-2, 2)); D.fl.material.opacity = 0;
   heat.stats.dronesDown++; if (how === 'gust') heat.stats.gustDowns++;
@@ -7026,6 +7055,7 @@ function setHeat(n, why) {
   n = clamp(Math.round(n), 0, HEAT.max); if (n > 0 && !heatOn()) return;
   const prev = heat.lvl; if (n === prev) return;
   heat.lvl = n; heat.t = 0; heat.stats.maxLvl = Math.max(heat.stats.maxLvl, n);
+  if (typeof storyEv === 'function') { if (n > prev) storyEv('heat'); else if (n === 0) storyEv('cool'); }
   if (n > prev) {
     heat.stats.ups++; restartAnim(elHeatRow, 'hflash'); sfx.heatUp && sfx.heatUp(n);
     if (prev === 0) { showMsg('🚨 HEAT 1: the cops are after you!', 2, true); hawkRetreat(20); if (dogfight.on) endDogfight('', 0); }
@@ -7229,6 +7259,7 @@ function updateCash(dt, time) {
   // bank it at the nest
   if (cash.carry > 0 && !ko.on) { const dx = crow.pos.x - NEST.x, dz = crow.pos.z - NEST.z;
     if (dx * dx + dz * dz < 49 && crow.pos.y < NEST.y + 9) { const n = cash.carry; cash.bank += n; cash.carry = 0; cash.stats.banked += n; saveCash();
+      storyEv('bankTrip', 1); storyEv('bank', n);
       let extra = ''; if (upgHas('homeStash')) { const c = Math.max(2, Math.round(n / 5)); cash.bank += c; extra = ` · +${c} stash bonus`; }
       popup(`🪺 Banked ${n} 🪙 · wallet ${cash.bank}` + extra, NEST_POS.clone().add(new THREE.Vector3(0, 4, 0)), 'gold linger'); sfx.chime(); } }
   drawCashHud(); if (CASH.merged && started) { showMsg(`💵 Your $${CASH.merged} cash is now ${CASH.merged} 🪙 coins: one wallet!`, 3.2, true); CASH.merged = 0; }
@@ -7270,7 +7301,7 @@ function syncCagePanel() {
   $('cageBank').textContent = `Bail ${cage.price} 🪙 · Wallet ${cash.bank} 🪙`;
   const b = $('btnBail'); b.disabled = !can || cage.t < 0.8; b.textContent = can ? `🪙 Pay Bail (${cage.price})` : `🪙 Bail ${cage.price} (need ${cage.price - cash.bank} more)`;
   const lost = []; if (cash.carry > 0) lost.push(`${cash.carry} carried coins`); if (carry > 0) lost.push(`${carry} trinket${carry > 1 ? 's' : ''}`);
-  const bk = $('btnBreak'); bk.disabled = !!cage.jbUsed || cage.t < 0.8; bk.textContent = cage.jbUsed ? '🗝 Guards are on alert now' : '🗝 Break Out (stealth, keep your stuff)';
+  const bk = $('btnBreak'); const bo = storyHas('breakout'); bk.disabled = !bo || !!cage.jbUsed || cage.t < 0.8; bk.textContent = !bo ? '🔒 Break Out (Cousin Jinx teaches it in Chapter 2)' : cage.jbUsed ? '🗝 Guards are on alert now' : '🗝 Break Out (stealth, keep your stuff)';
   $('cageWait').textContent = `${can ? 'Or wait it out' : 'Can\u2019t afford bail? Sit tight'}: released in ${left}s` + (lost.length ? ` (confiscated: ${lost.join(' + ')})` : '') + '.';
 }
 function cageKro(lvl) { // called from knockOut while heat > 0
@@ -7397,7 +7428,7 @@ function jbDraw() {
   addEventListener('keydown', e => { if (!$('jb').classList.contains('show')) return; e.preventDefault(); e.stopImmediatePropagation(); if (KM[e.key]) jbKeys[KM[e.key]] = true; else if (e.key === ' ') hop(); else if (e.key === 'Shift' || e.key === 'c' || e.key === 'C') cover(true); }, true);
   addEventListener('keyup', e => { if (!$('jb').classList.contains('show')) { for (const k in jbKeys) jbKeys[k] = false; return; } e.stopImmediatePropagation(); if (KM[e.key]) jbKeys[KM[e.key]] = false; else if (e.key === 'Shift' || e.key === 'c' || e.key === 'C') cover(false); }, true);
   $('jb').addEventListener('pointerdown', e => e.stopPropagation());
-  $('btnBreak').addEventListener('click', e => { e.preventDefault(); if (cage.on && !cage.jbUsed && cage.t >= 0.8) startBreak(); });
+  $('btnBreak').addEventListener('click', e => { e.preventDefault(); if (cage.on && !cage.jbUsed && cage.t >= 0.8 && storyHas('breakout')) startBreak(); });
   window.__jbHop = hop; window.__jbCover = cover; }
 // ================================================================ v7l: SPIRIT SQUIRREL EVENT (Bran: become a squirrel for tree tasks, ground-only until you
 // transform back; nut collection; woodpeckers are enemies — stop them pecking/damaging the trees)
@@ -7444,7 +7475,7 @@ function spawnSpirit(force) {
   const trees = sqParkTrees(); if (!trees.length) return false; const T = trees[Math.floor(Math.random() * trees.length)];
   const a = rand(0, 6.28), x = T.x + Math.cos(a) * 2.6, z = T.z + Math.sin(a) * 2.6;
   sqr.spirit = { x, z, t: SQ.stay, tree: T }; sqSpirit.visible = sqBeacon.visible = true; sqSpirit.position.set(x, groundAt(x, z), z); sqBeacon.position.set(x, groundAt(x, z) + 30, z);
-  showMsg('✨ A Spirit Squirrel appeared in the park! Land next to it…', 3, true); return true;
+  showMsg('✨ A Spirit Squirrel appeared in the park! Land next to it…', 3, true); storySquirrelIntro(); return true;
 }
 function despawnSpirit() { sqr.spirit = null; sqSpirit.visible = sqBeacon.visible = false; }
 function startSquirrel(force) {
@@ -7585,7 +7616,7 @@ const TUT_CARDS = {
     p: 'The goose guards the pond. <b>Stay above 14 m</b> and he ignores you.', s: 'Fight him with drops and Gusts.' },
 };
 const tutEl = $('tut');
-function canCard() { return started && !paused && !ko.on && !(cage && cage.on) && !dfActive && !(window.__intro && window.__intro.open) && !(window.__guide && window.__guide.open) && !menuOpen && !upgOpen; }
+function canCard() { return started && !paused && !stCardOpen && !nestHubOpen && !ko.on && !(cage && cage.on) && !dfActive && !(window.__intro && window.__intro.open) && !(window.__guide && window.__guide.open) && !menuOpen && !upgOpen; }
 function tutShow(k) {
   const C = TUT_CARDS[k]; if (!C) return; tut.open = k; tut.stats.shown.push(k);
   const intro = TUT_INTRO.includes(k) && !tut.catchup;
@@ -7638,8 +7669,8 @@ function tutUpdate(dt) {
   if (!tut.st.intro) { if (canCard()) { tut.introI = 0; tutShow(TUT_INTRO[0]); } return; }
   if (!tut.st.seen.roll && canCard()) { tut.catchup = true; tutShow('roll'); return; } // v7d1: finished the tutorial before the barrel-roll card existed -> show it once
   if (!tut.st.seen.brake && canCard()) { tut.catchup = true; tutShow('brake'); return; } // v7g: new brake-hover card, shown once to current players
-  if (!tut.objShown && canCard()) { tut.objShown = true; objBanner(quest); }
-  if (tut.pendObj && msgTimer <= 0 && canCard()) { tut.pendObj = false; objBanner(quest); }
+  if (!tut.objShown && canCard()) { tut.objShown = true; storyBanner(); }
+  if (tut.pendObj && msgTimer <= 0 && canCard()) { tut.pendObj = false; storyBanner(); }
   if (!tut.st.done) { tut.freeT += dt; if (tut.freeT >= TUT_FREE) tutFinish('time'); }
   if (tut.st.all) return;
   tut.moved += dt; tut.scanT -= dt; if (tut.scanT > 0 || !canCard()) return; tut.scanT = 0.25;
@@ -7776,10 +7807,10 @@ function closeUpg() { if (!upgOpen) return; upgOpen = false; $('upg').classList.
 $('upgGrid').addEventListener('click', e => { const b = e.target.closest('button[data-upg]'); if (!b || b.disabled) return; buyUpg(b.dataset.upg, +b.dataset.i); });
 onTap('mUpg', () => { closeMenu(); openUpg('menu'); });
 onTap('upgClose', () => closeUpg());
-onTap('btnNestUpg', () => openUpg('nest'));
+onTap('btnNestUpg', () => openNestHub());
 function updateNestUpgBtn() {
   const el = $('btnNestUpg'); if (!el) return;
-  const near = started && !ko.on && !cage.on && !dogfight.on && !dialogOpen && !tutCardOpen && !menuOpen && !upgOpen;
+  const near = started && !ko.on && !cage.on && !dogfight.on && !dialogOpen && !tutCardOpen && !menuOpen && !upgOpen && !nestHubOpen && !stCardOpen;
   const d2 = (crow.pos.x - NEST.x) ** 2 + (crow.pos.z - NEST.z) ** 2;
   el.classList.toggle('show', !!(near && d2 < 12 * 12 && crow.pos.y < NEST.y + 12));
 }
@@ -7824,7 +7855,7 @@ const gmaStats = { talks: 0, clues: 0, wrongs: 0, done: 0, swats: 0 };
 function makeGlassesMesh() {
   const g = new THREE.Group();
   const lens = M(0x9fd4ea, { accent: true, transparent: true, opacity: 0.35 });
-  const rim = M(0x6b5a45); // every pair is identical, nothing marks the real one
+  const rim = M(0x6b5a45); g.userData.rim = rim; // v7o: each pair gets its own frame colour; Grandma's are purple (the clue)
   for (const s of [-1, 1]) {
     const r = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.035, 6, 14), rim); r.position.set(s * 0.26, 0, 0); g.add(r);
     const l = new THREE.Mesh(new THREE.CircleGeometry(0.18, 12), lens); l.position.set(s * 0.26, 0, 0.01); g.add(l);
@@ -7922,8 +7953,11 @@ const gmaPickups = GMA_GLASSES.map(d => {
   const gy = groundAt(d.x, d.z) + 0.55; g.position.set(d.x, gy, d.z); scene.add(g);
   return { ...d, g, m, gl, gy, got: false, ph: rand(0, 6) };
 });
-const gmaClueObj = []; // v7g1: no trail / description clues — players guess
+const gmaClueObj = []; // v7o: the clue is spoken: her frames are purple, like her front door
 applyGmaHers();
+const GMA_RIMS = [0x7a3fb0, 0x6b4a2f, 0xb8332e, 0x2e8a8a, 0x1d1d1d];
+function gmaTint() { let k = 1; for (const p of gmaPickups) { const c = p.hers ? GMA_RIMS[0] : GMA_RIMS[k++ % GMA_RIMS.length || 1]; p.rimCol = c; p.m.userData.rim.color.set(c); } }
+gmaTint();
 const gmaCarryMesh = makeGlassesMesh(); gmaCarryMesh.position.set(0, -0.55, -0.55); gmaCarryMesh.scale.setScalar(0.7); gmaCarryMesh.visible = false; crow.group.add(gmaCarryMesh);
 
 function gmaActive() { return gmaState.stage === 'asked' && !gmaState.done; }
@@ -7938,8 +7972,9 @@ function drawGmaHud() {
   if (gmaState.carry) {
     const p = GMA_GLASSES.find(d => d.id === gmaState.carry);
     $('gmaTxt').textContent = 'Return glasses'; $('gmaCarry').textContent = p ? p.name : '';
+    const pk = gmaPickups.find(q => q.id === gmaState.carry); if (pk && pk.rimCol != null) gmaCarryMesh.userData.rim.color.set(pk.rimCol);
   } else {
-    $('gmaTxt').textContent = 'Lost Glasses'; $('gmaCarry').textContent = left + ' left';
+    $('gmaTxt').textContent = 'Lost Glasses'; $('gmaCarry').textContent = left + ' left · purple frames';
   }
 }
 function gmaBanner(text, why, how, rew) {
@@ -7957,10 +7992,10 @@ function talkToGrandma() {
   if (gmaState.stage === 'new') {
     openDialog([
       { t: 'Oh! A crow! Or… almost a crow? Come closer, dear, I can hardly see a thing.', e: 'idle' },
-      { t: 'I’ve lost my glasses. There are a few pairs around town, and I can’t tell them apart anymore.', e: 'sad' },
-      { t: 'I had them this morning, and then I wandered. Everything is a blur!', e: 'idle' },
-      { t: 'If you find a pair, bring it to my porch. I’ll know mine when I see them.', e: 'happy', btn: 'I’ll look!' },
-    ], () => { gmaState.stage = 'asked'; saveGma(); closeTalk(); showMsg('👓 Quest: Lost Glasses. Bring Grandma her pair', 2.4); sfx.pickup(true); gmaBanner('Find Grandma’s glasses', 'Kro can help a neighbor. Real crows look out for the flock — and the porch next door.', 'Search for glasses around town. All the pairs look alike — bring them back and Grandma will know hers.', '+80 coins · +$30'); drawGmaHud(); }, 'happy', GMA_WHO);
+      { t: 'A gust whisked my reading glasses right off the porch rail this morning. Kind folks found a few pairs around town and left them out on benches and ledges.', e: 'sad' },
+      { t: 'Mine have purple frames, the same purple as my front door. The others belong to other people.', e: 'idle' },
+      { t: 'Bring me the purple pair and I can finally finish my crossword!', e: 'happy', btn: 'I’ll look!' },
+    ], () => { gmaState.stage = 'asked'; saveGma(); closeTalk(); showMsg('👓 Quest: Lost Glasses. Bring Grandma her pair', 2.4); sfx.pickup(true); gmaBanner('Find Grandma’s glasses', 'Kro can help a neighbor. Real crows look out for the flock — and the porch next door.', 'Look for the pair with PURPLE frames, like her front door. Other colours belong to other people.', '+80 coins · +$30'); drawGmaHud(); }, 'happy', GMA_WHO);
     return;
   }
   if (gmaState.carry) {
@@ -7976,7 +8011,7 @@ function talkToGrandma() {
     return;
   }
   const n = gmaState.wrong.length;
-  openDialog([{ t: n ? 'Still not the right pair… Don’t give up, little one.' : 'No luck yet? Keep looking around town, dear.', e: 'idle', btn: 'On it' }], () => closeTalk(), 'idle', GMA_WHO);
+  openDialog([{ t: n ? 'Not those, dear. Mine are purple, like my front door.' : 'No luck yet? Look for purple frames, like my front door.', e: 'idle', btn: 'On it' }], () => closeTalk(), 'idle', GMA_WHO);
 }
 function gmaSwatHurt() {
   // Lose 1 heart, but never drop to 0 / knock out (even from 1 heart, and never a game over from full health).
@@ -8004,8 +8039,8 @@ function doGmaSwat() {
   crow.pos.x += dx / L * 2; crow.pos.z += dz / L * 2;
   gmaSwatHurt();
   sfx.bonk();
-  popup('Wrong pair! Keep trying.', crow.pos.clone().add(new THREE.Vector3(0, 2, 0)));
-  showMsg('Wrong pair! Keep trying.', 2.2);
+  popup('Not purple! Shoo!', crow.pos.clone().add(new THREE.Vector3(0, 2, 0)));
+  showMsg('Wrong pair! Hers have purple frames, like her door.', 2.4);
   for (let i = 0; i < 8 && typeof emit === 'function'; i++) {
     try { emit(leafPool, leafI++, new THREE.Vector3(GMA.x + 1.1, gmaHouse.gy + 1.4, GMA.z + 3.8), new THREE.Vector3(rand(-3, 3), rand(2, 5), rand(-1, 4)), rand(0.6, 1.1), 0.2, 0, rand(-6, 6), 0xe8c96a); } catch (_) {}
   }
@@ -8016,7 +8051,7 @@ function finishGma() {
   const pack = gmaPickups.find(p => p.hers);
   if (pack) pack.got = true;
   gmaState.carry = ''; gmaState.stage = 'done'; gmaState.done = true; saveGma();
-  gmaStats.done++;
+  gmaStats.done++; storyEv('gma');
   ach.coins += 110; saveAch(); cash.stats.banked += 30;
   addScore(1500); questHeartReward(1);
   drawCashHud(); drawGmaHud();
@@ -8159,7 +8194,7 @@ function frame() {
       crow.pos.y = Math.max(groundAt(crow.pos.x, crow.pos.z) + 0.9, crow.pos.y + crow.vy * dt); crow.yaw += dt * 2.5;
       crow.group.position.copy(crow.pos); crow.group.rotation.set(0.3, crow.yaw, Math.sin(gameTime * 6) * 0.5);
     } else if (sqr.on) updateSquirrel(dt, gameTime); else updateCrow(dt, gameTime);
-    checkNestDelivery();
+    checkNestDelivery(); updateStory(dt, gameTime);
     if (quest && quest.done) { questDoneT -= dt; if (questDoneT <= 0) newQuest(); }
   } else {
     // idle attract: slow circling
@@ -8249,8 +8284,240 @@ var gfxDetail = (() => {
 }
 applyGfx();
 const v7m = { GFX, GFX_KEY, GFX_AUTO, gfxLevel, setGfxQ, applyGfx, post, sun, get gfxDetail() { return gfxDetail; }, sqCamClear, postBuild, postLoad, fps: () => fpsMeter.fps };
+// ================================================================ v7o: STORY SPINE. Kro is a raven raised by a family of crows; 5 chapters + finale at the Nest Base.
+// Each chapter has 3 authored goals (reusing existing activities) and unlocks one system with a reason. The hawk (LV 2+) and the
+// Spirit Squirrel stay random encounters; the random quest board lives on as optional, repeatable side jobs. All original names.
+const STORY_KEY = 'totallyACrow.story.v1';
+const FAM = {
+  mama: { ava: '🐦‍⬛', name: 'Mama Caw', sub: 'Kro’s mom · the nest', role: 'Raised a raven like her own' },
+  pip: { ava: '🐥', name: 'Pip', sub: 'little brother · mischief expert', role: 'Taught Kro classic crow mischief' },
+  jinx: { ava: '🕶', name: 'Cousin Jinx', sub: 'street-smart cousin · back alleys', role: 'Knows every gap in the impound fence' },
+  rook: { ava: '🪶', name: 'Grandpa Rook', sub: 'oldest crow on the block', role: 'Looks out for the whole neighborhood' },
+  smudge: { ava: '🎨', name: 'Aunt Smudge', sub: 'paint-splashed aunt · plaza wall', role: 'Guards the plaza mural' },
+};
+const CHAPTERS = [
+  { id: 'pro', tag: 'PROLOGUE', name: 'The Odd Egg', who: 'mama',
+    intro: 'Kro hatched bigger and darker than every other egg in the nest: a raven, raised by crows. The family loves him. The neighborhood crows whisper.',
+    lines: ['There’s my big boy! Some crows on the block say you’re “not a real crow.” Pfft.', 'Show them. Snack like a crow, bring home something shiny and stash a few coins. That’s how crows live.'],
+    goals: [{ k: 'fries', n: 5, icon: '🍟', t: 'Snack like a crow: collect 5 fries', how: 'Fly low through 🍟 fries' },
+      { k: 'deliver', n: 1, icon: '✨', t: 'Bring a shiny trinket home', how: 'Grab a ✨ trinket, then fly to the 🪺 nest' },
+      { k: 'bankTrip', n: 1, icon: '🪙', t: 'Bank a coin pouch at the nest', how: 'Grab a 🪙 coin pouch, then fly to the 🪺 nest' }],
+    unlock: 'jobs', unlockName: 'Side jobs on the Quest Board', why: 'Mama: “The flock pins odd jobs on the board by our nest. Take one whenever you like. They pay XP and coins.”', xp: 1500, coins: 40 },
+  { id: 'c1', tag: 'CHAPTER 1', name: 'Totally a Crow', who: 'pip',
+    intro: 'Little brother Pip has heard the gossip: ravens are “too fancy” for crow mischief. He has a plan to prove them wrong.',
+    lines: ['Big bro! The block crows say ravens can’t do proper mischief.', 'Prove ’em wrong: splat some people, bomb a couple of cars and get a phone-starer. We do it every day!'],
+    goals: [{ k: 'splat', n: 4, icon: '🎯', t: 'Splat 4 people', how: 'Drop on people anywhere in town' },
+      { k: 'cars', n: 2, icon: '🚗', t: 'Bomb 2 moving cars', how: 'Drop when the ring locks on a car' },
+      { k: 'phones', n: 1, icon: '📱', t: 'Hit a phone-starer', how: 'Drop right on a 📱 human' }],
+    unlock: 'classes', unlockName: 'Crow Classes', why: 'Pip: “Every crow in this family has a style. Pick yours! Your first class is on me.”', xp: 3000, coins: 60 },
+  { id: 'c2', tag: 'CHAPTER 2', name: 'Street Heat', who: 'jinx',
+    intro: 'Cousin Jinx runs the back alleys and has been caged more times than anyone will admit. She wants to see if the raven can handle Heat.',
+    lines: ['So you’re the raven everyone’s squawking about. Ever had the cops on your tail?', 'Splat a cop to get some Heat, then shake it off. And stash coins. Bail isn’t free, kid.'],
+    goals: [{ k: 'heat', n: 1, icon: '🔥', t: 'Get some Heat: splat a cop', how: 'Drop on a cop on patrol' },
+      { k: 'cool', n: 1, icon: '🍩', t: 'Shake off the Heat', how: 'Eat a 🍩 donut, or lie low until Heat is back to 0' },
+      { k: 'bank', n: 40, icon: '🪙', t: 'Stash 40 coins at the nest', how: 'Carry 🪙 coin pouches home to the 🪺 nest' }],
+    unlock: 'breakout', unlockName: 'Break Out', why: 'Jinx: “If they ever cage you, there’s a gap in the impound-lot fence. Sneak past the guards and you keep your stuff.”', xp: 5000, coins: 80 },
+  { id: 'c3', tag: 'CHAPTER 3', name: 'Shadow and Feathers', who: 'rook',
+    intro: 'Grandpa Rook has watched over this block for longer than the plaza has existed. He thinks a real crow protects the neighborhood.',
+    lines: ['Hrrm. A raven in a crow nest. Your mother was right about you, boy.', 'A real crow looks after the neighborhood. Help Wren on her porch, stop those raccoon bandits and learn to slip the hawk.'],
+    goals: [{ k: 'gma', n: 1, icon: '👓', t: 'Help Grandma Wren find her glasses', how: 'Visit her porch by the east avenue', pre: () => gmaState.done },
+      { k: 'heist', n: 1, icon: '🦝', t: 'Stop a raccoon fry heist', how: 'Hit the 🦝 bandit before he reaches the dumpster' },
+      { k: 'hawk', n: 1, icon: '🦅', t: 'Escape the hawk', how: 'He hunts the west neighborhood. Weave, fly low or hide to fill EVADE' }],
+    unlock: 'rudy', unlockName: 'Rattlecan Rudy (boss)', why: 'Grandpa: “Your Aunt Smudge flew home dripping paint. Somebody’s tagging the plaza wall. Go see her.”', xp: 8000, coins: 120 },
+  { id: 'c4', tag: 'CHAPTER 4', name: 'Paint the Town', who: 'smudge',
+    intro: 'Aunt Smudge guards the plaza mural. Tonight she came home sprayed head to tail, and she is not amused.',
+    lines: ['Look at me! Rattlecan Rudy sprayed me head to tail while I was guarding the wall.', 'Stop him, knock that bully goose off the pond and bring down one of those buzzing drones. Then the whole family will see what you are.'],
+    goals: [{ k: 'tagger', n: 1, icon: '🎨', t: 'Stop Rattlecan Rudy at the wall', how: 'Drops and Gusts drain his bar' },
+      { k: 'goose', n: 1, icon: '🪿', t: 'Defeat Baron Bellowbeak at the pond', how: 'Drops and Gusts drain his bar' },
+      { k: 'drone', n: 1, icon: '🛸', t: 'Bring down a drone', how: 'Drones come at 🔥 Heat 3. Drop on one, or roll so its blast hits nothing' }],
+    unlock: 'nestbase', unlockName: 'The Nest Base', why: 'Smudge: “Everyone’s flying home tonight. Go on, they’re waiting for you at the nest.”', xp: 12000, coins: 200 },
+  { id: 'fin', tag: 'FINALE', name: 'A Nest of His Own', who: 'mama',
+    intro: 'The whole crow family is gathering at the nest. Every one of them has a story about the raven now.',
+    lines: ['Everyone’s home. Come on, Kro. The family is waiting.'],
+    goals: [{ k: 'nest', n: 1, icon: '🪺', t: 'Fly home to the nest', how: 'Follow the arrow to the 🪺 nest' }],
+    unlock: '', unlockName: '', why: '', xp: 5000, coins: 300 },
+];
+var story = null, stCardOpen = false, nestHubOpen = false;
+function storyHas(u) { return !story || story.done || story.un.includes(u); }
+function saveStory() { try { localStorage.setItem(STORY_KEY, JSON.stringify(story)); } catch (_) {} }
+function loadStory() {
+  let s = null; try { s = JSON.parse(localStorage.getItem(STORY_KEY) || 'null'); } catch (_) {}
+  if (s && typeof s === 'object' && isFinite(s.ci)) return Object.assign({ ci: 0, gi: 0, n: 0, un: [], seen: {}, done: 0, freeCls: 0, shown: -1, vet: 0 }, s);
+  s = { ci: 0, gi: 0, n: 0, un: [], seen: {}, done: 0, freeCls: 0, shown: -1, vet: 0 };
+  // existing players: credit chapters they've clearly lived through (no rewards paid twice); keep anything they already use
+  const tutDone = !!(tut && tut.st && tut.st.done), owned = clsOwned ? clsOwned.length : 1;
+  if (tutDone || lvl.xp >= 3000) { s.ci = 1; s.un.push('jobs'); s.vet = 1; }
+  if (s.ci >= 1 && (lvl.lv >= 3 || owned > 1)) { s.ci = 2; s.un.push('classes'); }
+  if (s.ci >= 2 && lvl.lv >= 4) { s.ci = 3; s.un.push('breakout'); }
+  if ((ach.tags | 0) > 0 && !s.un.includes('rudy')) s.un.push('rudy');
+  return s;
+}
+story = loadStory(); saveStory();
+const stCh = () => CHAPTERS[Math.min(story.ci, CHAPTERS.length - 1)];
+const stGoal = () => story.done ? null : stCh().goals[story.gi] || null;
+function storyEv(k, amt = 1) {
+  if (!story || story.done || stCardOpen) return; const g = stGoal(); if (!g || g.k !== k) return;
+  story.n += amt; if (story.n >= g.n) storyAdvance(); else { saveStory(); drawStoryHud(); try { sfx.pickup(false); } catch (_) {} }
+}
+function storyAdvance() {
+  story.gi++; story.n = 0;
+  const C = stCh();
+  while (story.gi < C.goals.length && C.goals[story.gi].pre && C.goals[story.gi].pre()) story.gi++; // already done (e.g. Grandma helped before)
+  if (story.gi >= C.goals.length) { storyCompleteChapter(); return; }
+  saveStory(); drawStoryHud(); try { sfx.chime(); } catch (_) {}
+  showMsg('✅ Goal done! Next: ' + C.goals[story.gi].t, 2.4, true); storyBanner();
+}
+function storyCompleteChapter() {
+  const C = stCh(); addScore(C.xp); ach.coins += C.coins; saveAch();
+  if (C.unlock && !story.un.includes(C.unlock)) story.un.push(C.unlock);
+  if (C.unlock === 'classes') story.freeCls = 1;
+  if (C.unlock === 'rudy' && tagger.state === 'gone') tagger.respawnT = Math.min(tagger.respawnT, 1);
+  const last = story.ci >= CHAPTERS.length - 1;
+  if (last) { story.done = 1; story.gi = 0; story.n = 0; saveStory(); drawStoryHud(); storyFinale(); return; }
+  story.ci++; story.gi = 0; story.n = 0; saveStory(); drawStoryHud(); syncFamily();
+  storyCard('done', C);
+}
+// ---- chapter cards (Kro graffiti palette)
+let stCardCb = null;
+function storyCard(mode, C, cb) {
+  const el = $('stCard'); stCardCb = cb || null; el.dataset.mode = mode;
+  if (mode === 'intro') {
+    $('stcTag').textContent = C.tag; $('stcName').textContent = C.name; $('stcIntro').textContent = C.intro + (story.vet === 1 ? ' (Story mode is new: your progress carried over, so you start here.)' : ''); if (story.vet === 1) story.vet = 2;
+    $('stcList').innerHTML = C.goals.map((g, i) => `<li><span>${g.icon}</span>${g.t}</li>`).join('');
+    $('stcUnlock').innerHTML = C.unlockName ? `🔓 Unlocks: <b>${C.unlockName}</b> · +${C.xp.toLocaleString()} XP · +${C.coins} 🪙` : `🏆 +${C.xp.toLocaleString()} XP · +${C.coins} 🪙`;
+    $('stcWho').textContent = `${FAM[C.who].ava} ${FAM[C.who].name} has something to ask…`;
+    $('stcGo').textContent = 'Let’s fly ▸';
+  } else {
+    $('stcTag').textContent = C.tag + ' COMPLETE'; $('stcName').textContent = C.name; $('stcIntro').textContent = C.why || '';
+    $('stcList').innerHTML = `<li><span>⭐</span>+${C.xp.toLocaleString()} XP</li><li><span>🪙</span>+${C.coins} coins</li>` + (C.unlockName ? `<li class="u"><span>🔓</span>${C.unlockName}</li>` : '');
+    $('stcUnlock').innerHTML = ''; $('stcWho').textContent = ''; $('stcGo').textContent = 'Next chapter ▸';
+  }
+  el.classList.add('show'); stCardOpen = true; updatePaused(); try { sfx.fanfare && mode === 'done' ? sfx.fanfare() : sfx.chime(); } catch (_) {}
+}
+function closeStoryCard() {
+  if (!stCardOpen) return; const mode = $('stCard').dataset.mode; $('stCard').classList.remove('show'); stCardOpen = false; updatePaused();
+  const cb = stCardCb; stCardCb = null;
+  if (mode === 'intro') { const C = stCh(); story.shown = story.ci; saveStory(); syncFamily(); openDialog(C.lines.map((t, i) => ({ t, e: 'happy', btn: i === C.lines.length - 1 ? 'On it!' : undefined })), () => { storyBanner(); if (cb) cb(); }, 'happy', FAM[C.who]); }
+  else if (cb) cb();
+}
+onTap('stcGo', () => closeStoryCard());
+function storyBanner() {
+  const g = stGoal(); if (!g) { if (storyHas('jobs') && quest && !quest.done) objBanner(quest); return; }
+  const C = stCh(); objBanner({ icon: g.icon, text: g.t, reward: '', bonus: '', type: '__story', _why: `${C.tag} · ${C.name}`, _how: g.how });
+}
+// ---- objective tracker (top-centre HUD): chapter + current goal, then the optional side job
+let stHudKey = '';
+function drawStoryHud() {
+  if (!story) return; const g = stGoal(), C = stCh();
+  const k = [story.ci, story.gi, story.n, story.done, storyHas('jobs')].join('|'); if (k === stHudKey) return; stHudKey = k;
+  $('stTag').textContent = story.done ? 'FREE FLIGHT' : C.tag; $('stName').textContent = story.done ? 'Kro is family' : C.name;
+  $('stStep').textContent = story.done ? '★' : `${Math.min(story.gi + 1, C.goals.length)}/${C.goals.length}`;
+  if (g) { $('qIcon').textContent = g.icon; $('qText').textContent = g.t; $('qProg').textContent = g.n > 1 ? `${Math.min(story.n, g.n)}/${g.n}` : ''; $('qHead').style.display = ''; }
+  else $('qHead').style.display = 'none';
+  $('sjRow').style.display = storyHas('jobs') ? '' : 'none';
+  document.body.classList.toggle('storyDone', !!story.done); if (story.done) $('qWhy').classList.remove('on');
+}
+function storyTarget() {
+  const g = stGoal(); if (!g) return undefined;
+  const near = l => nearestOf(l);
+  switch (g.k) {
+    case 'fries': return near(items.filter(i => i.alive && i.type === 'fries').map(i => i.obj.position));
+    case 'deliver': return carry > 0 ? NEST_POS : near(items.filter(i => i.alive && i.type === 'trinket').map(i => i.obj.position)) || NEST_POS;
+    case 'bank': case 'bankTrip': return cash.carry > 0 ? NEST_POS : near(cashItems.filter(c => c.alive).map(c => c.g.position)) || NEST_POS;
+    case 'splat': return near(peds.filter(p => p.panic <= 0 && p.g.visible).map(p => p.g.position));
+    case 'phones': return near(peds.filter(p => p.hasPhone).map(p => p.g.position));
+    case 'cars': return near(movingCars);
+    case 'heat': return near(cops.filter(c => c.active && c.g.visible).map(c => c.g.position));
+    case 'cool': return donut.on ? donut.g.position : null;
+    case 'gma': return gmaState.carry || gmaState.stage === 'new' ? grandma.g.position : null;
+    case 'heist': return heistActive() ? heistRac.g.position : null;
+    case 'tagger': return { x: TAG.x, z: (TAG.z0 + TAG.z1) / 2 };
+    case 'goose': return { x: goose.x, z: goose.z };
+    case 'drone': return near(drones.filter(d => d.st !== 'off' && d.g.visible).map(d => d.g.position));
+    case 'nest': return NEST_POS;
+  }
+  return null;
+}
+// ---- the crow family perched around the nest (one merged mesh each; they show up as Kro meets them)
+function famCrowGeo(body, extra = [], head) {
+  return propGeo([
+    [G.ball(0.55, 1), body, [0, 0.75, 0], [0, 0, 0], [0.9, 0.85, 1.25]], [G.ball(0.36, 1), head || body, [0, 1.35, 0.45]],
+    [G.cone(0.12, 0.45, 6), 0x3e3a52, [0, 1.3, 0.92], [Math.PI / 2, 0, 0]], [G.box(0.5, 0.08, 0.6), body, [0, 0.78, -0.78], [0.3, 0, 0]],
+    [G.box(0.1, 0.1, 0.06), 0xffffff, [-0.17, 1.42, 0.77]], [G.box(0.1, 0.1, 0.06), 0xffffff, [0.17, 1.42, 0.77]],
+    [G.box(0.06, 0.3, 0.06), 0xe0a020, [-0.15, 0.22, 0.1]], [G.box(0.06, 0.3, 0.06), 0xe0a020, [0.15, 0.22, 0.1]],
+  ].concat(extra));
+}
+const FAM_LOOK = {
+  mama: [0x2a2a36, [[G.box(0.62, 0.14, 0.5), 0xc9b8ff, [0, 1.06, 0.3]]], null, 1.05],
+  pip: [0x2e2e3a, [[G.cone(0.1, 0.32, 5), 0xffe229, [0, 1.78, 0.4]]], null, 0.72],
+  jinx: [0x262630, [[G.box(0.62, 0.14, 0.5), 0xff2d95, [0, 1.06, 0.3]], [G.box(0.5, 0.09, 0.08), 0x111111, [0, 1.42, 0.79]]], null, 0.95],
+  rook: [0x30303a, [[G.box(0.2, 0.04, 0.05), 0xd8d0c0, [0.15, 1.58, 0.74], [0, 0, -0.5]]], 0x8a8a96, 1.0],
+  smudge: [0x2a2a34, [[G.ball(0.2, 0), 0xff2d95, [0.38, 0.95, 0.3]], [G.ball(0.16, 0), 0x1ee8ff, [-0.35, 0.7, -0.2]], [G.ball(0.15, 0), 0x9cff2e, [0.1, 1.55, 0.3]]], null, 1.0],
+};
+const famCrows = {};
+{ const order = ['mama', 'pip', 'jinx', 'rook', 'smudge'];
+  order.forEach((id, i) => { const L = FAM_LOOK[id], m = new THREE.Mesh(famCrowGeo(L[0], L[1], L[2]), propMat); const a = -0.9 + i * 0.95, r = 2.55;
+    m.position.set(NEST.x + Math.cos(a) * r, NEST.y + 0.35, NEST.z + Math.sin(a) * r); m.rotation.y = Math.atan2(-Math.cos(a), -Math.sin(a)) + Math.PI; m.scale.setScalar(L[3] * 1.15);
+    m.visible = false; m.castShadow = true; scene.add(m); famCrows[id] = { m, y0: m.position.y, ph: i * 1.3 }; }); }
+const nestGold = new THREE.Mesh(new THREE.TorusGeometry(2.35, 0.16, 6, 28), M(0xffd23f, { accent: true, emissive: 0x6a4a00 })); nestGold.rotation.x = Math.PI / 2; nestGold.position.set(NEST.x, NEST.y + 0.95, NEST.z); nestGold.visible = false; scene.add(nestGold);
+function famMet(id) { if (!story) return false; if (story.done) return true; const idx = CHAPTERS.findIndex(c => c.who === id); return idx >= 0 && (idx < story.ci || (idx === story.ci && story.shown >= story.ci)); }
+function syncFamily() { for (const id in famCrows) famCrows[id].m.visible = famMet(id); nestGold.visible = !!(story && story.done); }
+function updateFamily(dt, time) {
+  for (const id in famCrows) { const F = famCrows[id]; if (!F.m.visible) continue; const h = Math.max(0, Math.sin(time * 2.2 + F.ph * 3)); F.m.position.y = F.y0 + (h > 0.97 ? (h - 0.97) * 6 : 0); }
+}
+// ---- the finale: the family gathers, Kro is accepted, the Nest Base opens
+function storyFinale() {
+  syncFamily(); camShake = Math.max(camShake, 0.2); try { sfx.fanfare(); } catch (_) {}
+  const C = CHAPTERS[CHAPTERS.length - 1];
+  openDialog([
+    { t: 'Look at you. Bigger than all of us, darker than all of us, and the best crow on the block.', e: 'happy' },
+    { t: 'Pip: “Told you he could do mischief!” Jinx: “Not bad, kid.” Smudge: “My feathers are almost clean again.”', e: 'happy' },
+    { t: 'Grandpa Rook: “Raven or crow, feathers don’t make family. You do.”', e: 'happy' },
+    { t: 'This nest is yours too, Kro. Welcome home.', e: 'happy', btn: 'Home ♥' },
+  ], () => {
+    bigBanner('KRO IS FAMILY!', `+${C.xp.toLocaleString()} XP · +${C.coins} 🪙 · The Nest Base is yours`, '#ffe229', 'ach');
+    openNestHub(true);
+  }, 'happy', FAM.mama);
+}
+// ---- the Nest Base hub: story chapters, the family, upgrades and class (at the nest or from the pause menu)
+function renderNestHub(fin) {
+  $('nhStats').textContent = `LV ${lvl.lv} · ${Math.round(lvl.xp).toLocaleString()} XP · 🪙 ${ach.coins | 0}`;
+  $('nhTitle').textContent = story.done ? '🪺 Kro’s Nest Base' : '🪺 The Nest';
+  $('nhNote').textContent = fin ? 'The End… of the story. The town is still yours: side jobs, the hawk, the Spirit Squirrel and the bosses keep coming.' : story.done ? 'Kro is family. Free flight: side jobs, the hawk, the Spirit Squirrel and the bosses keep coming.' : 'Finish each chapter to meet the family and unlock what they teach.';
+  $('nhFam').innerHTML = Object.entries(FAM).map(([id, f]) => `<div class="nhF${famMet(id) ? '' : ' off'}"><span>${famMet(id) ? f.ava : '❔'}</span><b>${famMet(id) ? f.name : '???'}</b><small>${famMet(id) ? f.role : 'Not met yet'}</small></div>`).join('');
+  $('nhStory').innerHTML = CHAPTERS.map((c, i) => { const st = story.done || i < story.ci ? 'done' : i === story.ci ? 'cur' : 'lock';
+    return `<div class="nhC ${st}"><span>${st === 'done' ? '✅' : st === 'cur' ? '▶' : '🔒'}</span><b>${c.tag} · ${st === 'lock' ? '???' : c.name}</b><small>${st === 'cur' ? (stGoal() ? 'Now: ' + stGoal().t : '') : c.unlockName ? 'Unlocks ' + c.unlockName : 'Finale'}</small></div>`; }).join('');
+}
+function openNestHub(fin) { if (nestHubOpen) return; nestHubOpen = true; renderNestHub(fin); $('nestHub').classList.add('show'); updatePaused(); }
+function closeNestHub() { if (!nestHubOpen) return; nestHubOpen = false; $('nestHub').classList.remove('show'); updatePaused(); }
+onTap('nhClose', () => closeNestHub());
+onTap('nhUpg', () => { closeNestHub(); openUpg('nest'); });
+onTap('nhCls', () => { closeNestHub(); openCls(); });
+onTap('mStory', () => { closeMenu(); openNestHub(); });
+function clsGate(id) {
+  if (!storyHas('classes')) { $('clsNote').textContent = '🔒 Classes unlock in Chapter 1: Totally a Crow (Pip).'; return false; }
+  if (story && story.freeCls) { story.freeCls = 0; saveStory(); unlockClass(id, true); showMsg('🎁 Pip covered your first class!', 1.8, true); return true; }
+  return true;
+}
+function clsLockLabel(c) { return !storyHas('classes') ? '🔒 Chapter 1' : story && story.freeCls ? '🎁 Free unlock' : `🔒 Unlock · ${CLS_COST[c.id]} 🪙`; }
+// ---- per-frame: show pending chapter cards, the 'fly home' goal, family idle
+let stSqPend = false;
+function updateStory(dt, time) {
+  updateFamily(dt, time); drawStoryHud();
+  if (!started || !story) return;
+  const ready = canCard() && !stCardOpen && !dialogOpen && !tutCardOpen && !nestHubOpen && !window.__clsOpen && tut.st.intro && !sqr.on && !(jb && jb.on);
+  if (ready && !story.done && story.shown < story.ci) { storyCard('intro', stCh()); return; }
+  if (ready && stSqPend) { stSqPend = false; openDialog([{ t: 'See that glow in the park? A Spirit Squirrel. Old crows say it picks a helper to guard the trees.', e: 'happy' }, { t: 'It comes and goes like the wind, same as that hawk. When it shows up, go see it.', e: 'happy', btn: 'Got it' }], null, 'happy', FAM.rook); return; }
+  const g = stGoal();
+  if (g && g.k === 'nest' && !ko.on && (crow.pos.x - NEST.x) ** 2 + (crow.pos.z - NEST.z) ** 2 < 64 && crow.pos.y < NEST.y + 10) storyEv('nest');
+  if (g && g.pre && g.pre()) storyAdvance();
+}
+function storySquirrelIntro() { if (story && !story.seen.sq) { story.seen.sq = 1; saveStory(); stSqPend = true; } }
+syncFamily(); drawStoryHud();
+const v7o = { STORY_KEY, CHAPTERS, FAM, get story() { return story; }, set story(v) { story = v; }, storyEv, storyAdvance, storyCompleteChapter, storyHas, saveStory, loadStory, stGoal, storyTarget, openNestHub, closeNestHub, closeStoryCard, get stCardOpen() { return stCardOpen; }, famCrows, syncFamily, clsGate, gmaState, finishGma, nestGold, snapCamera, NEST };
+
 const v7n = { CASH, cash, CLS_COST, get clsOwned() { return clsOwned; }, clsHas, unlockClass, setClass, ach, migrateCashToCoins, cage, cageKro, releaseCage, drawCashHud };
-window.__crowGame = { v7n, v7m, v7l, v7k, v7g, v7e, v7d, v7b, v7, v6d, v6c: { ...v6c, THREE, HILLS, hillAt: (x, z) => hillAt(x, z), groundAt, heal, questHeartReward, DIFF }, v6b: { ach, ACH_TRACKS, achAdvance, achHas, netBust, heist, heistRac, HEIST_SITES, startHeist, heistSave, heistActive, gust, GUST, startGust, trashCans, TREES, gdrops, spawnDrop, FP, onFootpath, parkProps, renderAch, showAch, banQ, stats: v6b.stats, knockPed, megaDur, saveAch, get dogfightOn() { return dogfight.on; }, pond, goose, gooseG, GZ, gooseHit, defeatGoose, respawnGoose, gustGoose, pigeons, flock, FLOCKS, scatterAt, fisher, FISH, crumbs, tossCrumbs, inLeash, crowCrown, syncCrown }, cameo: { state: cameo, gears, bot, skins, cstats, grantAllGears, resetCameo, talkToBot, closeDialog, applySkin, BOT_POS, TOWER, gearCar, get dialogOpen() { return dialogOpen; }, get skinCur() { return skinCur; }, circFx, CIRC_U, circParts }, colliders, colliderAt, groundAt, groundLayers, grassFx, skyDome, enemy: { dogfight, chaseMusic, startDogfight, endDogfight, hawkCrash, losBlocked, DF_DIFF, hitPed, movingCars, hawk, netters, hurt, heal, knockOut, respawn, resetEnemies, gameSet, ens, ko, setHawkWarn, get hp() { return crow.hp; } }, airFx, musStats, get mus() { return mus; }, get megaTime() { return megaTime; }, setMega(v) { megaTime = v; }, fxSet, get actx() { return actx; }, renderer, camera, scene, crow, peds, items, projectiles, input, dropBomb, restart, get score() { return score; }, get phonesHit() { return phonesHit; }, get paused() { return paused; }, get quest() { return quest; }, get carry() { return carry; }, NEST, movingCars, colliders, questProgress, newQuest, get qTarget() { return qTarget; }, air, streams, raccoons, get layout() { return layout; }, applyLayout, openMenu, closeMenu, menuPage, get menuOpen() { return menuOpen; }, get customizing() { return customizing; }, start() { $('start').style.display = 'none'; started = true; }, roll, ROLL, startRoll, flick, FLICK, flickCheck };
+window.__crowGame = { v7o, v7n, v7m, v7l, v7k, v7g, v7e, v7d, v7b, v7, v6d, v6c: { ...v6c, THREE, HILLS, hillAt: (x, z) => hillAt(x, z), groundAt, heal, questHeartReward, DIFF }, v6b: { ach, ACH_TRACKS, achAdvance, achHas, netBust, heist, heistRac, HEIST_SITES, startHeist, heistSave, heistActive, gust, GUST, startGust, trashCans, TREES, gdrops, spawnDrop, FP, onFootpath, parkProps, renderAch, showAch, banQ, stats: v6b.stats, knockPed, megaDur, saveAch, get dogfightOn() { return dogfight.on; }, pond, goose, gooseG, GZ, gooseHit, defeatGoose, respawnGoose, gustGoose, pigeons, flock, FLOCKS, scatterAt, fisher, FISH, crumbs, tossCrumbs, inLeash, crowCrown, syncCrown }, cameo: { state: cameo, gears, bot, skins, cstats, grantAllGears, resetCameo, talkToBot, closeDialog, applySkin, BOT_POS, TOWER, gearCar, get dialogOpen() { return dialogOpen; }, get skinCur() { return skinCur; }, circFx, CIRC_U, circParts }, colliders, colliderAt, groundAt, groundLayers, grassFx, skyDome, enemy: { dogfight, chaseMusic, startDogfight, endDogfight, hawkCrash, losBlocked, DF_DIFF, hitPed, movingCars, hawk, netters, hurt, heal, knockOut, respawn, resetEnemies, gameSet, ens, ko, setHawkWarn, get hp() { return crow.hp; } }, airFx, musStats, get mus() { return mus; }, get megaTime() { return megaTime; }, setMega(v) { megaTime = v; }, fxSet, get actx() { return actx; }, renderer, camera, scene, crow, peds, items, projectiles, input, dropBomb, restart, get score() { return score; }, get phonesHit() { return phonesHit; }, get paused() { return paused; }, get quest() { return quest; }, get carry() { return carry; }, NEST, movingCars, colliders, questProgress, newQuest, get qTarget() { return qTarget; }, air, streams, raccoons, get layout() { return layout; }, applyLayout, openMenu, closeMenu, menuPage, get menuOpen() { return menuOpen; }, get customizing() { return customizing; }, start() { $('start').style.display = 'none'; started = true; }, roll, ROLL, startRoll, flick, FLICK, flickCheck };
 </script>
 </body>
 </html>
