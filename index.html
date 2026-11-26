@@ -5,8 +5,47 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#260b3d">
-<link rel="icon" href="data:,">
+<meta name="theme-color" content="#331257">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kro">
+<script>
+// v7p: ONE versioned save. Every progress/setting value lives in localStorage['kro.save'] = { app:'kro', v, saved, data:{ key: value } }.
+// The ~20 old per-feature keys (crowPatrol.* / totallyACrow.*) are folded in once and removed. Same get/set API as localStorage.
+window.KroSave = (() => {
+  const KEY = 'kro.save', V = 1, LEGACY = /^(crowPatrol|totallyACrow)\./;
+  const MIGRATIONS = {}; // MIGRATIONS[n] = save => save (upgrades a v n save to v n+1)
+  let ls = null; try { ls = window.localStorage; ls.getItem(KEY); } catch (_) { ls = null; }
+  let S = null, ok = true;
+  const fresh = () => ({ app: 'kro', v: V, created: Date.now(), saved: 0, data: {}, migrated: [] });
+  function persist() { S.saved = Date.now(); if (!ls) return false; try { ls.setItem(KEY, JSON.stringify(S)); ok = true; } catch (e) { ok = false; } return ok; }
+  function upgrade(o) { while ((o.v | 0) < V) { const f = MIGRATIONS[o.v | 0]; if (f) o = f(o) || o; o.v = (o.v | 0) + 1; } return o; }
+  function valid(o) { return o && o.app === 'kro' && o.data && typeof o.data === 'object' && isFinite(o.v) && o.v <= V; }
+  let raw = null; try { raw = ls && JSON.parse(ls.getItem(KEY) || 'null'); } catch (_) { raw = null; }
+  if (valid(raw)) S = upgrade(raw);
+  else { S = fresh(); if (ls) { const ks = []; for (let i = 0; i < ls.length; i++) { const k = ls.key(i); if (k && LEGACY.test(k)) ks.push(k); }
+      for (const k of ks) S.data[k] = ls.getItem(k); S.migrated = ks; if (persist()) for (const k of ks) try { ls.removeItem(k); } catch (_) {} } else persist(); }
+  // late legacy writes (e.g. an old tab) are folded in too
+  if (ls) { const late = []; for (let i = 0; i < ls.length; i++) { const k = ls.key(i); if (k && LEGACY.test(k)) late.push(k); } if (late.length) { for (const k of late) { if (!(k in S.data)) S.data[k] = ls.getItem(k); try { ls.removeItem(k); } catch (_) {} } persist(); } }
+  try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (_) {}
+  return {
+    getItem: k => (Object.prototype.hasOwnProperty.call(S.data, k) ? S.data[k] : null),
+    setItem: (k, v) => { S.data[k] = String(v); persist(); },
+    removeItem: k => { delete S.data[k]; persist(); },
+    clear: () => { S.data = {}; persist(); },
+    key: i => Object.keys(S.data)[i] ?? null,
+    get length() { return Object.keys(S.data).length; },
+    get version() { return S.v; }, get ok() { return ok; }, get migrated() { return S.migrated.slice(); },
+    flush: () => persist(),
+    exportText: () => JSON.stringify(Object.assign({}, S, { exported: new Date().toISOString() }), null, 1),
+    importText: txt => { let o; try { o = JSON.parse(txt); } catch (_) { return 'That file is not a Kro save.'; } if (!valid(o)) return 'That file is not a Kro save (or it is from a newer version).';
+      S = upgrade({ app: 'kro', v: o.v, created: o.created || Date.now(), saved: 0, data: Object.assign({}, o.data), migrated: o.migrated || [] }); persist(); return ''; },
+  };
+})();
+</script>
+
 <title>Kro</title>
 <style>
   html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#7cc4ff;
@@ -584,6 +623,15 @@
   /* v7m: graphics quality segmented control */
   #gfxSeg{display:flex;gap:4px;flex:1;justify-content:center}
   #gfxSeg button{font:800 13px system-ui,sans-serif;padding:7px 10px;border-radius:11px;border:2.5px solid #160526;background:#331257;color:#cbb8e8;box-shadow:0 3px 0 #160526;cursor:pointer}
+  /* v7p: phone-first HUD. Contextual SOAR/GUST, stamina and phone rows; ≥44px touch targets; fewer always-on items on touch */
+  body.touch #btnSoar,body.touch #btnGust{transition:opacity .25s,transform .25s}
+  body.touch:not(.ctxSoar) #btnSoar,body.touch:not(.ctxGust) #btnGust{opacity:0;transform:scale(.6);pointer-events:none}
+  body.touch:not(.ctxStam) #barsCol>.g:nth-child(2),
+  body.touch:not(.ctxPhone) #barsCol>.g:nth-child(3){display:none}
+  body.touch #score{display:none} body.touch #altCol{display:none} body.touch #btnCam{display:none}
+  .abtn{min-width:44px;min-height:44px} .smallBtn{min-width:44px;min-height:44px}
+  .mbtn,#btnNestUpg,#btnDonut,#sqBack,.jbBtn,#dlgNext,#tutGo,#tutSkip,#gfxSeg button,#btnBail,#btnBreak,#koBtn,#btnGo,#btnCls,#btnGuide{min-height:44px}
+  #gfxSeg button{min-width:44px}
   #gfxSeg button.on{background:linear-gradient(180deg,#ff2d95,#ff8a1f);color:#fff;text-shadow:0 1px 0 #160526}
   .gfxSeg #mGfx{font-size:11.5px;color:#9cff2e;min-width:64px;text-align:right}
 </style>
@@ -641,7 +689,7 @@
     <button class="mbtn primary mtop" id="mResume">▶ Resume</button>
     <button class="mbtn mcat" data-go="sound">🔊 Sound<small>Music · Volume · Vibration · Airstream</small></button>
     <button class="mbtn mcat" data-go="gameplay">🎮 Gameplay<small>Controls · Difficulty · Camera · Skin</small></button>
-    <button class="mbtn mcat" data-go="display">🖼 Display &amp; Extras<small>Graphics · FPS · Intro · Achievements</small></button>
+    <button class="mbtn mcat" data-go="display">🖼 Display &amp; Extras<small>Graphics · Save backup · Achievements</small></button>
     <button class="mbtn mcat" id="mStory">📖 Story &amp; Family<small>Chapters · Crow family · Nest</small></button>
     <button class="mbtn mtop" id="mGuide">📘 How to Play</button>
     <button class="mbtn mtop" id="mUpg">🌿 Nest Upgrades</button>
@@ -670,6 +718,8 @@
     <button class="mbtn" id="mFps">⏱ FPS counter: Off</button>
     <button class="mbtn" id="mIntro">📖 Replay Intro</button>
     <button class="mbtn" id="mTut">🎓 Replay Tutorial</button>
+    <button class="mbtn" id="mExport">💾 Export save</button>
+    <button class="mbtn" id="mImport">📂 Import save</button><input type="file" id="saveFile" accept=".json,application/json" style="display:none">
     <button class="mbtn mwide" id="mAch">🏆 Achievements</button>
     </div>
     <div class="msub" id="subFriends"><div class="msubHead"><button class="mbtn mback">◂ Back</button><b>🐦 Friends</b></div>
@@ -816,8 +866,8 @@
   const el = document.getElementById('intro'), img = document.getElementById('introImg'), txt = document.getElementById('introTxt'), dots = document.getElementById('introDots'), nx = document.getElementById('introNext');
   dots.innerHTML = PAGES.map(() => '<i></i>').join('');
   let i = 0, replay = false;
-  const seen = () => { try { return localStorage.getItem(KEY) === '1'; } catch (e) { return false; } };
-  const mark = () => { try { localStorage.setItem(KEY, '1'); } catch (e) {} };
+  const seen = () => { try { return KroSave.getItem(KEY) === '1'; } catch (e) { return false; } };
+  const mark = () => { try { KroSave.setItem(KEY, '1'); } catch (e) {} };
   const FOCUS = ['50% 45%', '50% 45%', '50% 42%', '50% 12%'];   // v7h: frame Kro's head cleanly at top on panel 4
   const show = () => { img.src = 'data:image/webp;base64,' + IMG[i]; img.style.objectPosition = FOCUS[i]; txt.innerHTML = PAGES[i]; [...dots.children].forEach((d, k) => d.classList.toggle('on', k === i));
     const last = i === PAGES.length - 1, started = document.getElementById('start') && document.getElementById('start').style.display === 'none';
@@ -860,8 +910,8 @@
   const $g = id => document.getElementById(id), el = $g('guide'), img = $g('guideImg'), nx = $g('guideNext'), bk = $g('guideBack'), dots = $g('guideDots');
   dots.innerHTML = PAGES.map(() => '<i></i>').join('');
   let i = 0, opt = {};
-  const seen = () => { try { return localStorage.getItem(KEY) === '1'; } catch (e) { return true; } };
-  const mark = () => { try { localStorage.setItem(KEY, '1'); } catch (e) {} };
+  const seen = () => { try { return KroSave.getItem(KEY) === '1'; } catch (e) { return true; } };
+  const mark = () => { try { KroSave.setItem(KEY, '1'); } catch (e) {} };
   const onStart = () => $g('start') && $g('start').style.display !== 'none';
   const show = () => { const [k, t, p] = PAGES[i]; img.src = IMG[k] ? 'data:image/webp;base64,' + IMG[k] : ''; img.alt = t;
     $g('guideStep').textContent = `How to Play · ${i + 1} / ${PAGES.length}`; $g('guideTitle').textContent = t; $g('guideText').innerHTML = p;
@@ -888,7 +938,7 @@
 })();
 </script>
 <script type="importmap">
-{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
+{ "imports": { "three": "./vendor/three/build/three.module.min.js", "three/addons/": "./vendor/three/examples/jsm/" } }
 </script>
 <script type="module">
 import * as THREE from 'three';
@@ -906,17 +956,17 @@ const angLerp = (a, b, t) => { let d = ((b - a + Math.PI) % (Math.PI * 2) + Math
 // ---------------------------------------------------------------- v6d view settings: camera distance, threat framing, graphics quality, FPS counter
 const VIEW_KEY = 'crowPatrol.view.v1';
 const viewSet = { zoom: 1, autoFrame: true, gfx: 'auto', fps: false };
-try { Object.assign(viewSet, JSON.parse(localStorage.getItem(VIEW_KEY) || '{}')); } catch (_) {}
+try { Object.assign(viewSet, JSON.parse(KroSave.getItem(VIEW_KEY) || '{}')); } catch (_) {}
 if (!(viewSet.zoom >= 0.5 && viewSet.zoom <= 3)) viewSet.zoom = 1;
 viewSet.zoom = viewSet.zoom < 1.3 ? 1 : 1.6;   // v6e: only Normal / Far remain (old Close → Normal, old Extra Far → Far)
-function saveView() { try { localStorage.setItem(VIEW_KEY, JSON.stringify(viewSet)); } catch (_) {} }
+function saveView() { try { KroSave.setItem(VIEW_KEY, JSON.stringify(viewSet)); } catch (_) {} }
 const IS_PHONE = ((navigator.maxTouchPoints || 0) > 0 || 'ontouchstart' in window) && Math.min(screen.width || 9999, screen.height || 9999) < 820;
 // v7m: Graphics quality lives in its own key now (old crowPatrol.view.v1 choice is migrated once)
 const GFX_KEY = 'totallyACrow.gfx.v1';
-try { const g = JSON.parse(localStorage.getItem(GFX_KEY) || 'null'); if (g && ['auto', 'low', 'medium', 'high'].includes(g.q)) viewSet.gfx = g.q; else localStorage.setItem(GFX_KEY, JSON.stringify({ q: ['auto', 'low', 'medium', 'high'].includes(viewSet.gfx) ? viewSet.gfx : 'auto' })); } catch (_) {}
-function saveGfxQ() { try { localStorage.setItem(GFX_KEY, JSON.stringify({ q: viewSet.gfx })); } catch (_) {} saveView(); }
+try { const g = JSON.parse(KroSave.getItem(GFX_KEY) || 'null'); if (g && ['auto', 'low', 'medium', 'high'].includes(g.q)) viewSet.gfx = g.q; else KroSave.setItem(GFX_KEY, JSON.stringify({ q: ['auto', 'low', 'medium', 'high'].includes(viewSet.gfx) ? viewSet.gfx : 'auto' })); } catch (_) {}
+function saveGfxQ() { try { KroSave.setItem(GFX_KEY, JSON.stringify({ q: viewSet.gfx })); } catch (_) {} saveView(); }
 const GFX_AUTO = (() => { const dpr = window.devicePixelRatio || 1, mem = navigator.deviceMemory || 8, cores = navigator.hardwareConcurrency || 8;
-  if (IS_PHONE) return (mem <= 3 || cores <= 4 || (dpr >= 3 && mem <= 4)) ? 'low' : 'medium';
+  if (IS_PHONE) return (navigator.deviceMemory >= 6 && cores >= 8 && dpr < 3) ? 'medium' : 'low'; // v7p: phones default to Low unless clearly strong
   return (mem <= 4 || cores <= 4) ? 'medium' : 'high'; })();
 const gfxLevel = () => (viewSet.gfx === 'auto' ? GFX_AUTO : viewSet.gfx);
 const GFX = {
@@ -2482,8 +2532,8 @@ const streaks = Array.from({ length: STREAKS }, () => ({ p: new THREE.Vector3(),
 
 // ---------------------------------------------------------------- audio (synth)
 let actx = null, master = null, muted = false, noiseBuf = null, volNode = null;
-let volPref = (() => { const v = parseFloat(localStorage.getItem('totallyACrow.vol')); return isFinite(v) ? Math.min(1, Math.max(0, v)) : 1; })();
-function setVolume(v, save = true) { volPref = Math.min(1, Math.max(0, +v || 0)); if (volNode) volNode.gain.setTargetAtTime(volPref, actx.currentTime, 0.03); const el = document.getElementById('volVal'); if (el) el.textContent = Math.round(volPref * 100) + '%'; const sl = document.getElementById('mVol'); if (sl && document.activeElement !== sl) sl.value = volPref; if (save) try { localStorage.setItem('totallyACrow.vol', String(volPref)); } catch (e) {} }
+let volPref = (() => { const v = parseFloat(KroSave.getItem('totallyACrow.vol')); return isFinite(v) ? Math.min(1, Math.max(0, v)) : 1; })();
+function setVolume(v, save = true) { volPref = Math.min(1, Math.max(0, +v || 0)); if (volNode) volNode.gain.setTargetAtTime(volPref, actx.currentTime, 0.03); const el = document.getElementById('volVal'); if (el) el.textContent = Math.round(volPref * 100) + '%'; const sl = document.getElementById('mVol'); if (sl && document.activeElement !== sl) sl.value = volPref; if (save) try { KroSave.setItem('totallyACrow.vol', String(volPref)); } catch (e) {} }
 function unlockAudio() {
   if (!actx) {
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
@@ -2814,7 +2864,7 @@ document.addEventListener('dblclick', e => e.preventDefault());
 
 const ORIENT_KEY = 'crowPatrol.orient.v1', ORIENTS = ['auto', 'landscape', 'portrait'];
 let orientPref = 'landscape';
-try { const v = localStorage.getItem(ORIENT_KEY); if (ORIENTS.includes(v)) orientPref = v; } catch (_) {}
+try { const v = KroSave.getItem(ORIENT_KEY); if (ORIENTS.includes(v)) orientPref = v; } catch (_) {}
 function goLandscape() {
   // fullscreen + orientation lock (Android Chrome); iOS ignores both, so failures are fine
   try {
@@ -2848,7 +2898,7 @@ if (window.visualViewport) window.visualViewport.addEventListener('resize', chec
 checkOrientation();
 $('btnRotLand').addEventListener('pointerdown', e => { e.preventDefault(); unlockAudio(); goLandscape(); setTimeout(checkOrientation, 400); });
 function setOrient(v) {
-  orientPref = v; try { localStorage.setItem(ORIENT_KEY, v); } catch (_) {}
+  orientPref = v; try { KroSave.setItem(ORIENT_KEY, v); } catch (_) {}
   $('mOrient').textContent = '📱 Orientation: ' + v[0].toUpperCase() + v.slice(1);
   if (document.fullscreenElement || document.webkitFullscreenElement) goLandscape(); // re-lock to the new choice
   checkOrientation(); setTimeout(checkOrientation, 400);
@@ -2885,7 +2935,7 @@ const CTLS = {
 };
 const LAYOUT_KEY_PORTRAIT = 'crowPatrol.layout.portrait.v1';
 const layoutKey = () => document.body.classList.contains('portrait') ? LAYOUT_KEY_PORTRAIT : LAYOUT_KEY;
-function loadLayout(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (_) { return null; } }
+function loadLayout(k) { try { return JSON.parse(KroSave.getItem(k) || 'null'); } catch (_) { return null; } }
 let layoutFor = layoutKey(), layout = loadLayout(layoutFor);
 function syncLayoutOrient() { // custom layouts are kept separately for landscape and portrait
   const k = layoutKey(); if (k === layoutFor) return;
@@ -2936,8 +2986,8 @@ function applyLayout() {
     Object.assign(joyZone.style, { left: zl + 'px', top: zt + 'px', width: (zr - zl) + 'px', height: (zb - zt) + 'px', bottom: 'auto' });
   }
 }
-function saveLayout() { try { localStorage.setItem(layoutFor, JSON.stringify(layout)); } catch (_) {} }
-function resetLayout() { layout = null; try { localStorage.removeItem(layoutFor); } catch (_) {} applyLayout(); }
+function saveLayout() { try { KroSave.setItem(layoutFor, JSON.stringify(layout)); } catch (_) {} }
+function resetLayout() { layout = null; try { KroSave.removeItem(layoutFor); } catch (_) {} applyLayout(); }
 let selCtl = null, drag = null;
 function selectCtl(k) {
   selCtl = k; for (const key in CTLS) CTLS[key].el.classList.toggle('sel', key === k);
@@ -3030,9 +3080,9 @@ const LEVELS = [
 ];
 var lvl = (() => {
   const st = { xp: 0, lv: 1, seeded: '' };
-  try { const v = JSON.parse(localStorage.getItem(LVL_KEY) || 'null'); if (v && isFinite(v.xp)) { st.xp = Math.max(0, +v.xp); st.seeded = v.seeded || ''; } else {
+  try { const v = JSON.parse(KroSave.getItem(LVL_KEY) || 'null'); if (v && isFinite(v.xp)) { st.xp = Math.max(0, +v.xp); st.seeded = v.seeded || ''; } else {
     // existing saves: credit earlier progress so returning players aren't sent back to the calm level
-    const J = k => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (_) { return null; } };
+    const J = k => { try { return JSON.parse(KroSave.getItem(k) || 'null'); } catch (_) { return null; } };
     const tutS = J('totallyACrow.tut.v1'), upg = J('totallyACrow.upgrades.v1'), ach = J('crowPatrol.ach.v1'), cashS = J('totallyACrow.cash');
     const nUpg = upg ? Object.keys(upg.bought || upg).filter(k => (upg.bought || upg)[k] === true || (upg.bought || upg)[k] === 1).length : 0;
     const nAch = ach && ach.got ? Object.values(ach.got).reduce((a, b) => a + (+b || 0), 0) : 0;
@@ -3044,8 +3094,8 @@ var lvl = (() => {
 function lvlFor(xp) { let l = 1; for (let i = 0; i < LEVELS.length; i++) if (xp >= LEVELS[i].at) l = i + 1; return l; }
 function kroLevel() { return lvl.lv; }
 let lvlSaveT = 0;
-function lvlSave(force) { const now = performance.now(); if (!force && now - lvlSaveT < 2000) return; lvlSaveT = now; try { localStorage.setItem(LVL_KEY, JSON.stringify({ xp: Math.round(lvl.xp), lv: lvl.lv, seeded: lvl.seeded })); } catch (_) {} }
-function lvlGain(n) { lvl.xp += n; const L = lvlFor(lvl.xp); if (L > lvl.lv) { const from = lvl.lv; lvl.lv = L; lvlSave(true); lvlUpCard(L, from); } else lvlSave(); lvlHud(); }
+function lvlSave(force) { const now = performance.now(); if (!force && now - lvlSaveT < 2000) return; lvlSaveT = now; try { KroSave.setItem(LVL_KEY, JSON.stringify({ xp: Math.round(lvl.xp), lv: lvl.lv, seeded: lvl.seeded })); } catch (_) {} }
+function lvlGain(n) { lvl.xp += n; const L = lvlFor(lvl.xp); if (L > lvl.lv) { const from = lvl.lv; lvl.lv = L; lvlSave(true); lvlUpCard(L, from); try { haptic('success'); } catch (_) {} } else lvlSave(); lvlHud(); }
 function lvlHud() {
   const i = lvl.lv - 1, cur = LEVELS[i], nx = LEVELS[i + 1];
   document.getElementById('lvlN').textContent = 'LV ' + lvl.lv; document.getElementById('lvlNm').textContent = cur.name;
@@ -3518,8 +3568,8 @@ function updateAirstream(dt, jx, braking) {
 // ================================================================ v5b airstream feedback (enter/ride/exit/nearby: sound, screen FX, trails, HUD, haptics)
 const FX_KEY = 'crowPatrol.fx.v1';
 const fxSet = { airSnd: true, vib: true, music: true };
-try { Object.assign(fxSet, JSON.parse(localStorage.getItem(FX_KEY) || '{}')); } catch (_) {}
-function saveFx() { try { localStorage.setItem(FX_KEY, JSON.stringify(fxSet)); } catch (_) {} }
+try { Object.assign(fxSet, JSON.parse(KroSave.getItem(FX_KEY) || '{}')); } catch (_) {}
+function saveFx() { try { KroSave.setItem(FX_KEY, JSON.stringify(fxSet)); } catch (_) {} }
 const canVibrate = typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
 function buzz(p) { if (!fxSet.vib || !canVibrate) return; try { navigator.vibrate(p); } catch (_) {} }
 const NEAR_R = 25;
@@ -4300,7 +4350,7 @@ function updateHud() {
 // ================================================================ v5i enemies + health (hawk, net-swingers, traffic)
 const GAME_KEY = 'crowPatrol.game.v1';
 const gameSet = { enemies: true, diff: 'normal' };
-try { Object.assign(gameSet, JSON.parse(localStorage.getItem(GAME_KEY) || '{}')); } catch (_) {}
+try { Object.assign(gameSet, JSON.parse(KroSave.getItem(GAME_KEY) || '{}')); } catch (_) {}
 if (!['easy', 'normal', 'hard'].includes(gameSet.diff)) gameSet.diff = 'normal';
 const DIFF = {
   easy:   { hp: 4, regen: 0, hawkCd: 1.7, hawkDmg: 1, nets: 4, stun: 0.8, inv: 2.4, penalty: 0 },
@@ -4308,7 +4358,7 @@ const DIFF = {
   hard:   { hp: 4, regen: 0, hawkCd: 0.7, hawkDmg: 2, nets: 10, stun: 1.5, inv: 1.4, penalty: 300 },
 };
 const dset = () => DIFF[gameSet.diff];
-function saveGameSet() { try { localStorage.setItem(GAME_KEY, JSON.stringify(gameSet)); } catch (_) {} }
+function saveGameSet() { try { KroSave.setItem(GAME_KEY, JSON.stringify(gameSet)); } catch (_) {} }
 crow.hp = dset().hp; crow.invuln = 0; crow.stun = 0; crow.lastHurt = -99; crow.regenT = 0;
 const enemiesOn = () => gameSet.enemies;
 const ko = { on: false, t: 0 };
@@ -4847,12 +4897,12 @@ resetEnemies();
 // All original: an invented tin wind-up bird with a screen face. No real brands or names.
 const CAMEO_KEY = 'crowPatrol.cameo.v1', SKIN_KEY = 'crowPatrol.skins.v1';
 const cameo = { stage: 'new', found: [] };   // stage: new → active → done
-try { Object.assign(cameo, JSON.parse(localStorage.getItem(CAMEO_KEY) || '{}')); } catch (_) {}
+try { Object.assign(cameo, JSON.parse(KroSave.getItem(CAMEO_KEY) || '{}')); } catch (_) {}
 const skins = { unlocked: ['default'], sel: 'default' };
-try { Object.assign(skins, JSON.parse(localStorage.getItem(SKIN_KEY) || '{}')); } catch (_) {}
+try { Object.assign(skins, JSON.parse(KroSave.getItem(SKIN_KEY) || '{}')); } catch (_) {}
 if (!skins.unlocked.includes('default')) skins.unlocked.unshift('default');
-function saveCameo() { try { localStorage.setItem(CAMEO_KEY, JSON.stringify(cameo)); } catch (_) {} }
-function saveSkins() { try { localStorage.setItem(SKIN_KEY, JSON.stringify(skins)); } catch (_) {} }
+function saveCameo() { try { KroSave.setItem(CAMEO_KEY, JSON.stringify(cameo)); } catch (_) {} }
+function saveSkins() { try { KroSave.setItem(SKIN_KEY, JSON.stringify(skins)); } catch (_) {} }
 const cstats = { ticks: 0, pickups: 0, dialogs: 0 };
 
 // ---- landmarks: water tower, park fountain, giant oak, highway footbridge
@@ -5196,11 +5246,11 @@ const KCLASSES = [
     perk: 'Pickup reach +30%. Coin pouches worth +20%.', trade: 'Soar is 10% slower (full pockets).', skin: 'Grungy feathers with leaves and twigs, a bigger beak.' },
 ];
 const CLS_OWN_KEY = 'totallyACrow.classOwn.v1', CLS_COST = { classic: 0, mayhem: 150, lovely: 150, scavenger: 200, hunter: 250 };
-var clsOwned = (() => { try { const v = JSON.parse(localStorage.getItem(CLS_OWN_KEY) || 'null'); if (Array.isArray(v)) return v; } catch (_) {} return null; })();
-var kroClass = (() => { try { const v = localStorage.getItem(CLS_KEY); return KCLASSES.some(c => c.id === v) ? v : 'classic'; } catch (_) { return 'classic'; } })();
-if (!clsOwned) { clsOwned = ['classic']; if (kroClass !== 'classic') clsOwned.push(kroClass); try { localStorage.setItem(CLS_OWN_KEY, JSON.stringify(clsOwned)); } catch (_) {} } // v7n migration: keep the class you already use
+var clsOwned = (() => { try { const v = JSON.parse(KroSave.getItem(CLS_OWN_KEY) || 'null'); if (Array.isArray(v)) return v; } catch (_) {} return null; })();
+var kroClass = (() => { try { const v = KroSave.getItem(CLS_KEY); return KCLASSES.some(c => c.id === v) ? v : 'classic'; } catch (_) { return 'classic'; } })();
+if (!clsOwned) { clsOwned = ['classic']; if (kroClass !== 'classic') clsOwned.push(kroClass); try { KroSave.setItem(CLS_OWN_KEY, JSON.stringify(clsOwned)); } catch (_) {} } // v7n migration: keep the class you already use
 function clsHas(id) { return clsOwned.includes(id); }
-function saveClsOwn() { try { localStorage.setItem(CLS_OWN_KEY, JSON.stringify(clsOwned)); } catch (_) {} }
+function saveClsOwn() { try { KroSave.setItem(CLS_OWN_KEY, JSON.stringify(clsOwned)); } catch (_) {} }
 function unlockClass(id, free) { if (clsHas(id)) return true; const c = CLS_COST[id] || 0; if (!free) { if ((ach.coins | 0) < c) return false; ach.coins -= c; saveAch(); } clsOwned.push(id); saveClsOwn(); return true; }
 function clsIs(id) { return kroClass === id; }
 function clsPts(base, kind) {
@@ -5296,7 +5346,7 @@ function updateCameo(dt, time) {
 function setClass(id, quiet) {
   if (!KCLASSES.some(c => c.id === id)) id = 'classic';
   if (!clsHas(id)) { if (typeof clsGate === 'function' && !clsGate(id)) return; if (!unlockClass(id)) { $('clsNote').textContent = `Need ${CLS_COST[id]} 🪙 to unlock this class (wallet ${ach.coins | 0} 🪙).`; return; } showMsg(`🔓 Class unlocked for ${CLS_COST[id]} 🪙`, 1.6, true); }
-  kroClass = id; try { localStorage.setItem(CLS_KEY, id); } catch (_) {}
+  kroClass = id; try { KroSave.setItem(CLS_KEY, id); } catch (_) {}
   applySkin(skinCur); crow.stamina = Math.min(crow.stamina, stamMax());
   const C = KCLASSES.find(c => c.id === id); $('btnCls').textContent = `${C.icon} Class: ${C.name}`; $('mCls').textContent = `🎭 Class: ${C.name}`;
   if (!quiet && started) showMsg(`${C.icon} ${C.name} Kro!`, 1.6);
@@ -5321,12 +5371,12 @@ function resetCameo() { cameo.stage = 'new'; cameo.found = []; saveCameo(); for 
 // ================================================================ end cameo
 
 // ================================================================ v6b: NET BUSTER, raccoon fry heists, achievements, GUST
-// All original: invented names, procedural props, synthesized sounds. Progress is saved in localStorage.
+// All original: invented names, procedural props, synthesized sounds. Progress is saved in KroSave.
 // ---- achievements
 const ACH_KEY = 'crowPatrol.ach.v1';
 const ach = { busts: 0, saved: 0, scatters: 0, geese: 0, tags: 0, swarms: 0, ghosts: 0, cools: 0, spins: 0, nears: 0, coins: 0, got: { bust: 0, fries: 0, pigeon: 0, goose: 0, tagger: 0, swarm: 0, ghost: 0, cool: 0, spin: 0, near: 0 }, trail: 'none', badge: true, crown: true };
-try { const v = JSON.parse(localStorage.getItem(ACH_KEY) || '{}'); Object.assign(ach, v); ach.got = Object.assign({ bust: 0, fries: 0, pigeon: 0, goose: 0, tagger: 0, swarm: 0, ghost: 0, cool: 0, spin: 0, near: 0 }, v.got || {}); } catch (_) {}
-function saveAch() { try { localStorage.setItem(ACH_KEY, JSON.stringify(ach)); } catch (_) {} }
+try { const v = JSON.parse(KroSave.getItem(ACH_KEY) || '{}'); Object.assign(ach, v); ach.got = Object.assign({ bust: 0, fries: 0, pigeon: 0, goose: 0, tagger: 0, swarm: 0, ghost: 0, cool: 0, spin: 0, near: 0 }, v.got || {}); } catch (_) {}
+function saveAch() { try { KroSave.setItem(ACH_KEY, JSON.stringify(ach)); } catch (_) {} }
 const ACH_TRACKS = {
   bust: { name: 'Net Buster', icon: '🥅', unit: 'nets busted', how: 'Hit a net-wielding human with a Mega Drop.', tiers: [
     { n: 1, title: 'Net Buster', score: 500, coins: 50 },
@@ -7226,9 +7276,9 @@ const CASH = { n: 9, vals: [6, 8, 10, 12], respawn: [25, 45], r2: 6.76, low: 4.5
 const cash = { bank: 0, carry: 0, stats: { picked: 0, banked: 0, bails: 0, waits: 0, lost: 0 } };
 Object.defineProperty(cash, 'bank', { get() { return ach.coins | 0; }, set(v) { ach.coins = Math.max(0, v | 0); saveAch(); }, enumerable: true });
 function migrateCashToCoins() { // v7n: old $ bank -> coins, 1:1, once (bail prices in coins match the old $ scale)
-  try { const v = JSON.parse(localStorage.getItem(CASH.key) || '{}') || {};
+  try { const v = JSON.parse(KroSave.getItem(CASH.key) || '{}') || {};
     if (!v.merged) { const b = isFinite(v.bank) ? Math.max(0, v.bank | 0) : 0; if (b > 0) { ach.coins = (ach.coins | 0) + b; saveAch(); CASH.merged = b; }
-      localStorage.setItem(CASH.key, JSON.stringify({ bank: 0, merged: 1, from: b })); } } catch (_) {} }
+      KroSave.setItem(CASH.key, JSON.stringify({ bank: 0, merged: 1, from: b })); } } catch (_) {} }
 migrateCashToCoins();
 const saveCash = () => { saveAch(); };
 const cashGeo = (() => { const P = []; // v7n: a little cloth coin pouch with gold coins spilling out (our own look)
@@ -7259,7 +7309,7 @@ function updateCash(dt, time) {
   // bank it at the nest
   if (cash.carry > 0 && !ko.on) { const dx = crow.pos.x - NEST.x, dz = crow.pos.z - NEST.z;
     if (dx * dx + dz * dz < 49 && crow.pos.y < NEST.y + 9) { const n = cash.carry; cash.bank += n; cash.carry = 0; cash.stats.banked += n; saveCash();
-      storyEv('bankTrip', 1); storyEv('bank', n);
+      storyEv('bankTrip', 1); storyEv('bank', n); haptic('light');
       let extra = ''; if (upgHas('homeStash')) { const c = Math.max(2, Math.round(n / 5)); cash.bank += c; extra = ` · +${c} stash bonus`; }
       popup(`🪺 Banked ${n} 🪙 · wallet ${cash.bank}` + extra, NEST_POS.clone().add(new THREE.Vector3(0, 4, 0)), 'gold linger'); sfx.chime(); } }
   drawCashHud(); if (CASH.merged && started) { showMsg(`💵 Your $${CASH.merged} cash is now ${CASH.merged} 🪙 coins: one wallet!`, 3.2, true); CASH.merged = 0; }
@@ -7435,8 +7485,8 @@ function jbDraw() {
 const SQ_KEY = 'totallyACrow.squirrel.v1';
 const SQ = { every: [240, 360], stay: 75, dur: 60, nuts: 10, touch: 4.2, run: 7.5, hop: 12, shoo: 3.4, peckRate: 9, wpEvery: 7, wpMax: 2, areaR: 135, nutPts: 100, shooPts: 200, savePts: 500 };
 var sqr = { on: false, spirit: null, spawnT: 0, t: 0, nuts: [], got: 0, shoo: 0, lost: 0, wps: [], wpT: 0, hopT: 0, vy: 0, res: null };
-const sqSave = (() => { try { return Object.assign({ runs: 0, nuts: 0, best: 0, shoos: 0, saved: 0 }, JSON.parse(localStorage.getItem(SQ_KEY) || '{}')); } catch (_) { return { runs: 0, nuts: 0, best: 0, shoos: 0, saved: 0 }; } })();
-function sqStore() { try { localStorage.setItem(SQ_KEY, JSON.stringify(sqSave)); } catch (_) {} }
+const sqSave = (() => { try { return Object.assign({ runs: 0, nuts: 0, best: 0, shoos: 0, saved: 0 }, JSON.parse(KroSave.getItem(SQ_KEY) || '{}')); } catch (_) { return { runs: 0, nuts: 0, best: 0, shoos: 0, saved: 0 }; } })();
+function sqStore() { try { KroSave.setItem(SQ_KEY, JSON.stringify(sqSave)); } catch (_) {} }
 sqr.spawnT = rand(150, 240); // first one comes a bit sooner than later ones
 const sqParkTrees = () => TREES.filter(t => Math.hypot(t.x - POND.x, t.z - POND.z) < SQ.areaR && !inPond(t.x, t.z));
 // ghostly spirit squirrel model (shared by the park spirit and Kro's squirrel form)
@@ -7567,9 +7617,9 @@ const v7b = { v7j, setCarry(n) { carry = n; }, nearMissAward, CASH, cash, cashIt
 const TUT_KEY = 'totallyACrow.tut.v1', TUT_FREE = 120, TUT_HAWK_HOLD = 120; // seconds of free exploring that also completes it; hawk hold after completion
 const TUT_INTRO = ['up', 'down', 'soar', 'gust', 'roll']; // v7d1: + barrel roll
 const TUT_CTX = ['fries', 'lock', 'phones', 'cars', 'trinket', 'cash', 'raccoon', 'cops', 'goose'];
-function loadTut() { try { const v = JSON.parse(localStorage.getItem(TUT_KEY) || 'null'); if (v && typeof v === 'object') return { intro: v.intro ? 1 : 0, done: v.done ? 1 : 0, all: v.all ? 1 : 0, seen: v.seen && typeof v.seen === 'object' ? v.seen : {} }; } catch (_) {} return { intro: 0, done: 0, all: 0, seen: {} }; }
+function loadTut() { try { const v = JSON.parse(KroSave.getItem(TUT_KEY) || 'null'); if (v && typeof v === 'object') return { intro: v.intro ? 1 : 0, done: v.done ? 1 : 0, all: v.all ? 1 : 0, seen: v.seen && typeof v.seen === 'object' ? v.seen : {} }; } catch (_) {} return { intro: 0, done: 0, all: 0, seen: {} }; }
 const tut = { st: loadTut(), open: '', introI: -1, freeT: 0, moved: 0, scanT: 0, hold: 0, force: '', objShown: false, goAt: 0, stats: { shown: [], finished: '' } };
-function saveTut() { try { localStorage.setItem(TUT_KEY, JSON.stringify(tut.st)); } catch (_) {} }
+function saveTut() { try { KroSave.setItem(TUT_KEY, JSON.stringify(tut.st)); } catch (_) {} }
 function tutCalm() { return started && !tut.st.done; }                 // enemies stay passive until the tutorial is complete
 function tutHawkHold() { return tutCalm() || tut.hold > 0 || kroLevel() < 2 || sqr.on; } // v7k: levels hook — hawk held until level 2
 const tutSeen = k => !!(tut.st.all || tut.st.seen[k]);
@@ -7767,8 +7817,8 @@ const UPG_TREE = [
   ]},
 ];
 const upgState = { bought: {} };
-try { const v = JSON.parse(localStorage.getItem(UPG_KEY) || '{}'); if (v && v.bought && typeof v.bought === 'object') upgState.bought = v.bought; } catch (_) {}
-function saveUpg() { try { localStorage.setItem(UPG_KEY, JSON.stringify({ bought: upgState.bought })); } catch (_) {} }
+try { const v = JSON.parse(KroSave.getItem(UPG_KEY) || '{}'); if (v && v.bought && typeof v.bought === 'object') upgState.bought = v.bought; } catch (_) {}
+function saveUpg() { try { KroSave.setItem(UPG_KEY, JSON.stringify({ bought: upgState.bought })); } catch (_) {} }
 function upgHas(id) { return !!upgState.bought[id]; }
 function upgCoins() { return ach.coins | 0; }
 function upgSpend(n) { if ((ach.coins | 0) < n) return false; ach.coins -= n; saveAch(); return true; }
@@ -7847,8 +7897,8 @@ sfx.brakeGust = function () { // v7g2: gentle, quiet air whoosh when braking sta
 // ---- Grandma Wren + "Lost Glasses" (roadmap: look-alikes, right pair rewards, wrong pair broom swat)
 const GMA = { x: 155.5, z: 264, ry: 0, talkR: 12, talkY: 10, awayR: 22 }; // south lot of street 280, between the last house (x≈142) and east avenue (x=170)
 const gmaState = { stage: 'new', wrong: [], clues: [], carry: '', done: false, hersId: '' };
-try { const v = JSON.parse(localStorage.getItem(GMA_KEY) || '{}'); if (v && typeof v === 'object') { if (v.stage) gmaState.stage = v.stage; if (Array.isArray(v.wrong)) gmaState.wrong = v.wrong; if (Array.isArray(v.clues)) gmaState.clues = v.clues; if (typeof v.carry === 'string') gmaState.carry = v.carry; if (typeof v.hersId === 'string') gmaState.hersId = v.hersId; gmaState.done = !!v.done || v.stage === 'done'; } } catch (_) {}
-function saveGma() { try { localStorage.setItem(GMA_KEY, JSON.stringify({ stage: gmaState.stage, wrong: gmaState.wrong, clues: gmaState.clues, carry: gmaState.carry, done: gmaState.done, hersId: gmaState.hersId })); } catch (_) {} }
+try { const v = JSON.parse(KroSave.getItem(GMA_KEY) || '{}'); if (v && typeof v === 'object') { if (v.stage) gmaState.stage = v.stage; if (Array.isArray(v.wrong)) gmaState.wrong = v.wrong; if (Array.isArray(v.clues)) gmaState.clues = v.clues; if (typeof v.carry === 'string') gmaState.carry = v.carry; if (typeof v.hersId === 'string') gmaState.hersId = v.hersId; gmaState.done = !!v.done || v.stage === 'done'; } } catch (_) {}
+function saveGma() { try { KroSave.setItem(GMA_KEY, JSON.stringify({ stage: gmaState.stage, wrong: gmaState.wrong, clues: gmaState.clues, carry: gmaState.carry, done: gmaState.done, hersId: gmaState.hersId })); } catch (_) {} }
 const GMA_WHO = { ava: '👵', name: 'Grandma Wren', sub: 'porch by the east avenue' };
 const gmaStats = { talks: 0, clues: 0, wrongs: 0, done: 0, swats: 0 };
 
@@ -8217,6 +8267,7 @@ function frame() {
   updateV6b(dt, rdt, gameTime);
   updateHeat(dt, rdt, gameTime); // v7 Heat / police
   updateCash(dt, gameTime); // v7b cash + cage
+  sbUpdate(rdt); updateCtxHud(); // v7p
   if (typeof updateGrandma === 'function') updateGrandma(dt, gameTime);
   updateSquirrelWorld(dt, gameTime); // v7l
   if (typeof updateNestUpgBtn === 'function') updateNestUpgBtn();
@@ -8339,9 +8390,9 @@ const CHAPTERS = [
 ];
 var story = null, stCardOpen = false, nestHubOpen = false;
 function storyHas(u) { return !story || story.done || story.un.includes(u); }
-function saveStory() { try { localStorage.setItem(STORY_KEY, JSON.stringify(story)); } catch (_) {} }
+function saveStory() { try { KroSave.setItem(STORY_KEY, JSON.stringify(story)); } catch (_) {} }
 function loadStory() {
-  let s = null; try { s = JSON.parse(localStorage.getItem(STORY_KEY) || 'null'); } catch (_) {}
+  let s = null; try { s = JSON.parse(KroSave.getItem(STORY_KEY) || 'null'); } catch (_) {}
   if (s && typeof s === 'object' && isFinite(s.ci)) return Object.assign({ ci: 0, gi: 0, n: 0, un: [], seen: {}, done: 0, freeCls: 0, shown: -1, vet: 0 }, s);
   s = { ci: 0, gi: 0, n: 0, un: [], seen: {}, done: 0, freeCls: 0, shown: -1, vet: 0 };
   // existing players: credit chapters they've clearly lived through (no rewards paid twice); keep anything they already use
@@ -8368,7 +8419,7 @@ function storyAdvance() {
   showMsg('✅ Goal done! Next: ' + C.goals[story.gi].t, 2.4, true); storyBanner();
 }
 function storyCompleteChapter() {
-  const C = stCh(); addScore(C.xp); ach.coins += C.coins; saveAch();
+  const C = stCh(); addScore(C.xp); ach.coins += C.coins; saveAch(); try { haptic('success'); } catch (_) {}
   if (C.unlock && !story.un.includes(C.unlock)) story.un.push(C.unlock);
   if (C.unlock === 'classes') story.freeCls = 1;
   if (C.unlock === 'rudy' && tagger.state === 'gone') tagger.respawnT = Math.min(tagger.respawnT, 1);
@@ -8461,7 +8512,7 @@ const famCrows = {};
     m.visible = false; m.castShadow = true; scene.add(m); famCrows[id] = { m, y0: m.position.y, ph: i * 1.3 }; }); }
 const nestGold = new THREE.Mesh(new THREE.TorusGeometry(2.35, 0.16, 6, 28), M(0xffd23f, { accent: true, emissive: 0x6a4a00 })); nestGold.rotation.x = Math.PI / 2; nestGold.position.set(NEST.x, NEST.y + 0.95, NEST.z); nestGold.visible = false; scene.add(nestGold);
 function famMet(id) { if (!story) return false; if (story.done) return true; const idx = CHAPTERS.findIndex(c => c.who === id); return idx >= 0 && (idx < story.ci || (idx === story.ci && story.shown >= story.ci)); }
-function syncFamily() { for (const id in famCrows) famCrows[id].m.visible = famMet(id); nestGold.visible = !!(story && story.done); }
+function syncFamily() { for (const id in famCrows) { famCrows[id].m.visible = famMet(id); famCrows[id].m.userData.noBatch = true; } nestGold.userData.noBatch = true; nestGold.visible = !!(story && story.done); }
 function updateFamily(dt, time) {
   for (const id in famCrows) { const F = famCrows[id]; if (!F.m.visible) continue; const h = Math.max(0, Math.sin(time * 2.2 + F.ph * 3)); F.m.position.y = F.y0 + (h > 0.97 ? (h - 0.97) * 6 : 0); }
 }
@@ -8516,8 +8567,106 @@ function storySquirrelIntro() { if (story && !story.seen.sq) { story.seen.sq = 1
 syncFamily(); drawStoryHud();
 const v7o = { STORY_KEY, CHAPTERS, FAM, get story() { return story; }, set story(v) { story = v; }, storyEv, storyAdvance, storyCompleteChapter, storyHas, saveStory, loadStory, stGoal, storyTarget, openNestHub, closeNestHub, closeStoryCard, get stCardOpen() { return stCardOpen; }, famCrows, syncFamily, clsGate, gmaState, finishGma, nestGold, snapCamera, NEST };
 
+// ================================================================ v7p: STATIC BATCHING (draw-call budget for phones)
+// Hundreds of world props are separate meshes. After the world has run for ~3 s, every opaque mesh that hasn't moved, changed
+// material or visibility is merged into per-material, per-90 m-cell chunks (colours baked into vertex colours so different
+// paint colours share one material). The originals stay in the scene graph on a hidden layer and are watched: if any code
+// later moves, hides or recolours one, its whole chunk is dissolved and the originals come back, so behaviour never changes.
+var SB = { cell: 90, chunks: [], cand: null, t: 0, done: false, members: 0, dissolved: 0, i: 0, mats: new Map(), on: true };
+function sbVisible(o) { for (let x = o; x; x = x.parent) { if (!x.visible) return false; if (x.isScene) return true; } return false; }
+function sbEligible(o) {
+  if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh || o.morphTargetInfluences) return false;
+  const m = o.material; if (!m || Array.isArray(m) || m.transparent || m.map || m.alphaMap || m.envMap || m.opacity < 1 || !m.isMeshToonMaterial) return false;
+  const g = o.geometry; if (!g || !g.attributes.position || !g.attributes.normal || g.attributes.position.count > 12000) return false;
+  if (o.renderOrder || !o.frustumCulled || o.onBeforeRender !== THREE.Object3D.prototype.onBeforeRender || o.layers.mask !== 1) return false;
+  for (let x = o; x; x = x.parent) if (x === crow.group || (x.userData && x.userData.noBatch)) return false;
+  return sbVisible(o);
+}
+function sbSnap(o) { return { e: o.matrixWorld.elements.slice(), mat: o.material, geo: o.geometry, p: o.parent, c: o.material.color.getHex(), em: o.material.emissive ? o.material.emissive.getHex() : 0 }; }
+function sbSame(o, s) {
+  if (o.material !== s.mat || o.geometry !== s.geo || o.parent !== s.p || !sbVisible(o) || o.material.color.getHex() !== s.c || (o.material.emissive && o.material.emissive.getHex() !== s.em)) return false;
+  const e = o.matrixWorld.elements; for (let i = 0; i < 16; i++) if (Math.abs(e[i] - s.e[i]) > 1e-4) return false; return true;
+}
+function sbSig(m) { const k = m.customProgramCacheKey ? m.customProgramCacheKey() : ''; if (k !== 'paint-v6') return 'own:' + m.uuid;
+  const u = m.userData || {}; return ['p', m.emissive.getHex(), m.side, m.flatShading ? 1 : 0, m.fog ? 1 : 0, m.vertexColors ? 'v' : '', u.paint ?? 1, u.rimG ?? 0, u.rimK ?? 0, u.spec ?? 0, m.gradientMap ? m.gradientMap.uuid : ''].join('|'); }
+function sbMat(src, sig) { // one shared, vertex-coloured toon material per paint signature
+  if (sig.startsWith('own:')) return src; let m = SB.mats.get(sig); if (m) return m;
+  m = brushify(new THREE.MeshToonMaterial({ color: 0xffffff, vertexColors: true, gradientMap: src.gradientMap, emissive: src.emissive.clone(), side: src.side, flatShading: src.flatShading, fog: src.fog }));
+  for (const k of ['paint', 'rimG', 'rimK', 'spec', 'rimA', 'rimB']) if (src.userData[k] !== undefined) m.userData[k] = src.userData[k];
+  SB.mats.set(sig, m); return m;
+}
+function sbStart() { SB.cand = []; scene.traverse(o => { if (sbEligible(o)) SB.cand.push([o, sbSnap(o)]); }); }
+function sbBuild() {
+  const groups = new Map(); let n = 0; const _c = new THREE.Color(), _v = new THREE.Vector3();
+  for (const [o, s] of SB.cand) { if (!sbSame(o, s) || !sbEligible(o)) continue;
+    const sig = sbSig(o.material); o.geometry.computeBoundingSphere && o.geometry.boundingSphere || o.geometry.computeBoundingSphere();
+    _v.copy(o.geometry.boundingSphere.center).applyMatrix4(o.matrixWorld);
+    const key = sig + '#' + Math.floor(_v.x / SB.cell) + ',' + Math.floor(_v.z / SB.cell) + '#' + (o.castShadow ? 1 : 0) + (o.receiveShadow ? 1 : 0);
+    let G2 = groups.get(key); if (!G2) groups.set(key, G2 = { sig, src: o.material, list: [], cast: o.castShadow, recv: o.receiveShadow }); G2.list.push([o, s]); }
+  for (const G2 of groups.values()) {
+    if (G2.list.length < 2) continue; const own = G2.sig.startsWith('own:'); const geos = [];
+    for (const [o] of G2.list) { let g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+      g.clearGroups(); for (const a of Object.keys(g.attributes)) if (a !== 'position' && a !== 'normal' && a !== 'color') g.deleteAttribute(a);
+      if (own && !!o.material.vertexColors !== !!g.attributes.color) { if (g.attributes.color) g.deleteAttribute('color'); }
+      if (!own) { const N = g.attributes.position.count, src = g.attributes.color && o.material.vertexColors ? g.attributes.color : null, a = new Float32Array(N * 3), col = o.material.color;
+        for (let i = 0; i < N; i++) { a[i * 3] = (src ? src.getX(i) : 1) * col.r; a[i * 3 + 1] = (src ? src.getY(i) : 1) * col.g; a[i * 3 + 2] = (src ? src.getZ(i) : 1) * col.b; }
+        g.setAttribute('color', new THREE.BufferAttribute(a, 3)); }
+      g.applyMatrix4(o.matrixWorld); geos.push(g); }
+    let merged = null; try { merged = mergeGeometries(geos); } catch (_) { merged = null; } geos.forEach(g => g.dispose());
+    if (!merged) continue; merged.computeBoundingSphere();
+    const mesh = new THREE.Mesh(merged, sbMat(G2.src, G2.sig)); mesh.castShadow = G2.cast; mesh.receiveShadow = G2.recv; mesh.matrixAutoUpdate = false; mesh.userData.noBatch = true; scene.add(mesh);
+    const ch = { mesh, list: G2.list, alive: true }; for (const [o] of G2.list) { o.userData.sbMask = o.layers.mask; o.layers.mask = 0; o.userData.sbChunk = ch; } SB.chunks.push(ch); n += G2.list.length; }
+  SB.members = n; SB.cand = null; SB.done = true;
+}
+function sbDissolve(ch) { if (!ch.alive) return; ch.alive = false; scene.remove(ch.mesh); ch.mesh.geometry.dispose(); for (const [o] of ch.list) { o.layers.mask = o.userData.sbMask ?? 1; delete o.userData.sbChunk; } SB.dissolved++; }
+function sbUpdate(rdt) {
+  if (!SB || !SB.on) return;
+  if (!SB.done) { if (!SB.cand) { sbStart(); SB.t = 0; } SB.t += rdt; if (SB.t > 3) sbBuild(); return; }
+  // watch the merged originals: a slice per frame
+  const all = SB.chunks; if (!all.length) return; let budget = 80;
+  while (budget-- > 0) { const ch = all[SB.i % all.length]; SB.j = (SB.j || 0); if (!ch.alive) { SB.i++; SB.j = 0; continue; }
+    const pair = ch.list[SB.j]; if (!pair) { SB.i++; SB.j = 0; continue; } SB.j++;
+    const [o, s] = pair; if (!sbSame(o, s)) sbDissolve(ch); }
+}
+function sbOff() { for (const ch of SB.chunks) sbDissolve(ch); SB.on = false; }
+
+// ================================================================ v7p: APP-READY: contextual HUD, pause on background, haptics, save export/import, service worker
+document.body.classList.toggle('touch', isTouch);
+var ctxHud = { k: '' };
+function updateCtxHud() {
+  if (!ctxHud) return;
+  const soarOn = crow.soaring || crow.pos.y >= soarMinY() - 1, gustOn = !(gust.cd > 0) && !sqr.on, stamOn = crow.stamina < stamMax() - 0.5 || hover.on || crow.soaring, phOn = phonesHit > 0 || megaTime > 0;
+  const k = [soarOn, gustOn, stamOn, phOn].join(); if (k === ctxHud.k) return; ctxHud.k = k;
+  const B = document.body.classList; B.toggle('ctxSoar', soarOn); B.toggle('ctxGust', gustOn); B.toggle('ctxStam', stamOn); B.toggle('ctxPhone', phOn);
+}
+// Pause when the app goes to the background (phone call, home button, tab switch); audio sleeps too
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { KroSave.flush(); if (started && !paused && !menuOpen) openMenu(); try { actx && actx.state === 'running' && actx.suspend(); } catch (_) {} }
+  else { try { actx && actx.state === 'suspended' && actx.resume(); } catch (_) {} }
+});
+window.addEventListener('pagehide', () => KroSave.flush());
+// Haptics: native (Capacitor Haptics plugin, when wrapped as an app) or the web Vibration API; respects the Vibration setting
+function haptic(kind) { if (!fxSet.vib) return; const H = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.Haptics;
+  try { if (H) { kind === 'success' ? H.notification({ type: 'SUCCESS' }) : H.impact({ style: kind === 'heavy' ? 'HEAVY' : kind === 'medium' ? 'MEDIUM' : 'LIGHT' }); return; } } catch (_) {}
+  if (canVibrate) try { navigator.vibrate(kind === 'success' ? [30, 50, 60] : kind === 'heavy' ? 60 : kind === 'medium' ? 30 : 12); } catch (_) {} }
+// Save export / import (Settings → Display & Extras)
+function exportSave() {
+  const txt = KroSave.exportText(), name = `kro-save-${new Date().toISOString().slice(0, 10)}.json`; let file = null;
+  try { file = new File([txt], name, { type: 'application/json' }); } catch (_) {}
+  if (file && navigator.canShare && navigator.canShare({ files: [file] }) && isTouch) { navigator.share({ files: [file], title: 'Kro save' }).catch(() => {}); return 'share'; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], { type: 'application/json' })); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  $('menuNote').textContent = '💾 Save exported: ' + name; setTimeout(() => $('menuNote').textContent = '', 3500); return 'download';
+}
+function importSaveText(txt) { const err = KroSave.importText(txt); if (err) { $('menuNote').textContent = '⚠ ' + err; setTimeout(() => $('menuNote').textContent = '', 4000); return false; }
+  $('menuNote').textContent = '📂 Save imported. Reloading…'; setTimeout(() => location.reload(), 600); return true; }
+onTap('mExport', () => exportSave());
+onTap('mImport', () => $('saveFile').click());
+$('saveFile').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => importSaveText(String(r.result || '')); r.readAsText(f); e.target.value = ''; });
+// Offline + installable: register the service worker (http/https only)
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+const v7p = { SB, sbUpdate, sbOff, sbBuild, KroSave, exportSave, importSaveText, haptic, updateCtxHud };
 const v7n = { CASH, cash, CLS_COST, get clsOwned() { return clsOwned; }, clsHas, unlockClass, setClass, ach, migrateCashToCoins, cage, cageKro, releaseCage, drawCashHud };
-window.__crowGame = { v7o, v7n, v7m, v7l, v7k, v7g, v7e, v7d, v7b, v7, v6d, v6c: { ...v6c, THREE, HILLS, hillAt: (x, z) => hillAt(x, z), groundAt, heal, questHeartReward, DIFF }, v6b: { ach, ACH_TRACKS, achAdvance, achHas, netBust, heist, heistRac, HEIST_SITES, startHeist, heistSave, heistActive, gust, GUST, startGust, trashCans, TREES, gdrops, spawnDrop, FP, onFootpath, parkProps, renderAch, showAch, banQ, stats: v6b.stats, knockPed, megaDur, saveAch, get dogfightOn() { return dogfight.on; }, pond, goose, gooseG, GZ, gooseHit, defeatGoose, respawnGoose, gustGoose, pigeons, flock, FLOCKS, scatterAt, fisher, FISH, crumbs, tossCrumbs, inLeash, crowCrown, syncCrown }, cameo: { state: cameo, gears, bot, skins, cstats, grantAllGears, resetCameo, talkToBot, closeDialog, applySkin, BOT_POS, TOWER, gearCar, get dialogOpen() { return dialogOpen; }, get skinCur() { return skinCur; }, circFx, CIRC_U, circParts }, colliders, colliderAt, groundAt, groundLayers, grassFx, skyDome, enemy: { dogfight, chaseMusic, startDogfight, endDogfight, hawkCrash, losBlocked, DF_DIFF, hitPed, movingCars, hawk, netters, hurt, heal, knockOut, respawn, resetEnemies, gameSet, ens, ko, setHawkWarn, get hp() { return crow.hp; } }, airFx, musStats, get mus() { return mus; }, get megaTime() { return megaTime; }, setMega(v) { megaTime = v; }, fxSet, get actx() { return actx; }, renderer, camera, scene, crow, peds, items, projectiles, input, dropBomb, restart, get score() { return score; }, get phonesHit() { return phonesHit; }, get paused() { return paused; }, get quest() { return quest; }, get carry() { return carry; }, NEST, movingCars, colliders, questProgress, newQuest, get qTarget() { return qTarget; }, air, streams, raccoons, get layout() { return layout; }, applyLayout, openMenu, closeMenu, menuPage, get menuOpen() { return menuOpen; }, get customizing() { return customizing; }, start() { $('start').style.display = 'none'; started = true; }, roll, ROLL, startRoll, flick, FLICK, flickCheck };
+window.__crowGame = { v7p, v7o, v7n, v7m, v7l, v7k, v7g, v7e, v7d, v7b, v7, v6d, v6c: { ...v6c, THREE, HILLS, hillAt: (x, z) => hillAt(x, z), groundAt, heal, questHeartReward, DIFF }, v6b: { ach, ACH_TRACKS, achAdvance, achHas, netBust, heist, heistRac, HEIST_SITES, startHeist, heistSave, heistActive, gust, GUST, startGust, trashCans, TREES, gdrops, spawnDrop, FP, onFootpath, parkProps, renderAch, showAch, banQ, stats: v6b.stats, knockPed, megaDur, saveAch, get dogfightOn() { return dogfight.on; }, pond, goose, gooseG, GZ, gooseHit, defeatGoose, respawnGoose, gustGoose, pigeons, flock, FLOCKS, scatterAt, fisher, FISH, crumbs, tossCrumbs, inLeash, crowCrown, syncCrown }, cameo: { state: cameo, gears, bot, skins, cstats, grantAllGears, resetCameo, talkToBot, closeDialog, applySkin, BOT_POS, TOWER, gearCar, get dialogOpen() { return dialogOpen; }, get skinCur() { return skinCur; }, circFx, CIRC_U, circParts }, colliders, colliderAt, groundAt, groundLayers, grassFx, skyDome, enemy: { dogfight, chaseMusic, startDogfight, endDogfight, hawkCrash, losBlocked, DF_DIFF, hitPed, movingCars, hawk, netters, hurt, heal, knockOut, respawn, resetEnemies, gameSet, ens, ko, setHawkWarn, get hp() { return crow.hp; } }, airFx, musStats, get mus() { return mus; }, get megaTime() { return megaTime; }, setMega(v) { megaTime = v; }, fxSet, get actx() { return actx; }, renderer, camera, scene, crow, peds, items, projectiles, input, dropBomb, restart, get score() { return score; }, get phonesHit() { return phonesHit; }, get paused() { return paused; }, get quest() { return quest; }, get carry() { return carry; }, NEST, movingCars, colliders, questProgress, newQuest, get qTarget() { return qTarget; }, air, streams, raccoons, get layout() { return layout; }, applyLayout, openMenu, closeMenu, menuPage, get menuOpen() { return menuOpen; }, get customizing() { return customizing; }, start() { $('start').style.display = 'none'; started = true; }, roll, ROLL, startRoll, flick, FLICK, flickCheck };
 </script>
 </body>
 </html>
