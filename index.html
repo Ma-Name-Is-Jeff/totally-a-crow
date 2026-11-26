@@ -557,6 +557,11 @@
   #sqBack{font:900 12px system-ui;padding:6px 10px;border-radius:12px;border:2px solid #160526;background:linear-gradient(180deg,#ff2d95,#ff8a1f);color:#fff;box-shadow:0 3px 0 #160526;cursor:pointer}
   body.squirrel #quest{opacity:.25} body.squirrel #btnGust,body.squirrel #btnSoar,body.squirrel #btnDrop{opacity:.3;pointer-events:none}
   @media (max-height:470px){#sqHud{font-size:12px;gap:7px;padding:4px 6px 4px 10px}}
+  /* v7m: graphics quality segmented control */
+  #gfxSeg{display:flex;gap:4px;flex:1;justify-content:center}
+  #gfxSeg button{font:800 13px system-ui,sans-serif;padding:7px 10px;border-radius:11px;border:2.5px solid #160526;background:#331257;color:#cbb8e8;box-shadow:0 3px 0 #160526;cursor:pointer}
+  #gfxSeg button.on{background:linear-gradient(180deg,#ff2d95,#ff8a1f);color:#fff;text-shadow:0 1px 0 #160526}
+  .gfxSeg #mGfx{font-size:11.5px;color:#9cff2e;min-width:64px;text-align:right}
 </style>
 </head>
 <body>
@@ -637,7 +642,7 @@
     <div class="mrow"><label for="mZoom">🔭 Camera distance</label><input type="range" id="mZoom" min="1" max="1.6" step="0.6" value="1"><b id="zoomVal">Normal</b></div>
     </div>
     <div class="msub" id="subDisplay"><div class="msubHead"><button class="mbtn mback">◂ Back</button><b>🖼 Display &amp; Extras</b></div>
-    <button class="mbtn" id="mGfx">🖼 Graphics: High</button>
+    <div class="mrow gfxSeg"><label>🖼 Graphics</label><div id="gfxSeg"><button data-q="auto">Auto</button><button data-q="low">Low</button><button data-q="medium">Med</button><button data-q="high">High</button></div><b id="mGfx">High</b></div>
     <button class="mbtn" id="mFps">⏱ FPS counter: Off</button>
     <button class="mbtn" id="mIntro">📖 Replay Intro</button>
     <button class="mbtn" id="mTut">🎓 Replay Tutorial</button>
@@ -878,11 +883,18 @@ if (!(viewSet.zoom >= 0.5 && viewSet.zoom <= 3)) viewSet.zoom = 1;
 viewSet.zoom = viewSet.zoom < 1.3 ? 1 : 1.6;   // v6e: only Normal / Far remain (old Close → Normal, old Extra Far → Far)
 function saveView() { try { localStorage.setItem(VIEW_KEY, JSON.stringify(viewSet)); } catch (_) {} }
 const IS_PHONE = ((navigator.maxTouchPoints || 0) > 0 || 'ontouchstart' in window) && Math.min(screen.width || 9999, screen.height || 9999) < 820;
-const gfxLevel = () => (viewSet.gfx === 'auto' ? (IS_PHONE ? 'medium' : 'high') : viewSet.gfx);
+// v7m: Graphics quality lives in its own key now (old crowPatrol.view.v1 choice is migrated once)
+const GFX_KEY = 'totallyACrow.gfx.v1';
+try { const g = JSON.parse(localStorage.getItem(GFX_KEY) || 'null'); if (g && ['auto', 'low', 'medium', 'high'].includes(g.q)) viewSet.gfx = g.q; else localStorage.setItem(GFX_KEY, JSON.stringify({ q: ['auto', 'low', 'medium', 'high'].includes(viewSet.gfx) ? viewSet.gfx : 'auto' })); } catch (_) {}
+function saveGfxQ() { try { localStorage.setItem(GFX_KEY, JSON.stringify({ q: viewSet.gfx })); } catch (_) {} saveView(); }
+const GFX_AUTO = (() => { const dpr = window.devicePixelRatio || 1, mem = navigator.deviceMemory || 8, cores = navigator.hardwareConcurrency || 8;
+  if (IS_PHONE) return (mem <= 3 || cores <= 4 || (dpr >= 3 && mem <= 4)) ? 'low' : 'medium';
+  return (mem <= 4 || cores <= 4) ? 'medium' : 'high'; })();
+const gfxLevel = () => (viewSet.gfx === 'auto' ? GFX_AUTO : viewSet.gfx);
 const GFX = {
-  low:    { pr: 1,   fogN: 70,  fogF: 340, far: 360, grass: 0.35, grassD: 70,  ped: 120, pig: 0.5, clouds: 6,  blob: false },
-  medium: { pr: 1.5, fogN: 110, fogF: 430, far: 450, grass: 0.7,  grassD: 95,  ped: 170, pig: 1,   clouds: 11, blob: true },
-  high:   { pr: 2,   fogN: 130, fogF: 505, far: 520, grass: 1,    grassD: 115, ped: 230, pig: 1,   clouds: 16, blob: true },
+  low:    { pr: 1,   fogN: 70,  fogF: 340, far: 360, grass: 0.35, grassD: 70,  ped: 120, pig: 0.5, clouds: 6,  blob: false, shadow: 0,    shExt: 0,  post: 0, bloom: false, detail: false },
+  medium: { pr: 1.5, fogN: 110, fogF: 430, far: 450, grass: 0.7,  grassD: 95,  ped: 170, pig: 1,   clouds: 11, blob: true,  shadow: 1024, shExt: 46, post: 1, bloom: false, detail: true },
+  high:   { pr: 2,   fogN: 130, fogF: 505, far: 520, grass: 1,    grassD: 115, ped: 230, pig: 1,   clouds: 16, blob: true,  shadow: 2048, shExt: 72, post: 1, bloom: true,  detail: true },
 };
 const gfx = () => GFX[gfxLevel()] || GFX.high;
 let pedCull2 = gfx().ped ** 2;
@@ -893,6 +905,7 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: (window.devicePixe
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, gfx().pr));
 renderer.setSize(window.innerWidth, window.innerHeight, false);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; // v7m: only the sun casts, and only on Medium/High
 
 const scene = new THREE.Scene();
 // v6 original soft painterly look: warm low sun, cool blue-violet shade, peach-lilac horizon haze that the fog fades into
@@ -922,7 +935,9 @@ const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerH
 scene.add(new THREE.HemisphereLight(0xe4ecff, 0x7c70c4, 1.15)); // v6: cool sky fill, blue-violet bounce in the shade
 const sun = new THREE.DirectionalLight(0xffd9a6, 1.95);              // warm, golden-hour-leaning key light
 sun.position.copy(SUN_DIR).multiplyScalar(150);
-scene.add(sun);
+scene.add(sun); scene.add(sun.target);
+const hemi = scene.children.find(o => o.isHemisphereLight);
+sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.35; sun.shadow.camera.near = 1; sun.shadow.camera.far = 340;
 
 function viewSize() {
   const vv = window.visualViewport;
@@ -938,6 +953,7 @@ function onResize() {
   // widen FOV a bit in portrait so you can still see sideways
   camera.fov = w < h ? 72 : 60;
   camera.updateProjectionMatrix();
+  if (typeof post !== 'undefined' && post) postResize();
 }
 window.addEventListener('resize', onResize);
 window.addEventListener('orientationchange', () => { onResize(); setTimeout(onResize, 250); setTimeout(onResize, 700); });
@@ -950,7 +966,58 @@ onResize();
 // It rendered into an off-screen target whose depth made the flat ground layers z-fight, and its edge detection turned that
 // into the stray black lines. Back to direct rendering like v4 (no lines); the crow keeps its per-object inverted-hull outline.
 function resizeInk() {}
-function renderInk() { skyDome.position.copy(camera.position); renderer.render(scene, camera); }
+// v7m: post-processing (Medium: colour grade + vignette; High: + soft bloom, MSAA target). Loads lazily; falls back to direct rendering.
+var post = { on: false, composer: null, mods: null, loading: null, failed: false, bloom: null, grade: null, level: '' };
+const GRADE_SHADER = {
+  uniforms: { tDiffuse: { value: null }, uVig: { value: 0.32 }, uSat: { value: 1.1 }, uCon: { value: 1.05 }, uWarm: { value: new THREE.Color(1.04, 1.0, 0.95) }, uCool: { value: new THREE.Color(0.93, 0.92, 1.06) }, uVigCol: { value: new THREE.Color(0x260b3d) } },
+  vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float uVig, uSat, uCon; uniform vec3 uWarm, uCool, uVigCol; varying vec2 vUv;
+    void main(){ vec4 t = texture2D(tDiffuse, vUv); vec3 c = t.rgb; float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
+      c = mix(vec3(l), c, uSat);                                  // a touch more colour
+      c = (c - 0.18) * uCon + 0.18;                               // gentle contrast around mid-grey (linear)
+      c *= mix(uCool, uWarm, smoothstep(0.05, 0.6, l));            // cool shade, warm light (split tone)
+      vec2 d = vUv - 0.5; float v = smoothstep(0.38, 0.92, length(d * vec2(1.15, 1.0)));
+      c = mix(c, c * uVigCol * 3.2, v * uVig);                     // soft deep-purple vignette (Kro palette)
+      gl_FragColor = vec4(max(c, 0.0), t.a); }` };
+function postLoad() {
+  if (post.mods || post.loading || post.failed) return post.loading;
+  post.loading = Promise.all(['postprocessing/EffectComposer.js', 'postprocessing/RenderPass.js', 'postprocessing/ShaderPass.js', 'postprocessing/UnrealBloomPass.js', 'postprocessing/OutputPass.js'].map(f => import('three/addons/' + f)))
+    .then(m => { post.mods = Object.assign({}, ...m); post.loading = null; postBuild(); })
+    .catch(e => { post.failed = true; post.loading = null; console.warn('Kro: post-processing unavailable, using direct rendering', e && e.message); });
+  return post.loading;
+}
+function postBuild() {
+  const Q = gfx(), L = gfxLevel();
+  if (post.composer) { post.composer.dispose && post.composer.dispose(); post.composer = null; }
+  post.on = false; post.level = L;
+  if (!Q.post || post.failed) return;
+  if (!post.mods) { postLoad(); return; }
+  try {
+    const { EffectComposer, RenderPass, ShaderPass, UnrealBloomPass, OutputPass } = post.mods; const [w, h] = viewSize(), pr = renderer.getPixelRatio();
+    const isGL2 = renderer.capabilities.isWebGL2;
+    const rt = new THREE.WebGLRenderTarget(w * pr, h * pr, { type: THREE.HalfFloatType, samples: isGL2 && Q.bloom ? 4 : 0 });
+    const C = new EffectComposer(renderer, rt); C.setPixelRatio(pr); C.setSize(w, h);
+    C.addPass(new RenderPass(scene, camera));
+    post.bloom = null; if (Q.bloom) { post.bloom = new UnrealBloomPass(new THREE.Vector2(w / 2, h / 2), 0.32, 0.55, 0.86); C.addPass(post.bloom); }
+    post.grade = new ShaderPass(GRADE_SHADER); C.addPass(post.grade); C.addPass(new OutputPass());
+    post.composer = C; post.on = true;
+  } catch (e) { post.failed = true; post.on = false; console.warn('Kro: post-processing failed, using direct rendering', e && e.message); }
+}
+function postResize() { if (!post.composer) return; const [w, h] = viewSize(); post.composer.setPixelRatio(renderer.getPixelRatio()); post.composer.setSize(w, h); }
+// sun follows Kro so the shadow map covers what the camera sees; gentle golden ↔ bright day drift (no direction change: hills bake the sun)
+const _sunF = new THREE.Vector3(), SUN_BASE = { col: new THREE.Color(0xffd9a6), noon: new THREE.Color(0xfff1dc), i: 1.95 }; let todLast = performance.now(), todT = 0;
+function gfxFrame() {
+  const now = performance.now(), dt = Math.min(0.1, (now - todLast) / 1000); todLast = now;
+  const Q = gfx();
+  if (Q.detail) { todT += dt; const u = 0.5 - 0.5 * Math.cos(todT / 480 * Math.PI * 2); // 8-minute cycle
+    sun.color.copy(SUN_BASE.col).lerp(SUN_BASE.noon, u * 0.8); sun.intensity = SUN_BASE.i * (0.94 + 0.12 * u); if (hemi) hemi.intensity = 1.15 * (0.96 + 0.06 * u); }
+  if (sun.castShadow) {
+    const e = Q.shExt, ts = (2 * e) / Q.shadow; _sunF.set(camLook.x + (crow.pos.x - camLook.x) * 0.5, 0, camLook.z + (crow.pos.z - camLook.z) * 0.5);
+    _sunF.x = Math.round(_sunF.x / ts) * ts; _sunF.z = Math.round(_sunF.z / ts) * ts;
+    sun.target.position.copy(_sunF); sun.position.copy(_sunF).addScaledVector(SUN_DIR, 160); sun.target.updateMatrixWorld();
+  }
+}
+function renderInk() { skyDome.position.copy(camera.position); gfxFrame(); if (post.on && post.composer) post.composer.render(); else renderer.render(scene, camera); }
 renderer.info.autoReset = false;
 resizeInk();
 window.addEventListener('resize', () => setTimeout(resizeInk, 0)); window.addEventListener('orientationchange', () => setTimeout(resizeInk, 300));
@@ -1020,7 +1087,15 @@ const M = (c, o = {}) => {
   if (accent) { m.userData.paint = 0.3; m.userData.rimG = 0.16; } // characters: lighter paint grain + soft warm rim light
   return m;
 };
-const matAsphalt = M(0x494a56), matGrass = M(0x6fb24c), matSidewalk = M(0xd9d5cc), matLine = new THREE.MeshBasicMaterial({ color: 0xf6f6ee });
+function asphaltify(mat) { // v7m
+  const base = mat.onBeforeCompile;
+  mat.onBeforeCompile = sh => { base(sh); sh.fragmentShader = sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
+    { vec2 ap = vBrushP.xz; float pa = bvn(ap * 0.07), sp = bh21(floor(ap * 7.0)), sp2 = bh21(floor(ap * 3.0) + 17.0);
+      diffuseColor.rgb *= (0.9 + 0.16 * pa) * (1.0 + 0.09 * step(0.88, sp) - 0.07 * step(0.9, sp2));
+      float cr = abs(bvn(ap * 0.22 + 4.0) - 0.5); diffuseColor.rgb *= mix(0.86, 1.0, smoothstep(0.003, 0.011, cr) + step(0.45, bvn(ap * 0.05 + 9.0))); }`); };
+  mat.customProgramCacheKey = () => 'paint-v6-asphalt'; return mat;
+}
+const matAsphalt = asphaltify(M(0x494a56)), matGrass = M(0x6fb24c), matSidewalk = M(0xd9d5cc), matLine = new THREE.MeshBasicMaterial({ color: 0xf6f6ee });
 const matCurb = M(0xe8e4da);
 
 // glint texture (4-point star) generated on canvas
@@ -1385,7 +1460,7 @@ const isBlocked = (x, z) => blockRects.some(b => x > b.minX && x < b.maxX && z >
 mrect(0, 0, 240, 150, '#55585e'); block(0, -10, 270, 190);
 plane(240, 43, matAsphalt, 0, 0.03, -122.5); mrect(0, -122.5, 240, 43, '#55585e'); block(0, -122.5, 240, 43);
 
-const matRoad = M(0x34363b);
+const matRoad = asphaltify(M(0x34363b));
 const dashList = [], yList = [];
 function road(x, z, w, d, horizontal, dashes = [0], median = false) {
   plane(w, d, matRoad, x, 0.03, z); mrect(x, z, w, d, '#2a2c31'); block(x, z, w + 4, d + 4);
@@ -3827,10 +3902,23 @@ function chaseCamTarget(outPos, outLook) {
   occludeCam(outPos);
   const gh = groundAt(outPos.x, outPos.z) + 0.8; if (outPos.y < gh) outPos.y = gh;
 }
+const _sqA = new THREE.Vector3();
+function sqCamBlocked(x, y, z) {
+  const c = colliderAt(x, z); if (c && (c.tag === 'tree' || c.tag === 'pole' || c.tag === 'bld' || c.tag === 'house') && y < c.top + 0.5) return true;
+  for (const L of parkProps.lamps) if (Math.abs(L.x - x) < 0.9 && Math.abs(L.z - z) < 0.9 && y < 5) return true;
+  return false;
+}
+function sqCamClear(cp) { // march from Kro's head back to the wanted camera spot; stop just before the first trunk/canopy/lamp
+  const hx = crow.pos.x, hy = crow.pos.y + 1.2, hz = crow.pos.z; let hit = -1;
+  for (let t = 0.12; t <= 1.0001; t += 0.06) if (sqCamBlocked(hx + (cp.x - hx) * t, hy + (cp.y - hy) * t, hz + (cp.z - hz) * t)) { hit = t; break; }
+  sqCamClear.hit = hit;
+  if (hit < 0) return; const k = Math.max(0.28, hit - 0.08); _sqA.set(hx + (cp.x - hx) * k, hy + (cp.y - hy) * k + 1.5 * (1 - k), hz + (cp.z - hz) * k); cp.copy(_sqA);
+}
 function updateCamera(rdt) {
   if (sqr.on) { // v7l: low chase cam for the squirrel run
     forward(crow.yaw, _f); const cx = crow.pos.x - _f.x * 9, cz = crow.pos.z - _f.z * 9;
     _cp.set(cx, Math.max(crow.pos.y + 6, groundAt(cx, cz) + 3), cz); _cl.set(crow.pos.x + _f.x * 2.5, crow.pos.y + 0.6, crow.pos.z + _f.z * 2.5);
+    sqCamClear(_cp); // v7m
     camPos.lerp(_cp, damp(5, rdt)); camLook.lerp(_cl, damp(8, rdt)); camera.position.copy(camPos); camera.lookAt(camLook);
     const [vw_, vh_] = viewSize(); camera.fov = lerp(camera.fov, vw_ < vh_ ? 72 : 60, damp(3, rdt)); camera.updateProjectionMatrix(); return;
   }
@@ -6420,13 +6508,14 @@ function syncViewUi() {
   $('camTag').textContent = CAM_ZOOMS[i][2] + (exact ? '' : '~'); $('mCam').textContent = '🎥 Camera: ' + nm; $('zoomVal').textContent = nm;
   if (document.activeElement !== $('mZoom')) $('mZoom').value = viewSet.zoom;
   $('mFrame').textContent = '🎯 Frame bosses: ' + (viewSet.autoFrame ? 'On' : 'Off');
-  const L = gfxLevel(); $('mGfx').textContent = '🖼 Graphics: ' + L[0].toUpperCase() + L.slice(1) + (viewSet.gfx === 'auto' ? ' (auto)' : '');
+  const L = gfxLevel(); $('mGfx').textContent = viewSet.gfx === 'auto' ? 'Auto: ' + L[0].toUpperCase() + L.slice(1) : L[0].toUpperCase() + L.slice(1); for (const b of document.querySelectorAll('#gfxSeg button')) b.classList.toggle('on', b.dataset.q === viewSet.gfx);
   $('mFps').textContent = '⏱ FPS counter: ' + (viewSet.fps ? 'On' : 'Off'); $('fpsBox').classList.toggle('on', !!viewSet.fps);
 }
 onTap('btnCam', cycleCam);
 onTap('mCam', cycleCam);
 onTap('mFrame', () => { viewSet.autoFrame = !viewSet.autoFrame; saveView(); syncViewUi(); });
-onTap('mGfx', () => { const o = ['auto', 'low', 'medium', 'high'], i = o.indexOf(viewSet.gfx); viewSet.gfx = o[(i + 1) % o.length]; saveView(); applyGfx(); syncViewUi(); });
+function setGfxQ(q) { if (!['auto', 'low', 'medium', 'high'].includes(q)) return; viewSet.gfx = q; saveGfxQ(); applyGfx(); syncViewUi(); }
+$('gfxSeg').addEventListener('click', e => { const b = e.target.closest('button[data-q]'); if (b) { e.preventDefault(); setGfxQ(b.dataset.q); } });
 onTap('mFps', () => { viewSet.fps = !viewSet.fps; saveView(); syncViewUi(); if (viewSet.fps) $('fpsBox').textContent = (fpsMeter.fps || '--') + ' FPS · ' + gfxLevel()[0].toUpperCase() + gfxLevel().slice(1); });
 $('mZoom').addEventListener('input', e => setZoom(e.target.value, false)); $('mZoom').addEventListener('change', e => setZoom(e.target.value));
 { const pts = new Map(); let d0 = 0, z0 = 1; const D = () => { const [a, b] = [...pts.values()]; return Math.hypot(a[0] - b[0], a[1] - b[1]); };
@@ -6453,6 +6542,13 @@ function applyGfx() {
   pigeons.forEach((P, i) => { P.lod = Q.pig < 1 && (i % 2 === 1); if (P.lod) { pigMesh.setMatrixAt(i, _z0); wingMesh.setMatrixAt(i * 2, _z0); wingMesh.setMatrixAt(i * 2 + 1, _z0); if (P.tgt && P.tgt.crumb) P.tgt = null; } else P.f.nAct++; });
   pigMesh.instanceMatrix.needsUpdate = wingMesh.instanceMatrix.needsUpdate = true;
   if (groundShadowList.mesh) groundShadowList.mesh.visible = Q.blob;
+  // v7m
+  sun.castShadow = Q.shadow > 0;
+  if (Q.shadow) { const S = sun.shadow; if (S.mapSize.x !== Q.shadow) { S.mapSize.set(Q.shadow, Q.shadow); if (S.map) { S.map.dispose(); S.map = null; } }
+    S.camera.left = S.camera.bottom = -Q.shExt; S.camera.right = S.camera.top = Q.shExt; S.camera.updateProjectionMatrix(); S.radius = Q.shadow > 1024 ? 3 : 2; }
+  if (typeof gfxDetail !== 'undefined' && gfxDetail) gfxDetail.visible = Q.detail;
+  if (!Q.detail) { sun.color.copy(SUN_BASE.col); sun.intensity = SUN_BASE.i; if (hemi) hemi.intensity = 1.15; }
+  if (post.level !== gfxLevel() || (Q.post && !post.on)) postBuild();
 }
 // ---- FPS counter (Settings → FPS counter) so real phone numbers can be read off
 const fpsMeter = { fps: 0 }; { let n = 0, t0 = performance.now(); const el = $('fpsBox');
@@ -8093,7 +8189,54 @@ function frame() {
 }
 frame();
 setClass(kroClass, true); // v7i: after upgrade state exists
-window.__crowGame = { v7l, v7k, v7g, v7e, v7d, v7b, v7, v6d, v6c: { ...v6c, THREE, HILLS, hillAt: (x, z) => hillAt(x, z), groundAt, heal, questHeartReward, DIFF }, v6b: { ach, ACH_TRACKS, achAdvance, achHas, netBust, heist, heistRac, HEIST_SITES, startHeist, heistSave, heistActive, gust, GUST, startGust, trashCans, TREES, gdrops, spawnDrop, FP, onFootpath, parkProps, renderAch, showAch, banQ, stats: v6b.stats, knockPed, megaDur, saveAch, get dogfightOn() { return dogfight.on; }, pond, goose, gooseG, GZ, gooseHit, defeatGoose, respawnGoose, gustGoose, pigeons, flock, FLOCKS, scatterAt, fisher, FISH, crumbs, tossCrumbs, inLeash, crowCrown, syncCrown }, cameo: { state: cameo, gears, bot, skins, cstats, grantAllGears, resetCameo, talkToBot, closeDialog, applySkin, BOT_POS, TOWER, gearCar, get dialogOpen() { return dialogOpen; }, get skinCur() { return skinCur; }, circFx, CIRC_U, circParts }, colliders, colliderAt, groundAt, groundLayers, grassFx, skyDome, enemy: { dogfight, chaseMusic, startDogfight, endDogfight, hawkCrash, losBlocked, DF_DIFF, hitPed, movingCars, hawk, netters, hurt, heal, knockOut, respawn, resetEnemies, gameSet, ens, ko, setHawkWarn, get hp() { return crow.hp; } }, airFx, musStats, get mus() { return mus; }, get megaTime() { return megaTime; }, setMega(v) { megaTime = v; }, fxSet, get actx() { return actx; }, renderer, camera, scene, crow, peds, items, projectiles, input, dropBomb, restart, get score() { return score; }, get phonesHit() { return phonesHit; }, get paused() { return paused; }, get quest() { return quest; }, get carry() { return carry; }, NEST, movingCars, colliders, questProgress, newQuest, get qTarget() { return qTarget; }, air, streams, raccoons, get layout() { return layout; }, applyLayout, openMenu, closeMenu, menuPage, get menuOpen() { return menuOpen; }, get customizing() { return customizing; }, start() { $('start').style.display = 'none'; started = true; }, roll, ROLL, startRoll, flick, FLICK, flickCheck };
+// ================================================================ v7m: building detail (instanced: window grids, roof clutter, trims) + shadow flags
+var gfxDetail = (() => {
+  const G = new THREE.Group(); G.name = 'gfxDetail'; scene.add(G);
+  let seed = 9173; const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647, rr = (a, b) => a + r() * (b - a); // own PRNG: keeps the world's random layout untouched
+  const win = [], trim = [], ac = [], vent = [], tank = [], sky = [];
+  const winRow = (x0, x1, y, z, face, nx, ny, sp) => { // face: 'z+','z-','x+','x-'
+    for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { const u = x0 + (i + 0.5) * (x1 - x0) / nx, yy = y + j * sp;
+      if (face[0] === 'z') win.push({ x: u, y: yy, z, ry: 0 }); else win.push({ x: z, y: yy, z: u, ry: Math.PI / 2 }); } };
+  const roof = (cx, cz, w, d, top, n) => { for (let k = 0; k < n; k++) { const x = cx + rr(-w * 0.35, w * 0.35), z = cz + rr(-d * 0.35, d * 0.35);
+      const t = r(); if (t < 0.55) ac.push({ x, y: top + 0.65, z, ry: r() < 0.5 ? 0 : Math.PI / 2 }); else if (t < 0.85) vent.push({ x, y: top + 0.6, z }); else tank.push({ x, y: top + 1.6, z }); } };
+  // plaza shops: back-face window grid, roof clutter, cornice trim
+  for (const S of shopsInfo) { const x0 = S.cx - S.w / 2 + 1.2, x1 = S.cx + S.w / 2 - 1.2, nx = Math.max(2, Math.floor((x1 - x0) / 3.2)), ny = Math.max(1, Math.floor((S.h - 3) / 3.4));
+    winRow(x0, x1, 3.2, -101.12, 'z-', nx, ny, 3.4); roof(S.cx, -86, S.w, 26, S.h + 1.2, Math.max(2, Math.round(S.w / 9)));
+    trim.push({ x: S.cx, y: S.h - 0.2, z: -101.1, sx: S.w, sy: 0.35, sz: 0.4 }); }
+  // warehouses: clerestory window bands on the long sides, skylights + vents on the roof
+  for (const [x, z, w, d, h] of [[-60, -240, 90, 50, 14], [110, -250, 70, 60, 12], [285, -260, 80, 50, 11], [-300, -250, 60, 60, 10]]) {
+    const ex = w * 0.97 / 2 + 0.08, ez = d * 0.97 / 2 + 0.08, nx = Math.floor(w / 4.2), nz = Math.floor(d / 4.2);
+    winRow(x - w * 0.45, x + w * 0.45, h - 3.2, z - ez, 'z-', nx, 1, 0); winRow(z - d * 0.42, z + d * 0.42, h - 3.2, x - ex, 'x-', nz, 1, 0); winRow(z - d * 0.42, z + d * 0.42, h - 3.2, x + ex, 'x+', nz, 1, 0);
+    for (let k = -2; k <= 2; k++) sky.push({ x: x + k * w / 6, y: h + 0.95, z, sx: w / 9, sz: d * 0.55 });
+    roof(x, z, w, d, h + 0.8, Math.round(w / 12)); }
+  // gas-station store + drive-thru: a couple of roof units each
+  roof(290, 60, 14, 20, 6.3, 3); roof(262, -85, 20, 14, 7, 3);
+  const glassM = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.28, metalness: 0.35, emissive: 0x000000 });
+  const winG = new THREE.BoxGeometry(1.5, 1.9, 0.1); const wm = new THREE.InstancedMesh(winG, glassM, win.length); const col = new THREE.Color();
+  win.forEach((p, i) => { _o.position.set(p.x, p.y, p.z); _o.rotation.set(0, p.ry, 0); _o.scale.set(1, 1, 1); _o.updateMatrix(); wm.setMatrixAt(i, _o.matrix);
+    const lit = r() < 0.18; col.setHex(lit ? 0xffd98a : [0x2a4a63, 0x355a78, 0x24405a, 0x3d6688][Math.floor(r() * 4)]); if (lit) col.multiplyScalar(1.25); wm.setColorAt(i, col); });
+  G.add(wm);
+  const frameG = new THREE.BoxGeometry(1.8, 2.2, 0.06), fm = new THREE.InstancedMesh(frameG, M(0xf1ede4), win.length);
+  win.forEach((p, i) => { _o.position.set(p.x, p.y, p.z); _o.rotation.set(0, p.ry, 0); _o.updateMatrix(); fm.setMatrixAt(i, _o.matrix); }); G.add(fm);
+  const inst = (geo, mat, list, f) => { if (!list.length) return null; const m = new THREE.InstancedMesh(geo, mat, list.length); list.forEach((p, i) => { _o.position.set(p.x, p.y, p.z); _o.rotation.set(0, p.ry || 0, 0); _o.scale.set(p.sx || 1, p.sy || 1, p.sz || 1); _o.updateMatrix(); m.setMatrixAt(i, _o.matrix); }); G.add(m); return m; };
+  inst(new THREE.BoxGeometry(1, 1, 1), M(0xd8d2c4), trim);
+  inst(new THREE.BoxGeometry(2.2, 1.3, 1.6), M(0xb9bec4), ac);
+  inst(new THREE.CylinderGeometry(0.35, 0.35, 1.2, 8), M(0x8d9196), vent);
+  inst(new THREE.CylinderGeometry(1.1, 1.1, 2.4, 10), M(0x9a7a5a), tank);
+  inst(new THREE.BoxGeometry(1, 0.3, 1), new THREE.MeshStandardMaterial({ color: 0x9fc4e0, roughness: 0.3, metalness: 0.2 }), sky);
+  G.userData.counts = { windows: win.length, ac: ac.length, vents: vent.length, tanks: tank.length, skylights: sky.length, trims: trim.length };
+  return G;
+})();
+{ // shadow flags: everything solid casts + receives, except ground planes, foliage (keeps its painted blob shadows), grass, sprites and see-through FX
+  const noCast = new Set([trunkList.mesh, leafList.mesh, leaf2List.mesh, leaf3List.mesh, coniferList.mesh, palmList.mesh, bushList.mesh, groundShadowList.mesh, skyDome, ...grassFx.chunkList.map(k => k.im)].filter(Boolean));
+  scene.traverse(o => { if (!o.isMesh || o === skyDome) return; const m = Array.isArray(o.material) ? o.material[0] : o.material; if (!m) return;
+    const see = m.transparent || m.isMeshBasicMaterial || m.isShaderMaterial || m.blending === THREE.AdditiveBlending || m === outlineMat;
+    o.receiveShadow = !see && !(m.isShaderMaterial);
+    o.castShadow = !see && !noCast.has(o) && !(o.geometry && o.geometry.type === 'PlaneGeometry'); });
+}
+applyGfx();
+const v7m = { GFX, GFX_KEY, GFX_AUTO, gfxLevel, setGfxQ, applyGfx, post, sun, get gfxDetail() { return gfxDetail; }, sqCamClear, postBuild, postLoad, fps: () => fpsMeter.fps };
+window.__crowGame = { v7m, v7l, v7k, v7g, v7e, v7d, v7b, v7, v6d, v6c: { ...v6c, THREE, HILLS, hillAt: (x, z) => hillAt(x, z), groundAt, heal, questHeartReward, DIFF }, v6b: { ach, ACH_TRACKS, achAdvance, achHas, netBust, heist, heistRac, HEIST_SITES, startHeist, heistSave, heistActive, gust, GUST, startGust, trashCans, TREES, gdrops, spawnDrop, FP, onFootpath, parkProps, renderAch, showAch, banQ, stats: v6b.stats, knockPed, megaDur, saveAch, get dogfightOn() { return dogfight.on; }, pond, goose, gooseG, GZ, gooseHit, defeatGoose, respawnGoose, gustGoose, pigeons, flock, FLOCKS, scatterAt, fisher, FISH, crumbs, tossCrumbs, inLeash, crowCrown, syncCrown }, cameo: { state: cameo, gears, bot, skins, cstats, grantAllGears, resetCameo, talkToBot, closeDialog, applySkin, BOT_POS, TOWER, gearCar, get dialogOpen() { return dialogOpen; }, get skinCur() { return skinCur; }, circFx, CIRC_U, circParts }, colliders, colliderAt, groundAt, groundLayers, grassFx, skyDome, enemy: { dogfight, chaseMusic, startDogfight, endDogfight, hawkCrash, losBlocked, DF_DIFF, hitPed, movingCars, hawk, netters, hurt, heal, knockOut, respawn, resetEnemies, gameSet, ens, ko, setHawkWarn, get hp() { return crow.hp; } }, airFx, musStats, get mus() { return mus; }, get megaTime() { return megaTime; }, setMega(v) { megaTime = v; }, fxSet, get actx() { return actx; }, renderer, camera, scene, crow, peds, items, projectiles, input, dropBomb, restart, get score() { return score; }, get phonesHit() { return phonesHit; }, get paused() { return paused; }, get quest() { return quest; }, get carry() { return carry; }, NEST, movingCars, colliders, questProgress, newQuest, get qTarget() { return qTarget; }, air, streams, raccoons, get layout() { return layout; }, applyLayout, openMenu, closeMenu, menuPage, get menuOpen() { return menuOpen; }, get customizing() { return customizing; }, start() { $('start').style.display = 'none'; started = true; }, roll, ROLL, startRoll, flick, FLICK, flickCheck };
 </script>
 </body>
 </html>
