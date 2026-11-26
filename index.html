@@ -513,7 +513,7 @@
   .clsCard.sel{border-color:var(--cc,#ffe229);box-shadow:0 4px 0 #160526,0 0 0 2px var(--cc,#ffe229),0 0 16px var(--cc,#ffe229);background:#4a1c7d}
   .clsCard.sel::after{content:'✓ PICKED';position:absolute;top:-9px;right:6px;background:var(--cc,#ffe229);color:#160526;font:900 9.5px system-ui;padding:2px 6px;border-radius:8px;border:2px solid #160526}
   #clsPick .cbar{display:flex;justify-content:center;gap:10px;margin-top:10px}
-  #clsPick .note{font-size:11px;color:#cbb8e8;margin-top:6px}
+  #clsPick .note{font-size:11px;color:#cbb8e8;margin-top:6px} .clsCard.lockd{filter:saturate(.55) brightness(.85)} .clsCard.lockd i{color:#ffe229;font-style:normal;font-weight:800} #lvlXp{font:800 9.5px system-ui;color:#cbb8e8;margin-left:4px;white-space:nowrap}
   #start .clsBtn{margin-top:12px;font:800 15px system-ui,sans-serif;padding:10px 18px;border-radius:30px;border:2.5px solid #9cff2e;background:#3a1564;color:#fff9f0;box-shadow:0 4px 0 #160526;cursor:pointer}
   @media (max-height:470px){#start .clsBtn{margin-top:6px;padding:7px 14px;font-size:13px}}
   @media (max-width:760px),(max-height:470px){#clsGrid{grid-template-columns:repeat(5,minmax(118px,1fr));overflow-x:auto}.clsCard{padding:6px 6px 7px}.clsCard .ci{font-size:20px}.clsCard b{font-size:13px}.clsCard i{min-height:0}#clsPick h2{font-size:18px}#clsPick .sub{display:none}}
@@ -571,7 +571,7 @@
 
 <div id="hud">
   <div id="score">0</div>
-  <div id="lvlPill"><b id="lvlN">LV 1</b><span id="lvlNm">Fledgling</span><div class="lb"><i id="lvlBar"></i></div></div>
+  <div id="lvlPill"><b id="lvlN">LV 1</b><span id="lvlNm">Fledgling</span><small id="lvlXp"></small><div class="lb"><i id="lvlBar"></i></div></div>
   <div id="achBadge" style="display:none"></div>
   <div class="g" id="hpRow"><div id="hearts"></div></div>
   <div class="g" id="heatRow" style="display:none"><span id="heatIcons"></span><span id="heatTxt">HEAT</span><button id="btnDonut" style="display:none">🍩 Eat (−1 heat)</button></div>
@@ -580,7 +580,7 @@
   <div class="g"><span class="gi">🍟</span><div class="bar" id="ammoBar"><i></i></div><span class="gt" id="ammoTxt">6/12</span></div>
   <div class="g"><span class="gi">🪶</span><div class="bar" id="stamBar"><i></i></div><span class="gt" id="stamTxt"></span></div>
   <div class="g"><span class="gi">📱</span><div id="phoneSegs"><i></i><i></i><i></i></div><span class="gt" id="phoneTxt">0/3</span></div>
-  <div class="g" id="cashRow"><span class="gi">💰</span><span id="cashTxt">$0</span><span id="cashCarry"></span></div>
+  <div class="g" id="cashRow"><span class="gi">🪙</span><span id="cashTxt">0</span><span id="cashCarry"></span></div>
   </div></div>
   <div class="g" id="gearRow" style="display:none"><span class="gi">⚙</span><span id="gearTxt">0/5</span></div>
   <div class="g" id="gmaRow" style="display:none"><span class="gi">👓</span><span id="gmaTxt"></span><span id="gmaCarry"></span></div>
@@ -659,14 +659,14 @@
   <div class="keys">Keys: WASD steer · Space flap · Shift dive · Q brake (hold to hover) · E soar · F drop · G gust · double-tap A/D or Z/C barrel roll · V camera · Esc menu</div>
 </div></div>
 <div id="clsPick" role="dialog" aria-label="Choose your class"><div class="panel">
-  <h2>🎭 Pick Kro's Class</h2><p class="sub">Each class has a perk, a small tradeoff and its own look. Switch any time at the nest or from the pause menu. Perks stack with Nest Upgrades.</p>
+  <h2>🎭 Pick Kro's Class</h2><p class="sub">Each class has a perk, a small tradeoff and its own look. Unlock a class once with 🪙 coins, then switch free any time. Perks stack with Nest Upgrades.</p>
   <div id="clsGrid"></div>
   <div class="cbar"><button class="mbtn" id="clsDone" style="min-width:170px">Done</button></div>
   <div class="note" id="clsNote"></div>
 </div></div>
 <div id="upg"><div class="panel">
   <div class="upgHead"><b>🌿 Nest Upgrades</b><button class="mbtn" id="upgCls" style="padding:5px 10px;font-size:13px">🎭 Class</button><span class="upgCoins" id="upgCoins">🪙 0</span></div>
-  <p class="upgNote">Spend 🪙 coins you earn from heists, achievements and finds. Buy in order down each branch. Opens at the nest or from the pause menu.</p>
+  <p class="upgNote">Spend 🪙 coins from pouches, heists, quests and achievements. Buy in order down each branch. Opens at the nest or from the pause menu.</p>
   <div id="upgGrid"></div>
   <button class="mbtn mtop" id="upgClose" style="margin-top:8px">Close</button>
 </div></div>
@@ -689,7 +689,7 @@
 <div id="dfBanner"><b></b><small></small></div>
 <div id="ko"><div class="panel"><div class="koStars">💫</div><h2>Knocked out!</h2><p>Your crow needs a little breather. Back to the nest with 4 fresh hearts…</p><p id="koPen"></p><button id="koBtn" class="mbtn primary">Fly again</button></div></div>
 <div id="caged"><div class="panel"><h2>🔒 CAGED!</h2><img id="cageArt" alt="Kro in a bird cage"><p id="cageLvl"></p><p id="cageBank"></p>
-  <button id="btnBail" class="mbtn primary">💵 Pay Bail</button><button id="btnBreak" class="mbtn">🗝 Break Out (stealth)</button><p id="cageWait"></p><small>Tip: pick up 💵 cash around town and carry it home to the nest to bank it.</small></div></div>
+  <button id="btnBail" class="mbtn primary">🪙 Pay Bail</button><button id="btnBreak" class="mbtn">🗝 Break Out (stealth)</button><p id="cageWait"></p><small>Tip: grab 🪙 coin pouches around town and carry them home to the nest to bank them.</small></div></div>
 <div id="jb" role="dialog" aria-label="Break Out"><div id="jbHead"><b>🗝 BREAK OUT</b><span id="jbTime">45s</span><span>👁</span><div id="jbSusW"><div id="jbSus"></div></div></div>
   <div id="jbWrap"><canvas id="jbCv" width="640" height="360"></canvas><div id="jbHint">Drag or WASD to sneak · HOP over low fences (Space) · hold COVER to hide in a box (Shift). Reach EXIT unseen!</div>
   <button class="jbBtn" id="jbHop">HOP</button><button class="jbBtn" id="jbCover">COVER</button><div id="jbEnd"><div><h3 id="jbEndT"></h3><p id="jbEndP"></p></div></div></div></div>
@@ -825,9 +825,9 @@
     ['roll', 'Barrel roll', 'Flick the stick fast left or right (keys: <b>Z</b> / <b>C</b>). A roll dodges drone blasts, nets and hawk strikes.'],
     ['drop', 'Drop fries', 'The ring shows where a drop lands. <b>Yellow = locked on</b>: tap <b>Drop</b>. Out of fries? Skim low through 🍟 to reload.'],
     ['targets', 'Targets', '📱 Phone humans are worth +1000 (3 hits = Mega Bomb). The ring leads moving cars for you. On a 🦝 heist, hit the bandit before he reaches the dumpster.'],
-    ['cash', 'Cash & trinkets', 'Fly low through 💵 cash and shiny trinkets, then carry them home to the 🪺 nest to bank them. Spend 🪙 coins on Nest Upgrades at the nest or in the pause menu.'],
+    ['cash', 'Coins & trinkets', 'Kro has <b>one wallet: 🪙 coins</b>. Fly low through coin pouches and shiny trinkets, then carry them home to the 🪺 nest to bank them. Coins buy Nest Upgrades, unlock classes and pay bail. Every point you score is XP for your level.'],
     ['danger', 'Hawk & hearts', 'The 🦅 hawk hunts the west neighborhood (orange ring on the minimap). Locked on? Weave, go low or hide to fill EVADE. Refill ♥ at 💧 bird baths.'],
-    ['heat', 'Heat', 'Splatting cops raises 🔥 Heat: cop cars, nets, then drones. A 🍩 donut cools you off. Knocked out with Heat = <b>CAGED</b>: pay bail with banked cash, or wait.'],
+    ['heat', 'Heat', 'Splatting cops raises 🔥 Heat: cop cars, nets, then drones. A 🍩 donut cools you off. Knocked out with Heat = <b>CAGED</b>: pay bail with 🪙 coins, break out, or wait.'],
     ['boss', 'Bosses & minimap', 'The pond goose and Rattlecan Rudy fight back: drops and Gusts drain their bar. The minimap shows the nest, quests and the hawk zone.']];
   const $g = id => document.getElementById(id), el = $g('guide'), img = $g('guideImg'), nx = $g('guideNext'), bk = $g('guideBack'), dots = $g('guideDots');
   dots.innerHTML = PAGES.map(() => '<i></i>').join('');
@@ -3022,7 +3022,8 @@ function lvlHud() {
   const i = lvl.lv - 1, cur = LEVELS[i], nx = LEVELS[i + 1];
   document.getElementById('lvlN').textContent = 'LV ' + lvl.lv; document.getElementById('lvlNm').textContent = cur.name;
   document.getElementById('lvlBar').style.width = (nx ? Math.min(100, (lvl.xp - cur.at) / (nx.at - cur.at) * 100) : 100) + '%';
-  document.getElementById('lvlPill').title = nx ? `${Math.round(lvl.xp).toLocaleString()} / ${nx.at.toLocaleString()} pts to LV ${lvl.lv + 1}` : 'Max level';
+  document.getElementById('lvlPill').title = nx ? `${Math.round(lvl.xp).toLocaleString()} / ${nx.at.toLocaleString()} XP to LV ${lvl.lv + 1}` : 'Max level';
+  const xe = document.getElementById('lvlXp'); if (xe) xe.textContent = nx ? `${Math.round(lvl.xp - cur.at).toLocaleString()}/${(nx.at - cur.at).toLocaleString()} XP` : 'MAX';
 }
 let lvlUpTO = 0;
 function lvlUpCard(L) {
@@ -3204,11 +3205,11 @@ function questProgress(type, zone) {
   if (quest.n >= quest.need) completeQuest(); else { drawQuestBoard(); sfx.pickup(false); }
 }
 function completeQuest() {
-  quest.done = true; questsDone++; addScore(clsPts(quest.reward, 'quest'));
+  quest.done = true; questsDone++; addScore(clsPts(quest.reward, 'quest')); ach.coins += Math.round(quest.reward / 100); saveAch();
   crow.ammo = MAX_AMMO; crow.stamina = stamMax();
   if (quest.type === 'phones') megaTime = Math.max(megaTime, 12);
   if (quest.type === 'deliver') crow.boost = 8;
-  showMsg(`✅ Quest complete! +${quest.reward} ${quest.bonus || ''}`, 2.6);
+  showMsg(`✅ Quest complete! +${quest.reward} XP · +${Math.round(quest.reward / 100)} 🪙 ${quest.bonus || ''}`, 2.6);
   sfx.chime();
   questDoneT = 3.5; drawQuestBoard();
 }
@@ -3220,7 +3221,7 @@ function checkNestDelivery() {
   const dx = crow.pos.x - NEST.x, dz = crow.pos.z - NEST.z;
   if (dx * dx + dz * dz < 7 * 7 && crow.pos.y < NEST.y + 9) {
     const n = carry; carry = 0;
-    addScore(300 * n); popup(`🪺 Delivered ×${n} +${300 * n}`, NEST_POS.clone().add(new THREE.Vector3(0, 3, 0)), 'gold'); sfx.chime();
+    addScore(300 * n); ach.coins += 5 * n; saveAch(); popup(`🪺 Delivered ×${n} +${300 * n} · +${5 * n} 🪙`, NEST_POS.clone().add(new THREE.Vector3(0, 3, 0)), 'gold'); sfx.chime();
     for (let i = 0; i < n; i++) questProgress('deliver');
   }
 }
@@ -5164,9 +5165,15 @@ const KCLASSES = [
   { id: 'hunter', icon: '🏹', name: 'Hunter', col: '#9cff2e', tag: 'Rid the town of pests',
     perk: 'Double points for raccoons and drones. Hawk EVADE fills 25% faster.', trade: '15 less max stamina.', skin: 'Scar over one eye, quiver and chest strap.' },
   { id: 'scavenger', icon: '🍂', name: 'Scavenger', col: '#ff8a1f', tag: 'Finders keepers',
-    perk: 'Pickup reach +30%. Cash worth +20%.', trade: 'Soar is 10% slower (full pockets).', skin: 'Grungy feathers with leaves and twigs, a bigger beak.' },
+    perk: 'Pickup reach +30%. Coin pouches worth +20%.', trade: 'Soar is 10% slower (full pockets).', skin: 'Grungy feathers with leaves and twigs, a bigger beak.' },
 ];
+const CLS_OWN_KEY = 'totallyACrow.classOwn.v1', CLS_COST = { classic: 0, mayhem: 150, lovely: 150, scavenger: 200, hunter: 250 };
+var clsOwned = (() => { try { const v = JSON.parse(localStorage.getItem(CLS_OWN_KEY) || 'null'); if (Array.isArray(v)) return v; } catch (_) {} return null; })();
 var kroClass = (() => { try { const v = localStorage.getItem(CLS_KEY); return KCLASSES.some(c => c.id === v) ? v : 'classic'; } catch (_) { return 'classic'; } })();
+if (!clsOwned) { clsOwned = ['classic']; if (kroClass !== 'classic') clsOwned.push(kroClass); try { localStorage.setItem(CLS_OWN_KEY, JSON.stringify(clsOwned)); } catch (_) {} } // v7n migration: keep the class you already use
+function clsHas(id) { return clsOwned.includes(id); }
+function saveClsOwn() { try { localStorage.setItem(CLS_OWN_KEY, JSON.stringify(clsOwned)); } catch (_) {} }
+function unlockClass(id, free) { if (clsHas(id)) return true; const c = CLS_COST[id] || 0; if (!free) { if ((ach.coins | 0) < c) return false; ach.coins -= c; saveAch(); } clsOwned.push(id); saveClsOwn(); return true; }
 function clsIs(id) { return kroClass === id; }
 function clsPts(base, kind) {
   let k = 1;
@@ -5260,6 +5267,7 @@ function updateCameo(dt, time) {
 // v7i: class picker UI
 function setClass(id, quiet) {
   if (!KCLASSES.some(c => c.id === id)) id = 'classic';
+  if (!clsHas(id)) { if (typeof clsGate === 'function' && !clsGate(id)) return; if (!unlockClass(id)) { $('clsNote').textContent = `Need ${CLS_COST[id]} 🪙 to unlock this class (wallet ${ach.coins | 0} 🪙).`; return; } showMsg(`🔓 Class unlocked for ${CLS_COST[id]} 🪙`, 1.6, true); }
   kroClass = id; try { localStorage.setItem(CLS_KEY, id); } catch (_) {}
   applySkin(skinCur); crow.stamina = Math.min(crow.stamina, stamMax());
   const C = KCLASSES.find(c => c.id === id); $('btnCls').textContent = `${C.icon} Class: ${C.name}`; $('mCls').textContent = `🎭 Class: ${C.name}`;
@@ -5267,7 +5275,7 @@ function setClass(id, quiet) {
   renderClsPick();
 }
 function renderClsPick() {
-  $('clsGrid').innerHTML = KCLASSES.map(c => `<button class="clsCard${c.id === kroClass ? ' sel' : ''}" data-cls="${c.id}" style="--cc:${c.col}"><span class="ci">${c.icon}</span><b>${c.name}</b><i>${c.tag}</i><span class="cp">✚ ${c.perk}</span><span class="ct">− ${c.trade}</span><span class="cs">🎨 ${c.skin}</span></button>`).join('');
+  $('clsGrid').innerHTML = KCLASSES.map(c => `<button class="clsCard${c.id === kroClass ? ' sel' : ''}${clsHas(c.id) ? '' : ' lockd'}" data-cls="${c.id}" style="--cc:${c.col}"><span class="ci">${c.icon}</span><b>${c.name}</b><i>${clsHas(c.id) ? c.tag : `🔒 Unlock · ${CLS_COST[c.id]} 🪙`}</i><span class="cp">✚ ${c.perk}</span><span class="ct">− ${c.trade}</span><span class="cs">🎨 ${c.skin}</span></button>`).join('');
   $('clsNote').textContent = skinCur !== 'default' ? `Your ${SKIN_NAMES[skinCur]} skin colors stay on; class gear still shows. Set Skin to Default for the class colors.` : '';
 }
 window.__clsOpen = false;
@@ -7183,14 +7191,19 @@ const v7 = { HEAT, heat, cops, copCars, drones, puffs, donut, setHeat, addHeat, 
 // Kro only *carries* picked-up cash; it is banked when he brings it home to the nest. Caught by the cops (knocked out
 // while heat > 0) = CAGED: Pay Bail (price scales with heat) for an instant release, or sit out the cage timer, released
 // at the nest with heat 0 but the unbanked cash and carried trinkets are confiscated.
-const CASH = { n: 9, vals: [10, 15, 20, 25], respawn: [25, 45], r2: 6.76, low: 4.5, bail: [0, 40, 75, 120, 180], wait: 10, key: 'totallyACrow.cash' };
+// v7n: ONE currency. World cash became 🪙 coin pouches; the old cash bank was merged 1:1 into the coin wallet (ach.coins).
+const CASH = { n: 9, vals: [6, 8, 10, 12], respawn: [25, 45], r2: 6.76, low: 4.5, bail: [0, 30, 60, 90, 130], wait: 10, key: 'totallyACrow.cash', merged: 0 };
 const cash = { bank: 0, carry: 0, stats: { picked: 0, banked: 0, bails: 0, waits: 0, lost: 0 } };
-try { const v = JSON.parse(localStorage.getItem(CASH.key) || '{}'); if (isFinite(v.bank)) cash.bank = Math.max(0, v.bank | 0); } catch (_) {}
-const saveCash = () => { try { localStorage.setItem(CASH.key, JSON.stringify({ bank: cash.bank })); } catch (_) {} };
-const cashGeo = (() => { const P = [], green = 0x58a85a, light = 0xbfe6b0, band = 0xf2e3b5;
-  for (let i = 0; i < 3; i++) { const y = 0.06 + i * 0.075, r = (i - 1) * 0.12;
-    P.push([G.box(0.92, 0.06, 0.46), green, [0, y, 0], [0, r, 0]], [G.box(0.5, 0.062, 0.3), light, [0, y + 0.002, 0], [0, r, 0]], [G.box(0.14, 0.064, 0.47), band, [0, y + 0.004, 0], [0, r, 0]]); }
-  for (const [x, z, y] of [[0.55, 0.32, 0.05], [0.68, 0.06, 0.05], [0.6, 0.2, 0.13]]) P.push([G.cyl(0.15, 0.15, 0.06, 14), 0xf2c23a, [x, y, z]], [G.cyl(0.1, 0.1, 0.064, 12), 0xffe27a, [x, y + 0.002, z]]);
+Object.defineProperty(cash, 'bank', { get() { return ach.coins | 0; }, set(v) { ach.coins = Math.max(0, v | 0); saveAch(); }, enumerable: true });
+function migrateCashToCoins() { // v7n: old $ bank -> coins, 1:1, once (bail prices in coins match the old $ scale)
+  try { const v = JSON.parse(localStorage.getItem(CASH.key) || '{}') || {};
+    if (!v.merged) { const b = isFinite(v.bank) ? Math.max(0, v.bank | 0) : 0; if (b > 0) { ach.coins = (ach.coins | 0) + b; saveAch(); CASH.merged = b; }
+      localStorage.setItem(CASH.key, JSON.stringify({ bank: 0, merged: 1, from: b })); } } catch (_) {} }
+migrateCashToCoins();
+const saveCash = () => { saveAch(); };
+const cashGeo = (() => { const P = []; // v7n: a little cloth coin pouch with gold coins spilling out (our own look)
+  P.push([G.box(0.5, 0.42, 0.42), 0x9a6a3a, [0, 0.24, 0]], [G.box(0.34, 0.12, 0.3), 0x7a4e26, [0, 0.5, 0]], [G.box(0.4, 0.05, 0.36), 0xd8b46a, [0, 0.43, 0]]);
+  for (const [x, z, y] of [[0.42, 0.22, 0.04], [0.52, -0.08, 0.04], [0.46, 0.08, 0.11], [-0.4, 0.2, 0.04], [0.2, 0.34, 0.04]]) P.push([G.cyl(0.15, 0.15, 0.06, 14), 0xf2c23a, [x, y, z]], [G.cyl(0.1, 0.1, 0.064, 12), 0xffe27a, [x, y + 0.002, z]]);
   return propGeo(P); })();
 const cashMat = sheen(M(0xffffff, { accent: true, vertexColors: true, emissive: 0x1a2a10 }), 0xeaffd8, 0xffffff, 0.45, 0.8);
 const cashItems = [];
@@ -7200,7 +7213,7 @@ for (let i = 0; i < CASH.n; i++) { const g = new THREE.Group(), m = new THREE.Me
   const c = { g, m, gl, alive: true, val: 10, respawn: 0, ph: rand(0, 6) }; placeCash(c); cashItems.push(c); }
 const cashCarryMesh = new THREE.Mesh(cashGeo, cashMat); cashCarryMesh.scale.setScalar(0.7); cashCarryMesh.position.set(0, -0.85, 0.1); cashCarryMesh.visible = false; crow.group.add(cashCarryMesh);
 const elCash = $('cashTxt'), elCashCarry = $('cashCarry'); let cashHudKey = '';
-function drawCashHud() { const k = cash.bank + '|' + cash.carry; if (k === cashHudKey) return; cashHudKey = k; elCash.textContent = '$' + cash.bank; elCashCarry.textContent = cash.carry > 0 ? '+$' + cash.carry + ' carried → nest' : ''; }
+function drawCashHud() { const k = cash.bank + '|' + cash.carry; if (k === cashHudKey) return; cashHudKey = k; elCash.textContent = cash.bank.toLocaleString(); elCashCarry.textContent = cash.carry > 0 ? '+' + cash.carry + ' carried → nest' : ''; }
 function updateCash(dt, time) {
   for (const c of cashItems) {
     if (!c.alive) { c.respawn -= dt; if (c.respawn <= 0) placeCash(c); continue; }
@@ -7209,16 +7222,16 @@ function updateCash(dt, time) {
     const dx = crow.pos.x - c.g.position.x, dz = crow.pos.z - c.g.position.z;
     if (started && !ko.on && crow.pos.y < c.g.position.y + pickLow(CASH.low) && dx * dx + dz * dz < pickR2(CASH.r2)) {
       c.alive = false; c.g.visible = false; c.respawn = cashRespawn(); const val = cashVal(c.val); cash.carry += val; cash.stats.picked++;
-      popup(`💵 +$${val} · carry it to the nest!`, c.g.position.clone().add(new THREE.Vector3(0, 2, 0)), 'gold linger'); sfx.pickup(true);
+      popup(`🪙 +${val} · carry it to the nest!`, c.g.position.clone().add(new THREE.Vector3(0, 2, 0)), 'gold linger'); sfx.pickup(true);
     }
   }
   cashCarryMesh.visible = cash.carry > 0; if (cash.carry > 0) cashCarryMesh.rotation.y += dt * 3;
   // bank it at the nest
   if (cash.carry > 0 && !ko.on) { const dx = crow.pos.x - NEST.x, dz = crow.pos.z - NEST.z;
     if (dx * dx + dz * dz < 49 && crow.pos.y < NEST.y + 9) { const n = cash.carry; cash.bank += n; cash.carry = 0; cash.stats.banked += n; saveCash();
-      let extra = ''; if (upgHas('homeStash')) { const c = Math.max(2, Math.floor(n / 5)); ach.coins += c; saveAch(); extra = ` · +${c} 🪙`; }
-      popup(`🏦 Banked $${n} · total $${cash.bank}` + extra, NEST_POS.clone().add(new THREE.Vector3(0, 4, 0)), 'gold linger'); sfx.chime(); } }
-  drawCashHud();
+      let extra = ''; if (upgHas('homeStash')) { const c = Math.max(2, Math.round(n / 5)); cash.bank += c; extra = ` · +${c} stash bonus`; }
+      popup(`🪺 Banked ${n} 🪙 · wallet ${cash.bank}` + extra, NEST_POS.clone().add(new THREE.Vector3(0, 4, 0)), 'gold linger'); sfx.chime(); } }
+  drawCashHud(); if (CASH.merged && started) { showMsg(`💵 Your $${CASH.merged} cash is now ${CASH.merged} 🪙 coins: one wallet!`, 3.2, true); CASH.merged = 0; }
   if (cage.on) updateCage(dt);
 }
 function drawCashMap(g, tm, k, W) { g.fillStyle = '#7ddc6a'; g.strokeStyle = '#1d3a14'; g.lineWidth = 0.8 * k;
@@ -7254,9 +7267,9 @@ $('cageArt').src = cageArtURL;
 function syncCagePanel() {
   const can = cash.bank >= cage.price, left = Math.max(0, Math.ceil(CASH.wait - cage.t));
   $('cageLvl').textContent = `The cops caught Kro at Heat ${cage.lvl}.`;
-  $('cageBank').textContent = `Bail $${cage.price} · Bank $${cash.bank}`;
-  const b = $('btnBail'); b.disabled = !can || cage.t < 0.8; b.textContent = can ? `💵 Pay Bail ($${cage.price})` : `💵 Bail $${cage.price} (need $${cage.price - cash.bank} more)`;
-  const lost = []; if (cash.carry > 0) lost.push(`$${cash.carry} carried cash`); if (carry > 0) lost.push(`${carry} trinket${carry > 1 ? 's' : ''}`);
+  $('cageBank').textContent = `Bail ${cage.price} 🪙 · Wallet ${cash.bank} 🪙`;
+  const b = $('btnBail'); b.disabled = !can || cage.t < 0.8; b.textContent = can ? `🪙 Pay Bail (${cage.price})` : `🪙 Bail ${cage.price} (need ${cage.price - cash.bank} more)`;
+  const lost = []; if (cash.carry > 0) lost.push(`${cash.carry} carried coins`); if (carry > 0) lost.push(`${carry} trinket${carry > 1 ? 's' : ''}`);
   const bk = $('btnBreak'); bk.disabled = !!cage.jbUsed || cage.t < 0.8; bk.textContent = cage.jbUsed ? '🗝 Guards are on alert now' : '🗝 Break Out (stealth, keep your stuff)';
   $('cageWait').textContent = `${can ? 'Or wait it out' : 'Can\u2019t afford bail? Sit tight'}: released in ${left}s` + (lost.length ? ` (confiscated: ${lost.join(' + ')})` : '') + '.';
 }
@@ -7268,9 +7281,9 @@ function updateCage(dt) { if (jb.on || jb.ending) return; cage.t += dt; syncCage
 function releaseCage(paid) {
   if (!cage.on) return; cage.on = false; $('caged').classList.remove('show');
   let msg;
-  if (paid) { cash.bank -= cage.price; cash.stats.bails++; saveCash(); msg = `💵 Bail paid ($${cage.price}). Heat 0. Fly safe!`; }
+  if (paid) { cash.bank -= cage.price; cash.stats.bails++; saveCash(); msg = `🪙 Bail paid (${cage.price}). Heat 0. Fly safe!`; }
   else { const lostC = cash.carry, lostT = carry; cash.stats.waits++; cash.stats.lost += lostC; cash.carry = 0; carry = 0;
-    msg = '🔓 Released. Heat 0' + (lostC || lostT ? ` · confiscated: ${[lostC ? '$' + lostC : '', lostT ? lostT + ' trinket' + (lostT > 1 ? 's' : '') : ''].filter(Boolean).join(' + ')}` : ''); }
+    msg = '🔓 Released. Heat 0' + (lostC || lostT ? ` · confiscated: ${[lostC ? lostC + ' coins' : '', lostT ? lostT + ' trinket' + (lostT > 1 ? 's' : '') : ''].filter(Boolean).join(' + ')}` : ''); }
   if (heat.lvl > 0) setHeat(0, 'cage');
   respawn(true); showMsg(msg, 2.4, true); drawCashHud();
 }
@@ -7332,7 +7345,7 @@ function jbStep(dt) {
 function endBreak(win, why) {
   if (!jb.on) return; jb.on = false; jb.ending = true; jb.res = win ? 'win' : why; jb.mx = jb.my = 0; jb.cover = false;
   $('jbEndT').textContent = win ? '🗝 BROKE OUT!' : why === 'time' ? '⏰ Out of time!' : '🚨 Spotted!';
-  $('jbEndP').textContent = win ? 'Heat cleared. You kept your cash and trinkets.' : `Back in the cage. Bail is now $${Math.ceil(cage.price * JB.failMul / 5) * 5} and the wait restarts.`;
+  $('jbEndP').textContent = win ? 'Heat cleared. You kept your coins and trinkets.' : `Back in the cage. Bail is now ${Math.ceil(cage.price * JB.failMul / 5) * 5} 🪙 and the wait restarts.`;
   $('jbEnd').classList.add('show'); jbDraw();
   if (win) { jb.stats.wins++; sfx.healChime && sfx.healChime(); } else { jb.stats.fails++; sfx.cageClank(); }
   setTimeout(() => {
@@ -7457,10 +7470,10 @@ function endSquirrel(reward = true) {
   const res = { nuts: sqr.got, shoo: sqr.shoo, lost: sqr.lost, pts: 0, healed: false, reward };
   if (reward) {
     res.pts = sqr.got * SQ.nutPts + sqr.shoo * SQ.shooPts + (sqr.lost === 0 && sqr.shoo > 0 ? SQ.savePts : 0);
-    if (res.pts) addScore(res.pts);
+    if (res.pts) addScore(res.pts); res.coins = sqr.got * 2 + sqr.shoo * 3 + (sqr.lost === 0 && sqr.shoo > 0 ? 10 : 0); if (res.coins) { ach.coins += res.coins; saveAch(); }
     const hp0 = crow.hp; heal(1); res.healed = crow.hp > hp0;
     sqSave.runs++; sqSave.nuts += sqr.got; sqSave.best = Math.max(sqSave.best, sqr.got); sqSave.shoos += sqr.shoo; if (sqr.lost === 0) sqSave.saved++; sqStore();
-    sqShowCard('SPIRIT BLESSING', `+${res.pts.toLocaleString()} pts`, `🌰 ${sqr.got} nuts · 🪵 ${sqr.shoo} woodpeckers shooed` + (sqr.lost ? ` · 💔 ${sqr.lost} tree${sqr.lost > 1 ? 's' : ''} pecked` : sqr.shoo ? ' · 🌳 every tree saved +500' : '') + (res.healed ? '<br>💚 +1 ♥ from the spirit' : ''), '#9cff2e');
+    sqShowCard('SPIRIT BLESSING', `+${res.pts.toLocaleString()} XP · +${res.coins} 🪙`, `🌰 ${sqr.got} nuts · 🪵 ${sqr.shoo} woodpeckers shooed` + (sqr.lost ? ` · 💔 ${sqr.lost} tree${sqr.lost > 1 ? 's' : ''} pecked` : sqr.shoo ? ' · 🌳 every tree saved +500' : '') + (res.healed ? '<br>💚 +1 ♥ from the spirit' : ''), '#9cff2e');
   } else showMsg('🐦‍⬛ Back to Kro', 1.6, true);
   sqr.res = res; sqr.spawnT = rand(SQ.every[0], SQ.every[1]); return res;
 }
@@ -7543,7 +7556,7 @@ const TUT_CARDS = {
   up: { t: 'Flap up', art: () => tScene(tArrow(46, 72, 46, 16, '#3ca0ff') + tCrow(46, 80, -70)) + tBtn('up'), glow: 'btnFlap',
     p: 'Tap or hold <b>▲ FLAP</b> to climb. Steer with the stick on the left side of the screen.', s: 'Each flap uses a little 🪶 stamina. It refills while you glide.' },
   down: { t: 'Dive down', art: () => tScene(tArrow(34, 30, 64, 66, '#8c5fff') + tCrow(26, 22, 40)) + tBtn('down'), glow: 'btnDive',
-    p: 'Hold <b>▼ DIVE</b> to swoop down fast. Diving builds speed.', s: 'Fly low to scoop up fries, shiny trinkets and cash.' },
+    p: 'Hold <b>▼ DIVE</b> to swoop down fast. Diving builds speed.', s: 'Fly low to scoop up fries, shiny trinkets and coin pouches.' },
   brake: { t: 'Brake & hover', art: () => tScene(tCrow(56, 50, 0) + '<path d="M20 50 h20 M92 50 h-20" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M36 50 l-8 -6 M36 50 l-8 6 M76 50 l8 -6 M76 50 l8 6" stroke="#fff" stroke-width="4" stroke-linecap="round"/>') + tBtn('brake'), glow: 'btnBrake',
     p: 'Hold <b>◇ BRAKE</b> (or <b>Q</b>) to clap-stop like a Gust (no attack) and hover in place.', s: 'Hovering uses 🪶 stamina. Let go to fly again. Don’t park in a chase — you’ll be an easy target.' },
   soar: { t: 'Soar (15 m and up)', art: () => tScene('<line x1="0" y1="64" x2="112" y2="64" stroke="#fff" stroke-width="2" stroke-dasharray="5 4"/><text x="6" y="78" font-size="11" font-weight="800" fill="#4a3a36">15 m</text><path d="M8 34 h18 M12 42 h14 M10 50 h16" stroke="#ffb020" stroke-width="3" stroke-linecap="round"/>' + tCrow(52, 42, 0, 1.1) + tArrow(72, 42, 102, 42, '#ffb020')) + tBtn('soar'), glow: 'btnSoar',
@@ -7563,7 +7576,7 @@ const TUT_CARDS = {
   cars: { t: 'Hitting cars', art: () => tScene('<rect x="0" y="52" width="112" height="34" fill="#7a7a80"/><path d="M0 69 h112" stroke="#fff" stroke-width="2" stroke-dasharray="8 6"/><rect x="14" y="58" width="30" height="16" rx="4" fill="#e04a3a"/><rect x="30" y="60" width="9" height="12" rx="2" fill="#bfe3ff"/>' + tArrow(48, 66, 70, 66, '#fff') + tRing(84, 66, 10, '#ffc93c'), false) + tBtn('drop'), glow: 'btnDrop',
     p: 'Ring yellow on a car? <b>● DROP</b>: the bomb leads it for you.', s: 'Hitting traffic costs a heart.' },
   trinket: { t: 'Shiny trinkets', art: () => tScene(tEmoji('💍', 30, 50, 30) + tArrow(46, 50, 74, 50) + tEmoji('🪺', 88, 50, 30)), p: 'Fly low through a silver sparkle to grab it, then carry it to the <b>🪺 nest</b> for points.', s: 'Carry up to 3 at once.' },
-  cash: { t: 'Cash', art: () => tScene(tEmoji('💵', 30, 50, 30) + tArrow(46, 50, 74, 50) + tEmoji('🪺', 88, 50, 30)), p: 'Grab 💵 cash and <b>carry it to the 🪺 nest to bank it</b> (💰, top left).', s: 'Banked cash pays bail. Carried cash can be taken.' },
+  cash: { t: 'Coins', art: () => tScene(tEmoji('🪙', 30, 50, 30) + tArrow(46, 50, 74, 50) + tEmoji('🪺', 88, 50, 30)), p: 'Grab 🪙 coin pouches and <b>carry them to the 🪺 nest to bank them</b> (🪙, top left).', s: 'Coins are Kro\u2019s only currency: upgrades, classes and bail. Carried cash can be taken.' },
   raccoon: { t: 'Raccoon bandits', art: () => tScene(tEmoji('🦝', 30, 64, 32) + tEmoji('🍟', 46, 40, 18) + tArrow(50, 64, 80, 64) + '<rect x="82" y="52" width="24" height="24" rx="3" fill="#3f6a4a"/><rect x="80" y="48" width="28" height="6" rx="2" fill="#2e5038"/>'),
     p: 'Heist! Follow the <b>🍟 marker</b> and hit the bandit with a drop or Gust <b>before he reaches the dumpster</b>.', s: 'Saved fries = points + ammo.' },
   cops: { t: 'Cops & Heat', art: () => tScene(tEmoji('🚓', 34, 52, 32) + tEmoji('🔥', 74, 40, 20) + tEmoji('🍩', 74, 70, 22)),
@@ -7716,10 +7729,10 @@ const UPG_TREE = [
     { id: 'duskFeathers', name: 'Dusk Feathers', cost: 320, d: 'Drones arm later. Hovering drains less stamina.' },
   ]},
   { id: 'scavenge', name: 'Scavenging', icon: '🪙', items: [
-    { id: 'keenBeak', name: 'Keen Beak', cost: 40, d: 'Fries, cash and trinkets are easier to scoop.' },
-    { id: 'fatPouch', name: 'Fat Pouch', cost: 90, d: 'Cash pickups are worth about a quarter more.' },
-    { id: 'homeStash', name: 'Home Stash', cost: 180, d: 'Banking cash at the nest also pays a few 🪙 coins.' },
-    { id: 'oddBits', name: 'Odd Bits', cost: 320, d: 'Gusted trees drop more often, and cash comes back sooner.' },
+    { id: 'keenBeak', name: 'Keen Beak', cost: 40, d: 'Fries, coin pouches and trinkets are easier to scoop.' },
+    { id: 'fatPouch', name: 'Fat Pouch', cost: 90, d: 'Coin pouches are worth about a quarter more.' },
+    { id: 'homeStash', name: 'Home Stash', cost: 180, d: 'Banking at the nest pays a 20% stash bonus.' },
+    { id: 'oddBits', name: 'Odd Bits', cost: 320, d: 'Gusted trees drop more often, and coin pouches come back sooner.' },
   ]},
 ];
 const upgState = { bought: {} };
@@ -8004,12 +8017,12 @@ function finishGma() {
   if (pack) pack.got = true;
   gmaState.carry = ''; gmaState.stage = 'done'; gmaState.done = true; saveGma();
   gmaStats.done++;
-  ach.coins += 80; saveAch(); cash.bank += 30; cash.stats.banked += 30; saveCash();
+  ach.coins += 110; saveAch(); cash.stats.banked += 30;
   addScore(1500); questHeartReward(1);
   drawCashHud(); drawGmaHud();
   sfx.chime(); sfx.shine();
-  bigBanner('👓 GLASSES HOME!', '+1500 · +80 🪙 · +$30 banked · +1 ♥', '#e8c4ff', 'ach');
-  showMsg('Grandma has her glasses back. +80 🪙, +$30, +1 ♥', 2.6, true);
+  bigBanner('👓 GLASSES HOME!', '+1500 · +110 🪙 · +1 ♥', '#e8c4ff', 'ach');
+  showMsg('Grandma has her glasses back. +110 🪙, +1 ♥', 2.6, true);
 }
 function gmaCanTalk() {
   return started && !ko.on && !dogfight.on && !dialogOpen && !menuOpen && !customizing && !tutCardOpen && !upgOpen && !cage.on && !tutCalm() && grandma.talkCd <= 0 && grandma.swat < 0;
@@ -8236,7 +8249,8 @@ var gfxDetail = (() => {
 }
 applyGfx();
 const v7m = { GFX, GFX_KEY, GFX_AUTO, gfxLevel, setGfxQ, applyGfx, post, sun, get gfxDetail() { return gfxDetail; }, sqCamClear, postBuild, postLoad, fps: () => fpsMeter.fps };
-window.__crowGame = { v7m, v7l, v7k, v7g, v7e, v7d, v7b, v7, v6d, v6c: { ...v6c, THREE, HILLS, hillAt: (x, z) => hillAt(x, z), groundAt, heal, questHeartReward, DIFF }, v6b: { ach, ACH_TRACKS, achAdvance, achHas, netBust, heist, heistRac, HEIST_SITES, startHeist, heistSave, heistActive, gust, GUST, startGust, trashCans, TREES, gdrops, spawnDrop, FP, onFootpath, parkProps, renderAch, showAch, banQ, stats: v6b.stats, knockPed, megaDur, saveAch, get dogfightOn() { return dogfight.on; }, pond, goose, gooseG, GZ, gooseHit, defeatGoose, respawnGoose, gustGoose, pigeons, flock, FLOCKS, scatterAt, fisher, FISH, crumbs, tossCrumbs, inLeash, crowCrown, syncCrown }, cameo: { state: cameo, gears, bot, skins, cstats, grantAllGears, resetCameo, talkToBot, closeDialog, applySkin, BOT_POS, TOWER, gearCar, get dialogOpen() { return dialogOpen; }, get skinCur() { return skinCur; }, circFx, CIRC_U, circParts }, colliders, colliderAt, groundAt, groundLayers, grassFx, skyDome, enemy: { dogfight, chaseMusic, startDogfight, endDogfight, hawkCrash, losBlocked, DF_DIFF, hitPed, movingCars, hawk, netters, hurt, heal, knockOut, respawn, resetEnemies, gameSet, ens, ko, setHawkWarn, get hp() { return crow.hp; } }, airFx, musStats, get mus() { return mus; }, get megaTime() { return megaTime; }, setMega(v) { megaTime = v; }, fxSet, get actx() { return actx; }, renderer, camera, scene, crow, peds, items, projectiles, input, dropBomb, restart, get score() { return score; }, get phonesHit() { return phonesHit; }, get paused() { return paused; }, get quest() { return quest; }, get carry() { return carry; }, NEST, movingCars, colliders, questProgress, newQuest, get qTarget() { return qTarget; }, air, streams, raccoons, get layout() { return layout; }, applyLayout, openMenu, closeMenu, menuPage, get menuOpen() { return menuOpen; }, get customizing() { return customizing; }, start() { $('start').style.display = 'none'; started = true; }, roll, ROLL, startRoll, flick, FLICK, flickCheck };
+const v7n = { CASH, cash, CLS_COST, get clsOwned() { return clsOwned; }, clsHas, unlockClass, setClass, ach, migrateCashToCoins, cage, cageKro, releaseCage, drawCashHud };
+window.__crowGame = { v7n, v7m, v7l, v7k, v7g, v7e, v7d, v7b, v7, v6d, v6c: { ...v6c, THREE, HILLS, hillAt: (x, z) => hillAt(x, z), groundAt, heal, questHeartReward, DIFF }, v6b: { ach, ACH_TRACKS, achAdvance, achHas, netBust, heist, heistRac, HEIST_SITES, startHeist, heistSave, heistActive, gust, GUST, startGust, trashCans, TREES, gdrops, spawnDrop, FP, onFootpath, parkProps, renderAch, showAch, banQ, stats: v6b.stats, knockPed, megaDur, saveAch, get dogfightOn() { return dogfight.on; }, pond, goose, gooseG, GZ, gooseHit, defeatGoose, respawnGoose, gustGoose, pigeons, flock, FLOCKS, scatterAt, fisher, FISH, crumbs, tossCrumbs, inLeash, crowCrown, syncCrown }, cameo: { state: cameo, gears, bot, skins, cstats, grantAllGears, resetCameo, talkToBot, closeDialog, applySkin, BOT_POS, TOWER, gearCar, get dialogOpen() { return dialogOpen; }, get skinCur() { return skinCur; }, circFx, CIRC_U, circParts }, colliders, colliderAt, groundAt, groundLayers, grassFx, skyDome, enemy: { dogfight, chaseMusic, startDogfight, endDogfight, hawkCrash, losBlocked, DF_DIFF, hitPed, movingCars, hawk, netters, hurt, heal, knockOut, respawn, resetEnemies, gameSet, ens, ko, setHawkWarn, get hp() { return crow.hp; } }, airFx, musStats, get mus() { return mus; }, get megaTime() { return megaTime; }, setMega(v) { megaTime = v; }, fxSet, get actx() { return actx; }, renderer, camera, scene, crow, peds, items, projectiles, input, dropBomb, restart, get score() { return score; }, get phonesHit() { return phonesHit; }, get paused() { return paused; }, get quest() { return quest; }, get carry() { return carry; }, NEST, movingCars, colliders, questProgress, newQuest, get qTarget() { return qTarget; }, air, streams, raccoons, get layout() { return layout; }, applyLayout, openMenu, closeMenu, menuPage, get menuOpen() { return menuOpen; }, get customizing() { return customizing; }, start() { $('start').style.display = 'none'; started = true; }, roll, ROLL, startRoll, flick, FLICK, flickCheck };
 </script>
 </body>
 </html>
