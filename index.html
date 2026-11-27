@@ -735,9 +735,9 @@ window.KroSave = (() => {
     </div>
     <div class="msub" id="subCredits"><div class="msubHead"><button class="mbtn mback">◂ Back</button><b>📜 Credits &amp; Licenses</b></div>
     <div id="creditsBox">
-      <h4>Kro</h4><p>Created by <b>Bran</b>. Game design, code, story, sound and art direction made for this game. All characters, places and names are original. Any resemblance to real businesses is unintended.</p>
-      <h4>Artwork</h4><p>The intro storybook panels and the 3D Kro logo were made with AI image tools from Bran's own concepts and banner art, then edited for the game. In-game 3D models, textures, UI and the How to Play screenshots are built in code or captured from the game.</p>
-      <h4>Sound &amp; music</h4><p>All sound effects and music are synthesized live in your browser by the game's own code. No recorded samples.</p>
+      <h4>Kro</h4><p>Created and directed by <b>Bran</b>. All characters, places and names are original. Any resemblance to real businesses is unintended.</p>
+      <h4>Made with AI</h4><p>Kro was made with the help of AI tools, directed, chosen and edited by Bran: the artwork (intro storybook panels, 3D logo, in-game 3D models, textures and UI), the game code, the story and dialogue, and the sound and music code. The How to Play pictures are screenshots captured from the game.</p>
+      <h4>Sound &amp; music</h4><p>All sound effects and music are synthesized live in your browser by the game's own (AI-assisted) code. No recorded samples.</p>
       <h4>Open-source software</h4><p><b>three.js</b> r160 (3D engine and add-ons: BufferGeometryUtils, EffectComposer, RenderPass, ShaderPass, UnrealBloomPass, OutputPass, CopyShader, LuminosityHighPassShader, OutputShader). MIT License.</p>
       <pre id="lic3">The MIT License
 
@@ -946,7 +946,7 @@ THE SOFTWARE.</pre>
     ['targets', 'Targets', '📱 Phone humans are worth +1000 (3 hits = Mega Bomb). The ring leads moving cars for you. On a 🦝 heist, hit the bandit before he reaches the dumpster.'],
     ['cash', 'Coins & trinkets', 'Kro has <b>one wallet: 🪙 coins</b>. Fly low through coin pouches and shiny trinkets, then carry them home to the 🪺 nest to bank them. Coins buy Nest Upgrades, unlock classes and pay bail. Every point you score is XP for your level.'],
     ['danger', 'Hawk & hearts', 'The 🦅 hawk hunts the west neighborhood (orange ring on the minimap). Locked on? Weave, go low or hide to fill EVADE. Refill ♥ at 💧 bird baths.'],
-    ['heat', 'Heat', 'Splatting cops raises 🔥 Heat: cop cars, nets, then drones. A 🍩 donut cools you off. Knocked out with Heat = <b>CAGED</b>: pay bail with 🪙 coins, break out, or wait.'],
+    ['heat', 'Heat', 'Splatting Cawps raises 🔥 Heat: Cawp cars, nets, then drones. A 🍩 donut cools you off. Knocked out with Heat = <b>CAGED</b>: pay bail with 🪙 coins, break out, or wait.'],
     ['boss', 'Bosses & minimap', 'The pond goose and Rattlecan Rudy fight back: drops and Gusts drain their bar. The minimap shows the nest, quests and the hawk zone.']];
   const $g = id => document.getElementById(id), el = $g('guide'), img = $g('guideImg'), nx = $g('guideNext'), bk = $g('guideBack'), dots = $g('guideDots');
   dots.innerHTML = PAGES.map(() => '<i></i>').join('');
@@ -7172,8 +7172,8 @@ function setHeat(n, why) {
   if (typeof storyEv === 'function') { if (n > prev) storyEv('heat'); else if (n === 0) storyEv('cool'); }
   if (n > prev) {
     heat.stats.ups++; restartAnim(elHeatRow, 'hflash'); sfx.heatUp && sfx.heatUp(n);
-    if (prev === 0) { showMsg('🚨 HEAT 1: the cops are after you!', 2, true); hawkRetreat(20); if (dogfight.on) endDogfight('', 0); }
-    if (n >= 2 && prev < 2) { spawnExtras(); showMsg('🚨 HEAT 2: more cops, and faster!', 2, true); }
+    if (prev === 0) { showMsg('🚨 HEAT 1: the Cawps are after you!', 2, true); hawkRetreat(20); if (dogfight.on) endDogfight('', 0); }
+    if (n >= 2 && prev < 2) { spawnExtras(); showMsg('🚨 HEAT 2: more Cawps, and faster!', 2, true); }
     if (n >= 3 && prev < 3) { heat.droneT = 3; heat.wave = 'pending3'; bigBanner('🚨 HEAT 3', '3 drones incoming! Gust or drop to knock them down', '#ff6a6a'); }
     if (n >= 4 && prev < 4) { heat.droneT = 2.5; heat.wave = 'pending4'; bigBanner('🚨 HEAT 4: DRONE SWARM!', '10 drones · beeping + red flash = dodge!', '#ff4a4a'); }
     // v7g2: a level-up never despawns or resets pursuers already in the chase — they keep going, extras only add on
@@ -7182,7 +7182,7 @@ function setHeat(n, why) {
   } else {
     if (n < 3) for (const D of drones) if (D.st !== 'off' && D.st !== 'down') { D.st = 'leave'; D.t = 0; D.fl.material.opacity = 0; }
     if (n === 3) { heat.wave = 'pending3'; heat.droneT = 12; for (const D of drones) if (D.st !== 'off' && D.st !== 'down') { D.st = 'leave'; D.t = 0; D.fl.material.opacity = 0; } }
-    if (n === 0) { for (const p of puffs) { scene.remove(p.s); p.s.material.dispose(); } puffs.length = 0; showMsg(why === 'ko' ? '😵 Caught! Heat cleared' : '😎 Heat cleared. The cops gave up', 2, true); }
+    if (n === 0) { for (const p of puffs) { scene.remove(p.s); p.s.material.dispose(); } puffs.length = 0; showMsg(why === 'ko' ? '😵 Caught! Heat cleared' : '😎 Heat cleared. The Cawps gave up', 2, true); }
     else if (why === 'donut') showMsg('🍩 Heat down to ' + n, 1.6, true);
   }
   drawHeatHud();
@@ -7304,9 +7304,9 @@ Object.assign(ACH_TRACKS, {
     { n: 1, title: 'Through the Swarm Untouched', score: 8000, coins: 800 }, { n: 3, title: 'Ghost Feathers', score: 15000, coins: 1500 }] },
   cool: { name: 'Cool Customer', icon: '🍩', unit: 'heat cleared at the nest', how: 'Grab a donut while the heat is on and carry it home to the nest: heat back to 0.', tiers: [
     { n: 1, title: 'Cool Customer', score: 1000, coins: 100 }, { n: 5, title: 'Donut Diplomat', score: 3000, coins: 300 }, { n: 15, title: 'Heat Shrugger', score: 8000, coins: 800 }] },
-  spin: { name: 'Siren Silencer', icon: '🚓', unit: 'cop cars spun out', how: 'Land a drop right on a chasing cop car to spin it out.', tiers: [
+  spin: { name: 'Siren Silencer', icon: '🚓', unit: 'Cawp cars spun out', how: 'Land a drop right on a chasing Cawp car to spin it out.', tiers: [
     { n: 5, title: 'Siren Silencer', score: 1000, coins: 100 }, { n: 20, title: 'Hubcap Hero', score: 3000, coins: 300 }, { n: 50, title: 'Traffic Trouble', score: 8000, coins: 800 }] },
-  near: { name: 'Near Miss', icon: '💨', unit: 'near misses', how: 'Fly fast and skim right past a moving car or cop car without touching it.', tiers: [
+  near: { name: 'Near Miss', icon: '💨', unit: 'near misses', how: 'Fly fast and skim right past a moving car or Cawp car without touching it.', tiers: [
     { n: 1, title: 'Whisker Close', score: 300, coins: 30 }, { n: 10, title: 'Feather Grazer', score: 1500, coins: 150 }, { n: 25, title: 'Bumper Skimmer', score: 4000, coins: 400 }, { n: 50, title: 'Wingtip Wizard', score: 9000, coins: 900 }] },
 });
 // ---- per-frame
@@ -7411,7 +7411,7 @@ const cageArtURL = (() => { // our own little drawing: Kro sulking inside a roun
 $('cageArt').src = cageArtURL;
 function syncCagePanel() {
   const can = cash.bank >= cage.price, left = Math.max(0, Math.ceil(CASH.wait - cage.t));
-  $('cageLvl').textContent = `The cops caught Kro at Heat ${cage.lvl}.`;
+  $('cageLvl').textContent = `The Cawps caught Kro at Heat ${cage.lvl}.`;
   $('cageBank').textContent = `Bail ${cage.price} 🪙 · Wallet ${cash.bank} 🪙`;
   const b = $('btnBail'); b.disabled = !can || cage.t < 0.8; b.textContent = can ? `🪙 Pay Bail (${cage.price})` : `🪙 Bail ${cage.price} (need ${cage.price - cash.bank} more)`;
   const lost = []; if (cash.carry > 0) lost.push(`${cash.carry} carried coins`); if (carry > 0) lost.push(`${carry} trinket${carry > 1 ? 's' : ''}`);
@@ -7710,11 +7710,11 @@ const TUT_CARDS = {
   soar: { t: 'Soar (15 m and up)', art: () => tScene('<line x1="0" y1="64" x2="112" y2="64" stroke="#fff" stroke-width="2" stroke-dasharray="5 4"/><text x="6" y="78" font-size="11" font-weight="800" fill="#4a3a36">15 m</text><path d="M8 34 h18 M12 42 h14 M10 50 h16" stroke="#ffb020" stroke-width="3" stroke-linecap="round"/>' + tCrow(52, 42, 0, 1.1) + tArrow(72, 42, 102, 42, '#ffb020')) + tBtn('soar'), glow: 'btnSoar',
     p: 'Once you are <b>15 m or higher</b>, hold <b>➶ SOAR</b> for a burst of speed.', s: 'Soaring drains stamina fast. Below 15 m the button is dimmed.' },
   gust: { t: 'Gust', art: () => tScene(tCrow(30, 52, 0) + '<path d="M52 36 q14 16 0 32 M64 30 q18 22 0 44 M76 24 q22 28 0 56" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M52 36 q14 16 0 32 M64 30 q18 22 0 44 M76 24 q22 28 0 56" fill="none" stroke="#5ec8ea" stroke-width="2" stroke-linecap="round"/>') + tBtn('gust'), glow: 'btnGust',
-    p: 'Tap <b>≋ GUST</b> to clap a blast of wind ahead of you: people and cops topple, bins tip and trees drop goodies.', s: 'It costs stamina. The ring around the button shows the cooldown.' },
+    p: 'Tap <b>≋ GUST</b> to clap a blast of wind ahead of you: people and Cawps topple, bins tip and trees drop goodies.', s: 'It costs stamina. The ring around the button shows the cooldown.' },
   roll: { t: 'Barrel roll', glow: 'joyBase', top: true,
     art: () => tScene('<path d="M20 66 q36 -50 72 0" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-dasharray="7 6"/><path d="M92 66 l-10 -2 l6 -8 z" fill="#fff"/>' + tCrow(56, 40, 180, 1.05) + '<circle cx="30" cy="92" r="14" fill="rgba(40,30,28,.35)" stroke="#fff" stroke-width="2"/><circle cx="30" cy="92" r="6" fill="#fff"/>' + tArrow(38, 92, 64, 92, '#ffd84a')),
     p: 'Flick the <b>steering stick</b> fast to the <b>left or right</b> (a quick swipe from the middle out past the edge) to barrel-roll that way. Keyboard: <b>Z</b> / <b>C</b>, or double-tap <b>A</b>/<b>D</b> (or <b>←</b>/<b>→</b>).',
-    s: 'While rolling you dodge <b>drone blasts</b>, <b>cop nets</b> and net humans, paint and hawk strikes. Short 1 s cooldown between rolls.' },
+    s: 'While rolling you dodge <b>drone blasts</b>, <b>Cawp nets</b> and net humans, paint and hawk strikes. Short 1 s cooldown between rolls.' },
   fries: { t: 'Fries = your ammo', art: () => tScene(tEmoji('🍟', 50, 52, 46) + '<g transform="translate(8 92)"><rect width="74" height="16" rx="8" fill="rgba(40,28,24,.75)"/><text x="8" y="12" font-size="10">🍟</text><rect x="22" y="5" width="28" height="6" rx="3" fill="#ffd27a"/><text x="54" y="12" font-size="9" font-weight="800" fill="#fff">6/12</text></g>', false) + tBtn('drop'), glow: 'btnDrop',
     p: 'Tap <b>● DROP</b> to drop a fry-bomb on whatever is under the ring. <b>🍟 6/12</b> (top left) is your ammo.', s: 'Out? Skim low through 🍟 fries for +5.' },
   lock: { t: 'The target ring', art: () => tScene(tRing(26, 40, 13, '#ffffff') + tRing(66, 40, 13, '#ffc93c') + tRing(46, 80, 13, '#ff3d33') + '<text x="26" y="62" font-size="9" font-weight="800" text-anchor="middle" fill="#4a3a36">ground</text><text x="66" y="62" font-size="9" font-weight="800" text-anchor="middle" fill="#8a5a00">target</text><text x="78" y="84" font-size="9" font-weight="800" fill="#a01a12">enemy</text>', false),
@@ -7727,8 +7727,8 @@ const TUT_CARDS = {
   cash: { t: 'Coins', art: () => tScene(tEmoji('🪙', 30, 50, 30) + tArrow(46, 50, 74, 50) + tEmoji('🪺', 88, 50, 30)), p: 'Grab 🪙 coin pouches and <b>carry them to the 🪺 nest to bank them</b> (🪙, top left).', s: 'Coins are Kro\u2019s only currency: upgrades, classes and bail. Carried cash can be taken.' },
   raccoon: { t: 'Raccoon bandits', art: () => tScene(tEmoji('🦝', 30, 64, 32) + tEmoji('🍟', 46, 40, 18) + tArrow(50, 64, 80, 64) + '<rect x="82" y="52" width="24" height="24" rx="3" fill="#3f6a4a"/><rect x="80" y="48" width="28" height="6" rx="2" fill="#2e5038"/>'),
     p: 'Heist! Follow the <b>🍟 marker</b> and hit the bandit with a drop or Gust <b>before he reaches the dumpster</b>.', s: 'Saved fries = points + ammo.' },
-  cops: { t: 'Cops & Heat', art: () => tScene(tEmoji('🚓', 34, 52, 32) + tEmoji('🔥', 74, 40, 20) + tEmoji('🍩', 74, 70, 22)),
-    p: 'Splatting cops raises <b>🔥 Heat</b>: cars, nets, then drones. A <b>🍩 donut</b> cools you off.', s: 'Barrel-roll (stick flick, Z / C) to dodge. KO with Heat = <b>Caged</b>.' },
+  cops: { t: 'Cawps & Heat', art: () => tScene(tEmoji('🚓', 34, 52, 32) + tEmoji('🔥', 74, 40, 20) + tEmoji('🍩', 74, 70, 22)),
+    p: 'Splatting Cawps raises <b>🔥 Heat</b>: cars, nets, then drones. A <b>🍩 donut</b> cools you off.', s: 'Barrel-roll (stick flick, Z / C) to dodge. KO with Heat = <b>Caged</b>.' },
   goose: { t: 'The Goose Boss', art: () => tScene('<ellipse cx="50" cy="74" rx="22" ry="12" fill="#f4f4f0" stroke="#9a9a90" stroke-width="1.5"/><path d="M64 70 q10 -10 6 -30" stroke="#f4f4f0" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M64 70 q10 -10 6 -30" stroke="#9a9a90" stroke-width="1" fill="none"/><circle cx="70" cy="38" r="6" fill="#f4f4f0" stroke="#9a9a90" stroke-width="1.5"/><path d="M75 37 L86 40 L75 42 Z" fill="#ff9a2a"/><circle cx="71" cy="36" r="1.2" fill="#222"/>' + tEmoji('💢', 92, 22, 16)),
     p: 'The goose guards the pond. <b>Stay above 14 m</b> and he ignores you.', s: 'Fight him with drops and Gusts.' },
 };
@@ -7873,9 +7873,9 @@ const UPG_TREE = [
     { id: 'trailWind', name: 'Trail Wind', cost: 360, d: 'Soaring drains slower and runs a bit faster.' },
   ]},
   { id: 'stealth', name: 'Stealth', icon: '🌙', items: [
-    { id: 'slowSimmer', name: 'Slow Simmer', cost: 50, d: 'Heat from cop splats rises a little slower.' },
+    { id: 'slowSimmer', name: 'Slow Simmer', cost: 50, d: 'Heat from Cawp splats rises a little slower.' },
     { id: 'watchful', name: 'Watchful Crow', cost: 120, d: 'The hawk starts stalking from a tighter range.' },
-    { id: 'wideGlance', name: 'Wide Glance', cost: 220, d: 'Cop nets and drone blasts telegraph longer.' },
+    { id: 'wideGlance', name: 'Wide Glance', cost: 220, d: 'Cawp nets and drone blasts telegraph longer.' },
     { id: 'duskFeathers', name: 'Dusk Feathers', cost: 360, d: 'Drones arm later. Hovering drains less stamina.' },
   ]},
   { id: 'scavenge', name: 'Scavenging', icon: '🪙', items: [
@@ -8432,8 +8432,8 @@ const CHAPTERS = [
     unlock: 'classes', unlockName: 'Crow Classes', why: 'Pip: “Every crow in this family has a style. Pick yours! Your first class is on me.”', xp: 3000, coins: 60 },
   { id: 'c2', tag: 'CHAPTER 2', name: 'Street Heat', who: 'jinx',
     intro: 'Cousin Jinx runs the back alleys and has been caged more times than anyone will admit. She wants to see if the raven can handle Heat.',
-    lines: ['So you’re the raven everyone’s squawking about. Ever had the cops on your tail?', 'Splat a cop to get some Heat, then shake it off. And stash coins. Bail isn’t free, kid.'],
-    goals: [{ k: 'heat', n: 1, icon: '🔥', t: 'Get some Heat: splat a cop', how: 'Drop on a cop on patrol' },
+    lines: ['So you’re the raven everyone’s squawking about. Ever had the Cawps on your tail?', 'Splat a Cawp to get some Heat, then shake it off. And stash coins. Bail isn’t free, kid.'],
+    goals: [{ k: 'heat', n: 1, icon: '🔥', t: 'Get some Heat: splat a Cawp', how: 'Drop on a Cawp on patrol' },
       { k: 'cool', n: 1, icon: '🍩', t: 'Shake off the Heat', how: 'Eat a 🍩 donut, or lie low until Heat is back to 0' },
       { k: 'bank', n: 40, icon: '🪙', t: 'Stash 40 coins at the nest', how: 'Carry 🪙 coin pouches home to the 🪺 nest' }],
     unlock: 'breakout', unlockName: 'Break Out', why: 'Jinx: “If they ever cage you, there’s a gap in the impound-lot fence. Sneak past the guards and you keep your stuff.”', xp: 5000, coins: 80 },
