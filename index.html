@@ -621,8 +621,8 @@ window.KroSave = (() => {
   body.squirrel #quest{opacity:.25} body.squirrel #btnGust,body.squirrel #btnSoar,body.squirrel #btnDrop{opacity:.3;pointer-events:none}
   @media (max-height:470px){#sqHud{font-size:12px;gap:7px;padding:4px 6px 4px 10px}}
   /* v7m: graphics quality segmented control */
-  #gfxSeg{display:flex;gap:4px;flex:1;justify-content:center}
-  #gfxSeg button{font:800 13px system-ui,sans-serif;padding:7px 10px;border-radius:11px;border:2.5px solid #160526;background:#331257;color:#cbb8e8;box-shadow:0 3px 0 #160526;cursor:pointer}
+  #gfxSeg,#resSeg{display:flex;gap:4px;flex:1;justify-content:center}
+  #gfxSeg button,#resSeg button{font:800 13px system-ui,sans-serif;padding:7px 10px;border-radius:11px;border:2.5px solid #160526;background:#331257;color:#cbb8e8;box-shadow:0 3px 0 #160526;cursor:pointer}
   /* v7p: phone-first HUD. Contextual SOAR/GUST, stamina and phone rows; ≥44px touch targets; fewer always-on items on touch */
   body.touch #btnSoar,body.touch #btnGust{transition:opacity .25s,transform .25s}
   body.touch:not(.ctxSoar) #btnSoar,body.touch:not(.ctxGust) #btnGust{opacity:0;transform:scale(.6);pointer-events:none}
@@ -631,9 +631,9 @@ window.KroSave = (() => {
   body.touch #score{display:none} body.touch #altCol{display:none} body.touch #btnCam{display:none}
   .abtn{min-width:44px;min-height:44px} .smallBtn{min-width:44px;min-height:44px}
   .mbtn,#btnNestUpg,#btnDonut,#sqBack,.jbBtn,#dlgNext,#tutGo,#tutSkip,#gfxSeg button,#btnBail,#btnBreak,#koBtn,#btnGo,#btnCls,#btnGuide{min-height:44px}
-  #gfxSeg button{min-width:44px}
-  #gfxSeg button.on{background:linear-gradient(180deg,#ff2d95,#ff8a1f);color:#fff;text-shadow:0 1px 0 #160526}
-  .gfxSeg #mGfx{font-size:11.5px;color:#9cff2e;min-width:64px;text-align:right}
+  #gfxSeg button,#resSeg button{min-width:44px;min-height:44px}
+  #gfxSeg button.on,#resSeg button.on{background:linear-gradient(180deg,#ff2d95,#ff8a1f);color:#fff;text-shadow:0 1px 0 #160526}
+  .gfxSeg #mGfx,.gfxSeg #mRes{font-size:11.5px;color:#9cff2e;min-width:64px;text-align:right}
 </style>
 </head>
 <body>
@@ -715,6 +715,7 @@ window.KroSave = (() => {
     </div>
     <div class="msub" id="subDisplay"><div class="msubHead"><button class="mbtn mback">◂ Back</button><b>🖼 Display &amp; Extras</b></div>
     <div class="mrow gfxSeg"><label>🖼 Graphics</label><div id="gfxSeg"><button data-q="auto">Auto</button><button data-q="low">Low</button><button data-q="medium">Med</button><button data-q="high">High</button></div><b id="mGfx">High</b></div>
+    <div class="mrow gfxSeg"><label>🔍 Sharpness</label><div id="resSeg" class="segRow"><button data-r="auto">Auto</button><button data-r="sharp">Sharp</button><button data-r="balanced">Bal</button><button data-r="battery">Saver</button></div><b id="mRes">Auto</b></div>
     <button class="mbtn" id="mFps">⏱ FPS counter: Off</button>
     <button class="mbtn" id="mIntro">📖 Replay Intro</button>
     <button class="mbtn" id="mTut">🎓 Replay Tutorial</button>
@@ -966,21 +967,28 @@ const GFX_KEY = 'totallyACrow.gfx.v1';
 try { const g = JSON.parse(KroSave.getItem(GFX_KEY) || 'null'); if (g && ['auto', 'low', 'medium', 'high'].includes(g.q)) viewSet.gfx = g.q; else KroSave.setItem(GFX_KEY, JSON.stringify({ q: ['auto', 'low', 'medium', 'high'].includes(viewSet.gfx) ? viewSet.gfx : 'auto' })); } catch (_) {}
 function saveGfxQ() { try { KroSave.setItem(GFX_KEY, JSON.stringify({ q: viewSet.gfx })); } catch (_) {} saveView(); }
 const GFX_AUTO = (() => { const dpr = window.devicePixelRatio || 1, mem = navigator.deviceMemory || 8, cores = navigator.hardwareConcurrency || 8;
-  if (IS_PHONE) return (navigator.deviceMemory >= 6 && cores >= 8 && dpr < 3) ? 'medium' : 'low'; // v7p: phones default to Low unless clearly strong
+  if (IS_PHONE) return ((navigator.deviceMemory && navigator.deviceMemory <= 3) || cores <= 3) ? 'low' : (navigator.deviceMemory >= 6 && cores >= 8) ? 'high' : 'medium'; // v7q: phones get Medium (like v7h-v7o) unless clearly weak; Auto sharpness keeps it smooth
   return (mem <= 4 || cores <= 4) ? 'medium' : 'high'; })();
 const gfxLevel = () => (viewSet.gfx === 'auto' ? GFX_AUTO : viewSet.gfx);
 const GFX = {
-  low:    { pr: 1,   fogN: 70,  fogF: 340, far: 360, grass: 0.35, grassD: 70,  ped: 120, pig: 0.5, clouds: 6,  blob: false, shadow: 0,    shExt: 0,  post: 0, bloom: false, detail: false },
-  medium: { pr: 1.5, fogN: 110, fogF: 430, far: 450, grass: 0.7,  grassD: 95,  ped: 170, pig: 1,   clouds: 11, blob: true,  shadow: 1024, shExt: 46, post: 1, bloom: false, detail: true },
+  low:    { pr: 1.5, fogN: 90,  fogF: 360, far: 380, grass: 0,    grassD: 60,  ped: 170, pig: 0.5, clouds: 4,  blob: false, shadow: 0,    shExt: 0,  post: 0, bloom: false, detail: false },
+  medium: { pr: 2,   fogN: 110, fogF: 430, far: 450, grass: 0.7,  grassD: 95,  ped: 170, pig: 1,   clouds: 11, blob: true,  shadow: 1024, shExt: 46, post: 1, bloom: false, detail: true },
   high:   { pr: 2,   fogN: 130, fogF: 505, far: 520, grass: 1,    grassD: 115, ped: 230, pig: 1,   clouds: 16, blob: true,  shadow: 2048, shExt: 72, post: 1, bloom: true,  detail: true },
 };
 const gfx = () => GFX[gfxLevel()] || GFX.high;
+var KRO_LOWMAT = gfxLevel() === 'low'; // v7q: Low = older-device mode, simpler (flat-toon) materials
+const LOK = () => (KRO_LOWMAT ? '-lo' : '');
+// v7q: Sharpness (render resolution) is its own setting. Auto = the quality preset's cap (Low 1.5x, Med/High 2x of the screen),
+// stepped down 0.25x at a time only while the frame rate is actually struggling, and back up when it recovers.
+var RES = { pref: 'auto', dyn: 9, fixed: { sharp: 2.5, balanced: 1.5, battery: 1 } };
+try { const r = KroSave.getItem('kro.res'); if (r && (r === 'auto' || RES.fixed[r])) RES.pref = r; } catch (_) {}
+function kroPR() { const dpr = window.devicePixelRatio || 1; if (RES.pref !== 'auto') return Math.min(dpr, RES.fixed[RES.pref]); return Math.min(dpr, gfx().pr, RES.dyn); }
 let pedCull2 = gfx().ped ** 2;
 // ---------------------------------------------------------------- renderer / scene
 const canvas = $('game');
 // v5i: MSAA only on low-density screens; on phones (DPR 2+) the pixel density hides jaggies and this keeps v5h's frame rate
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: (window.devicePixelRatio || 1) < 1.75, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, gfx().pr));
+renderer.setPixelRatio(kroPR());
 renderer.setSize(window.innerWidth, window.innerHeight, false);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; // v7m: only the sun casts, and only on Medium/High
@@ -1025,7 +1033,7 @@ function viewSize() {
 }
 function onResize() {
   const [w, h] = viewSize();
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, gfx().pr));
+  renderer.setPixelRatio(kroPR());
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
   // widen FOV a bit in portrait so you can still see sideways
@@ -1047,7 +1055,7 @@ function resizeInk() {}
 // v7m: post-processing (Medium: colour grade + vignette; High: + soft bloom, MSAA target). Loads lazily; falls back to direct rendering.
 var post = { on: false, composer: null, mods: null, loading: null, failed: false, bloom: null, grade: null, level: '' };
 const GRADE_SHADER = {
-  uniforms: { tDiffuse: { value: null }, uVig: { value: 0.32 }, uSat: { value: 1.1 }, uCon: { value: 1.05 }, uWarm: { value: new THREE.Color(1.04, 1.0, 0.95) }, uCool: { value: new THREE.Color(0.93, 0.92, 1.06) }, uVigCol: { value: new THREE.Color(0x260b3d) } },
+  uniforms: { tDiffuse: { value: null }, uVig: { value: IS_PHONE ? 0.14 : 0.24 }, uSat: { value: 1.1 }, uCon: { value: 1.05 }, uWarm: { value: new THREE.Color(1.04, 1.0, 0.95) }, uCool: { value: new THREE.Color(0.93, 0.92, 1.06) }, uVigCol: { value: new THREE.Color(0x260b3d) } },
   vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
   fragmentShader: `uniform sampler2D tDiffuse; uniform float uVig, uSat, uCon; uniform vec3 uWarm, uCool, uVigCol; varying vec2 vUv;
     void main(){ vec4 t = texture2D(tDiffuse, vUv); vec3 c = t.rgb; float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
@@ -1073,7 +1081,7 @@ function postBuild() {
   try {
     const { EffectComposer, RenderPass, ShaderPass, UnrealBloomPass, OutputPass } = post.mods; const [w, h] = viewSize(), pr = renderer.getPixelRatio();
     const isGL2 = renderer.capabilities.isWebGL2;
-    const rt = new THREE.WebGLRenderTarget(w * pr, h * pr, { type: THREE.HalfFloatType, samples: isGL2 && Q.bloom ? 4 : 0 });
+    const rt = new THREE.WebGLRenderTarget(w * pr, h * pr, { type: THREE.HalfFloatType, samples: isGL2 && (Q.bloom || pr < 1.75) ? 4 : 0 }); // v7q: MSAA on low-density screens too
     const C = new EffectComposer(renderer, rt); C.setPixelRatio(pr); C.setSize(w, h);
     C.addPass(new RenderPass(scene, camera));
     post.bloom = null; if (Q.bloom) { post.bloom = new UnrealBloomPass(new THREE.Vector2(w / 2, h / 2), 0.32, 0.55, 0.86); C.addPass(post.bloom); }
@@ -1131,12 +1139,14 @@ function brushify(mat) {
         return mix(mix(bh21(i), bh21(i + vec2(1.0, 0.0)), f.x), mix(bh21(i + vec2(0.0, 1.0)), bh21(i + vec2(1.0, 1.0)), f.x), f.y); }
       float brushN(vec3 p){ vec2 q = vec2(p.x * 0.55 + p.y * 0.35, p.z * 0.18 + p.y * 0.3);
         return 0.6 * bvn(q * vec2(1.0, 3.2)) + 0.4 * bvn(q * vec2(2.7, 8.0) + 7.0); }`)
-      .replace('#include <color_fragment>', `#include <color_fragment>
+      .replace('#include <color_fragment>', KRO_LOWMAT ? '#include <color_fragment>' : `#include <color_fragment>
       { // v6 painterly albedo: soft brush-stroke value noise + big watercolour blotches drifting warm/cool
         float bn = brushN(vBrushP); float wb = bvn(vBrushP.xz * 0.05 + vec2(vBrushP.y * 0.02, 0.0)); float wb2 = bvn(vBrushP.zx * 0.11 + 3.1);
         vec3 wc = mix(vec3(1.1, 1.02, 0.84), vec3(0.88, 0.98, 1.1), smoothstep(0.15, 0.85, wb));
         diffuseColor.rgb *= mix(vec3(1.0), wc * (0.86 + 0.28 * bn) * (0.92 + 0.16 * wb2), uPaint); }`)
-      .replace('#include <opaque_fragment>', `{ vec3 rN = normalize(normal); vec3 rV = normalize(vViewPosition);
+      .replace('#include <opaque_fragment>', KRO_LOWMAT ? `{ float lumA = max(dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114)), 1e-3), sh = dot(outgoingLight, vec3(0.299, 0.587, 0.114)) / lumA;
+        outgoingLight *= mix(vec3(0.84, 0.86, 1.1), vec3(1.05, 1.0, 0.93), smoothstep(0.55, 1.05, sh)); } // v7q Low: warm/cool toon only, no brush grain / rim / highlight
+      #include <opaque_fragment>` : `{ vec3 rN = normalize(normal); vec3 rV = normalize(vViewPosition);
         float ndv = 1.0 - clamp(dot(rN, rV), 0.0, 1.0);
         // warm light / cool shade: compare lit result to albedo and tint the shaded part blue-violet, the lit part golden
         float lumA = max(dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114)), 1e-3), sh = dot(outgoingLight, vec3(0.299, 0.587, 0.114)) / lumA;
@@ -1155,7 +1165,7 @@ function brushify(mat) {
     sh.uniforms.uPaint = { value: mat.userData.paint ?? 1.0 }; sh.uniforms.uRimG = { value: mat.userData.rimG ?? 0.0 };
     mat.userData.shader = sh; // v5k: lets skins retune rim/spec live
   };
-  mat.customProgramCacheKey = () => 'paint-v6';
+  mat.customProgramCacheKey = () => 'paint-v6' + LOK();
   return mat;
 }
 const M = (c, o = {}) => {
@@ -1167,11 +1177,12 @@ const M = (c, o = {}) => {
 };
 function asphaltify(mat) { // v7m
   const base = mat.onBeforeCompile;
-  mat.onBeforeCompile = sh => { base(sh); sh.fragmentShader = sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
+  mat.onBeforeCompile = sh => { base(sh); if (KRO_LOWMAT) return; sh.fragmentShader = sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
     { vec2 ap = vBrushP.xz; float pa = bvn(ap * 0.07), sp = bh21(floor(ap * 7.0)), sp2 = bh21(floor(ap * 3.0) + 17.0);
-      diffuseColor.rgb *= (0.9 + 0.16 * pa) * (1.0 + 0.09 * step(0.88, sp) - 0.07 * step(0.9, sp2));
-      float cr = abs(bvn(ap * 0.22 + 4.0) - 0.5); diffuseColor.rgb *= mix(0.86, 1.0, smoothstep(0.003, 0.011, cr) + step(0.45, bvn(ap * 0.05 + 9.0))); }`); };
-  mat.customProgramCacheKey = () => 'paint-v6-asphalt'; return mat;
+      float fw = max(fwidth(ap.x), fwidth(ap.y)), kS = 1.0 - smoothstep(0.05, 0.16, fw), kC = 1.0 - smoothstep(0.12, 0.4, fw); // v7q: fade sub-pixel detail
+      diffuseColor.rgb *= (0.9 + 0.16 * pa) * (1.0 + kS * (0.09 * step(0.88, sp) - 0.07 * step(0.9, sp2)));
+      float cr = abs(bvn(ap * 0.22 + 4.0) - 0.5); diffuseColor.rgb *= mix(1.0 - 0.14 * kC, 1.0, smoothstep(0.003, 0.011, cr) + step(0.45, bvn(ap * 0.05 + 9.0))); }`); };
+  mat.customProgramCacheKey = () => 'paint-v6-asphalt' + LOK(); return mat;
 }
 const matAsphalt = asphaltify(M(0x494a56)), matGrass = M(0x6fb24c), matSidewalk = M(0xd9d5cc), matLine = new THREE.MeshBasicMaterial({ color: 0xf6f6ee });
 const matCurb = M(0xe8e4da);
@@ -1285,6 +1296,7 @@ function wonky(geo, taper = 0.95, lean = 0) {
 }
 // v5 flat graphic ground shadows (cool purple, no real-time shadow maps)
 const shadowMat = new THREE.MeshBasicMaterial({ color: 0x3a2f78, transparent: true, opacity: 0.26, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+const droneShMat = shadowMat.clone(); // v7q: drone ground marker stays on Low (it's a gameplay cue)
 const shadowGeo = new THREE.CircleGeometry(1, 18).rotateX(-Math.PI / 2);
 // ---- cars: tintable body shell (instance colour) + vertex-coloured details (glass, wheels, lights, bumpers). Unit car: 2.0 x 1.25 x 4.5, front = +z
 const carBodyGeo = propGeo([
@@ -2021,7 +2033,7 @@ function circuitify(mat, tone, scale) {
         vec3 pc; pcb(cp * ${scale.toFixed(1)}, uCircT, pc, circGlow); diffuseColor.rgb = mix(diffuseColor.rgb, pc, uCirc); circGlow *= uCirc; }`)
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += circGlow;');
   };
-  mat.customProgramCacheKey = () => 'paint-v6-circ';
+  mat.customProgramCacheKey = () => 'paint-v6-circ' + LOK();
   return mat;
 }
 circuitify(crowMat, 1.0, 8.0); circuitify(crowMat2, 0.8, 9.0); circuitify(crowEdge, 1.15, 7.0);
@@ -4770,7 +4782,7 @@ const chaseMusic = (() => {
 
 // --- net-swinging pedestrians
 const netMat = new THREE.MeshBasicMaterial({ color: 0xf4efe2, transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false });
-const poleMat = M(0x8a6a44), hoopMat = M(0xdfe5ea);
+const poleMat = M(0x8a6a44), hoopMat = M(0xff7a1a, { accent: true }), vestMat = M(0xff8a1f, { accent: true }), vestStripe = M(0xf4f0c8, { accent: true }); // v7q: hi-vis catchers
 const netGeo = { pole: new THREE.CylinderGeometry(0.045, 0.045, 2.2, 6), hoop: new THREE.TorusGeometry(0.55, 0.05, 6, 18), bag: new THREE.ConeGeometry(0.52, 0.9, 12, 1, true) };
 const tellTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
   x.fillStyle = '#ffd23f'; x.strokeStyle = '#2a2140'; x.lineWidth = 5; x.beginPath(); x.arc(32, 32, 26, 0, 7); x.fill(); x.stroke();
@@ -4789,10 +4801,13 @@ function armNetter(p) {
   const n = makeNet(); p.arms[1].add(n.g);
   const tell = new THREE.Sprite(new THREE.SpriteMaterial({ map: tellTex, depthTest: false, transparent: true })); tell.scale.setScalar(0.9); tell.position.y = 3.3; tell.visible = false; p.g.add(tell);
   n.g.scale.setScalar(1.3); // v5m: longer pole, bigger hoop
+  const vest = new THREE.Group(); vest.add(new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.62, 0.48), vestMat)); const st = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.09, 0.5), vestStripe); st.position.y = -0.08; vest.add(st);
+  vest.position.y = 1.32; vest.userData.noBatch = true; p.g.add(vest); n.vest = vest; // v7q: readable from a distance on a phone
   p.net = { ...n, tell, st: 'idle', t: 0, cd: rand(0, 2), jumper: Math.random() < 0.4, ox: 0, oz: 0, jy: 0, tx: 0, tz: 0 }; p.hold = false; netters.push(p);
 }
 function dropNet(p) { // bombed: they drop the net and run
   const N = p.net; if (!N) return;
+  if (N.vest) N.vest.removeFromParent();
   const wp = new THREE.Vector3(); N.g.getWorldPosition(wp); N.g.removeFromParent();
   N.g.position.copy(wp); N.g.rotation.set(rand(0.8, 1.5), rand(0, 6), 0); scene.add(N.g);
   fallingPhones.push({ obj: N.g, v: new THREE.Vector3(rand(-2, 2), 3, rand(-2, 2)), life: 7 });
@@ -4801,7 +4816,7 @@ function dropNet(p) { // bombed: they drop the net and run
   popup('NET DROPPED!', p.g.position.clone().add(new THREE.Vector3(0, 3.2, 0)), 'gold'); addScore(50);
 }
 function setupNetters() {
-  for (const p of [...netters]) { p.net.g.removeFromParent(); p.net.tell.removeFromParent(); p.net = null; p.hold = false; }
+  for (const p of [...netters]) { p.net.g.removeFromParent(); p.net.tell.removeFromParent(); if (p.net.vest) p.net.vest.removeFromParent(); p.net = null; p.hold = false; }
   netters.length = 0;
   if (!enemiesOn()) return;
   const pool = peds.filter(p => !p.hasPhone).sort(() => Math.random() - 0.5);
@@ -4810,13 +4825,16 @@ function setupNetters() {
 let netRefill = 0;
 const _np = new THREE.Vector3(), _ns = new THREE.Vector3();
 const NET_WIND = { easy: 0.85, normal: 0.6, hard: 0.45 };
+const netFr = new THREE.Frustum(), _nm = new THREE.Matrix4(), _nv = new THREE.Vector3(), NET_SEEN = 0.6; // v7q: no swing from someone you never saw
 function updateNetters(dt) {
   if (!enemiesOn() || tutCalm()) return; // v7d: net humans wait until the tutorial is complete
   netRefill -= dt;
-  if (netRefill <= 0) { netRefill = 12; if (netters.length < dset().nets) { const c = peds.filter(p => !p.net && !p.hasPhone && p.panic <= 0 && camera.position.distanceTo(p.g.position) > 120); if (c.length) armNetter(pick(c)); } }
+  netFr.setFromProjectionMatrix(_nm.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+  if (netRefill <= 0) { netRefill = 12; if (netters.length < dset().nets) { const c = peds.filter(p => !p.net && !p.hasPhone && p.panic <= 0 && camera.position.distanceTo(p.g.position) > 120 && Math.hypot(p.g.position.x - crow.pos.x, p.g.position.z - crow.pos.z) > 120 && !netFr.containsPoint(p.g.position)); if (c.length) armNetter(pick(c)); } }
   const gh = groundAt(crow.pos.x, crow.pos.z);
   for (const p of netters) {
     const N = p.net; N.cd -= dt;
+    _nv.copy(p.g.position); _nv.y += 1.4; const onScr = p.g.visible && netFr.containsPoint(_nv); N.seen = Math.max(0, Math.min(2, (N.seen || 0) + (onScr ? dt : -dt * 0.5))); // v7q: time on screen
     // v5m: they lead toward where you'll be, can lunge a couple of steps, and jumpers leap to reach ~8 m up
     forward(crow.yaw, _f); const lead = N.st === 'idle' ? 0.35 : 0.55, cs = crow.curSpeed || crow.speed;
     const px = crow.pos.x + _f.x * cs * lead, pz = crow.pos.z + _f.z * cs * lead;
@@ -4825,7 +4843,7 @@ function updateNetters(dt) {
     if (N.st === 'idle') {
       p.hold = false; N.tell.visible = false;
       if (p.panic <= 0) { p.arms[1].rotation.x = -2.5; p.arms[1].rotation.z = 0.15; p.arms[0].rotation.x = -1.9; p.arms[0].rotation.z = -0.25; }
-      if (started && !ko.on && N.cd <= 0 && p.panic <= 0 && low && dxz < 13 && p.g.visible) { N.st = 'wind'; N.t = 0; N.ox = N.oz = N.jy = 0; }
+      if (started && !ko.on && N.cd <= 0 && p.panic <= 0 && low && dxz < 13 && p.g.visible && N.seen >= NET_SEEN) { N.st = 'wind'; N.t = 0; N.ox = N.oz = N.jy = 0; }
     } else {
       p.hold = true; N.t += dt;
       p.g.rotation.y = angLerp(p.g.rotation.y, Math.atan2(-dx, -dz), damp(10, dt));
@@ -6473,14 +6491,14 @@ const grassFx = (() => {
       .replace('#include <begin_vertex>', `#include <begin_vertex>
       { vec3 ip = vec3(instanceMatrix[3][0], 0.0, instanceMatrix[3][2]); float w = sin(uGrassT * 1.8 + ip.x * 0.21 + ip.z * 0.17) * 0.6 + sin(uGrassT * 3.1 + ip.x * 0.7) * 0.25;
         transformed.x += w * 0.14 * position.y; transformed.z += w * 0.07 * position.y; }`); };
-  mat.customProgramCacheKey = () => 'paint-v6-grass';
+  mat.customProgramCacheKey = () => 'paint-v6-grass' + LOK();
   const CH = 60, buckets = new Map();   // ~60 m chunks: frustum + distance culled, so far-away tufts cost nothing
   for (const t of list) { const k = Math.floor(t.x / CH) + ',' + Math.floor(t.z / CH); if (!buckets.has(k)) buckets.set(k, []); buckets.get(k).push(t); }
   const chunks = []; for (const arr of buckets.values()) { const im = instanced(g, mat, arr); if (!im) continue;
     let cx = 0, cz = 0; for (const t of arr) { cx += t.x; cz += t.z; } cx /= arr.length; cz /= arr.length;
     let r = 0; for (const t of arr) r = Math.max(r, Math.hypot(t.x - cx, t.z - cz)); im.boundingSphere = new THREE.Sphere(new THREE.Vector3(cx, 0.4, cz), r + 1); im.frustumCulled = true; chunks.push({ im, cx, cz, r, n: arr.length }); }
   return { count: list.length, chunks: chunks.length, chunkList: chunks, meshes: chunks.map(k => k.im), update(t) { uT.value = t; const c = camera.position, D = gfx().grassD;
-    for (const k of chunks) k.im.visible = Math.hypot(k.cx - c.x, k.cz - c.z) - k.r < D; } };
+    const on = gfx().grass > 0; for (const k of chunks) k.im.visible = on && Math.hypot(k.cx - c.x, k.cz - c.z) - k.r < D; } };
 })();
 const groundLayers = (() => {
   const flat = [], bb = new THREE.Box3();
@@ -6596,12 +6614,15 @@ function syncViewUi() {
   if (document.activeElement !== $('mZoom')) $('mZoom').value = viewSet.zoom;
   $('mFrame').textContent = '🎯 Frame bosses: ' + (viewSet.autoFrame ? 'On' : 'Off');
   const L = gfxLevel(); $('mGfx').textContent = viewSet.gfx === 'auto' ? 'Auto: ' + L[0].toUpperCase() + L.slice(1) : L[0].toUpperCase() + L.slice(1); for (const b of document.querySelectorAll('#gfxSeg button')) b.classList.toggle('on', b.dataset.q === viewSet.gfx);
+  { const pr = renderer.getPixelRatio(); $('mRes').textContent = (RES.pref === 'auto' ? 'Auto ' : '') + pr.toFixed(2).replace(/0$/, '').replace(/\.0?$/, '') + 'x'; for (const b of document.querySelectorAll('#resSeg button')) b.classList.toggle('on', b.dataset.r === RES.pref); }
   $('mFps').textContent = '⏱ FPS counter: ' + (viewSet.fps ? 'On' : 'Off'); $('fpsBox').classList.toggle('on', !!viewSet.fps);
 }
 onTap('btnCam', cycleCam);
 onTap('mCam', cycleCam);
 onTap('mFrame', () => { viewSet.autoFrame = !viewSet.autoFrame; saveView(); syncViewUi(); });
-function setGfxQ(q) { if (!['auto', 'low', 'medium', 'high'].includes(q)) return; viewSet.gfx = q; saveGfxQ(); applyGfx(); syncViewUi(); }
+function setGfxQ(q) { if (!['auto', 'low', 'medium', 'high'].includes(q)) return; viewSet.gfx = q; RES.dyn = 9; saveGfxQ(); applyGfx(); syncViewUi(); }
+function setRes(r) { if (r !== 'auto' && !RES.fixed[r]) return; RES.pref = r; RES.dyn = 9; try { KroSave.setItem('kro.res', r); } catch (_) {} onResize(); syncViewUi(); }
+$('resSeg').addEventListener('click', e => { const b = e.target.closest('button[data-r]'); if (b) { e.preventDefault(); setRes(b.dataset.r); } });
 $('gfxSeg').addEventListener('click', e => { const b = e.target.closest('button[data-q]'); if (b) { e.preventDefault(); setGfxQ(b.dataset.q); } });
 onTap('mFps', () => { viewSet.fps = !viewSet.fps; saveView(); syncViewUi(); if (viewSet.fps) $('fpsBox').textContent = (fpsMeter.fps || '--') + ' FPS · ' + gfxLevel()[0].toUpperCase() + gfxLevel().slice(1); });
 $('mZoom').addEventListener('input', e => setZoom(e.target.value, false)); $('mZoom').addEventListener('change', e => setZoom(e.target.value));
@@ -6623,12 +6644,14 @@ function applyGfx() {
   const Q = gfx(); onResize();
   scene.fog.near = Q.fogN; scene.fog.far = Q.fogF; camera.far = Q.far; camera.updateProjectionMatrix();
   cloudSprites.forEach((s, i) => { s.visible = i < Q.clouds; });
-  for (const k of grassFx.chunkList) k.im.count = Math.max(1, Math.round(k.n * Q.grass));
+  for (const k of grassFx.chunkList) { k.im.count = Math.max(1, Math.round(k.n * Q.grass)); k.im.visible = Q.grass > 0; } // v7q: Low has no grass tufts
   pedCull2 = Q.ped * Q.ped;
   for (const F of FLOCKS) F.nAct = 0;
   pigeons.forEach((P, i) => { P.lod = Q.pig < 1 && (i % 2 === 1); if (P.lod) { pigMesh.setMatrixAt(i, _z0); wingMesh.setMatrixAt(i * 2, _z0); wingMesh.setMatrixAt(i * 2 + 1, _z0); if (P.tgt && P.tgt.crumb) P.tgt = null; } else P.f.nAct++; });
   pigMesh.instanceMatrix.needsUpdate = wingMesh.instanceMatrix.needsUpdate = true;
   if (groundShadowList.mesh) groundShadowList.mesh.visible = Q.blob;
+  shadowMat.visible = Q.blob; // v7q: Low = no painted blob shadows under cars/people/props either (each was its own draw call)
+  { const lo = gfxLevel() === 'low'; if (lo !== KRO_LOWMAT) { KRO_LOWMAT = lo; const seen = new Set(); scene.traverse(o => { const ms = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : []; for (const m of ms) if (!seen.has(m)) { seen.add(m); m.needsUpdate = true; } }); if (typeof SB !== 'undefined' && SB) { for (const m of SB.mats.values()) m.needsUpdate = true; if (SB.done && SB.on) { for (const ch of SB.chunks) sbDissolve(ch); SB.chunks = []; SB.done = false; SB.cand = null; SB.i = SB.j = 0; } } } } // v7q: re-batch for the new cell size / shadow flags
   // v7m
   sun.castShadow = Q.shadow > 0;
   if (Q.shadow) { const S = sun.shadow; if (S.mapSize.x !== Q.shadow) { S.mapSize.set(Q.shadow, Q.shadow); if (S.map) { S.map.dispose(); S.map = null; } }
@@ -6937,7 +6960,7 @@ for (let i = 0; i < 10; i++) {
   const lt = new THREE.Sprite(i % 2 ? droneLightRed : droneLightBlue); lt.scale.setScalar(1.4); lt.position.y = -0.25; g.add(lt);
   const fl = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xff2020, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 })); fl.scale.setScalar(4); g.add(fl);
   g.scale.setScalar(1.6); g.visible = false; scene.add(g); // v7c: a bit bigger so the trio reads clearly
-  const sh = new THREE.Mesh(shadowGeo, shadowMat); sh.scale.setScalar(0.9); sh.visible = false; scene.add(sh);
+  const sh = new THREE.Mesh(shadowGeo, droneShMat); sh.scale.setScalar(0.9); sh.visible = false; scene.add(sh);
   drones.push({ g, fl, sh, i, st: 'off', p: new THREE.Vector3(), v: new THREE.Vector3(), t: 0, ang: rand(0, 6.28), orbitR: rand(...HEAT.drone.orbit), hOff: rand(-4, 2), cd: 0, swarm: false, lockDir: new THREE.Vector3(), lockSp: 0, beepN: 0, fuseOn: false });
 }
 const _dv = new THREE.Vector3(), _dwant = new THREE.Vector3(); // v7c: own vector for the steering target (was aliased with _hw7)
@@ -7037,7 +7060,7 @@ function updateDrones(dt, time) {
       D.g.rotation.set(clamp(D.v.z * 0.03, -0.4, 0.4), 0, clamp(-D.v.x * 0.03, -0.4, 0.4));
     }
     D.g.position.copy(D.p); D.g.position.y += Math.sin(time * 6 + D.i) * 0.06;
-    const sg = groundAt(D.p.x, D.p.z); D.sh.position.set(D.p.x, sg + 0.06, D.p.z); D.sh.material = shadowMat; D.sh.scale.setScalar(1.1 + (D.p.y - sg) * 0.01);
+    const sg = groundAt(D.p.x, D.p.z); D.sh.position.set(D.p.x, sg + 0.06, D.p.z); D.sh.material = droneShMat; D.sh.scale.setScalar(1.1 + (D.p.y - sg) * 0.01);
   }
 }
 // ---- donuts: rare (max 1), only while heat > 0, marked on the minimap. Eat (tap 🍩 / X) = −1 heat. Carry to the nest = heat 0.
@@ -7519,7 +7542,9 @@ function sqShowCard(title, name, line, col) {
   const el = $('lvlUp'); el.querySelector('.t').textContent = title; $('lvlUpN').textContent = name; $('lvlUpNm').textContent = ''; $('lvlUpU').innerHTML = line;
   el.style.boxShadow = `0 6px 0 #160526,0 0 0 2px ${col},0 0 26px ${col}88`; el.classList.add('show'); clearTimeout(lvlUpTO); lvlUpTO = setTimeout(() => { el.classList.remove('show'); el.style.boxShadow = ''; el.querySelector('.t').textContent = 'LEVEL UP!'; }, 4200);
 }
-function sqCanSpawn() { return started && !paused && !sqr.on && !sqr.spirit && heat.lvl === 0 && !dogfight.on && !ko.on && !cage.on && !jb.on && !tutCalm(); }
+const SQ_GATE_CH = 2, SQ_FIRST = [360, 480]; // v7q: Spirit Squirrel is a random encounter once Chapter 2 'Street Heat' is cleared; first one waits 6-8 min of play after that
+function sqGateOpen() { return !!(typeof story !== 'undefined' && story && (story.done || story.ci > SQ_GATE_CH)); }
+function sqCanSpawn() { if (!sqGateOpen()) { sqr.gated = true; return false; } if (sqr.gated !== false) { sqr.gated = false; sqr.spawnT = sqSave.runs ? rand(SQ.every[0], SQ.every[1]) : rand(SQ_FIRST[0], SQ_FIRST[1]); } return started && !paused && !sqr.on && !sqr.spirit && heat.lvl === 0 && !dogfight.on && !ko.on && !cage.on && !jb.on && !tutCalm(); }
 function spawnSpirit(force) {
   if (!force && !sqCanSpawn()) return false; if (sqr.on || sqr.spirit) return false;
   const trees = sqParkTrees(); if (!trees.length) return false; const T = trees[Math.floor(Math.random() * trees.length)];
@@ -7608,7 +7633,7 @@ function updateSquirrelWorld(dt, time) {
   if (sqr.t <= 0 || (sqr.got >= SQ.nuts && !sqr.wps.some(W => !W.leave))) endSquirrel(true);
 }
 onTap('sqBack', () => endSquirrel(true));
-const v7l = { SQ, SQ_KEY, sqr, sqSave, spawnSpirit, startSquirrel, endSquirrel, despawnSpirit, sqParkTrees, sqForm, sqSpirit };
+const v7l = { SQ_GATE_CH, SQ_FIRST, sqGateOpen, sqCanSpawn, SQ, SQ_KEY, sqr, sqSave, spawnSpirit, startSquirrel, endSquirrel, despawnSpirit, sqParkTrees, sqForm, sqSpirit };
 const v7k = { LEVELS, LVL_KEY, get lvl() { return lvl; }, kroLevel, lvlGain, lvlFor, lvlSave, lvlHud, lvlUpCard, lvlRacK, lvlHeatK, lvlDroneN, lvlHawkRest };
 const v7j = { JB, jb, startBreak, endBreak, jbStep, jbSees, JB_SOLID, JB_LOW, JB_EXIT, hop: () => window.__jbHop(), cover: on => window.__jbCover(on) };
 const v7b = { v7j, setCarry(n) { carry = n; }, nearMissAward, CASH, cash, cashItems, placeCash, saveCash, cage, bailPrice, cageKro, releaseCage, NEAR, nearStats, carGap, hillBumps, pigSnd, HEAT, puffs, tossPuff, setVolume, get volPref() { return volPref; } };
@@ -8267,7 +8292,7 @@ function frame() {
   updateV6b(dt, rdt, gameTime);
   updateHeat(dt, rdt, gameTime); // v7 Heat / police
   updateCash(dt, gameTime); // v7b cash + cage
-  sbUpdate(rdt); updateCtxHud(); // v7p
+  sbUpdate(rdt); updateCtxHud(); resAdapt(rdt); // v7p, v7q
   if (typeof updateGrandma === 'function') updateGrandma(dt, gameTime);
   updateSquirrelWorld(dt, gameTime); // v7l
   if (typeof updateNestUpgBtn === 'function') updateNestUpgBtn();
@@ -8577,6 +8602,7 @@ function sbVisible(o) { for (let x = o; x; x = x.parent) { if (!x.visible) retur
 function sbEligible(o) {
   if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh || o.morphTargetInfluences) return false;
   const m = o.material; if (!m || Array.isArray(m) || m.transparent || m.map || m.alphaMap || m.envMap || m.opacity < 1 || !m.isMeshToonMaterial) return false;
+  if (!m.depthWrite || !m.depthTest || !m.colorWrite) return false; // v7q: depth-tweaked materials stay separate; polygon-offset ground layers (sidewalks!) only merge with their own exact material (see sbSig)
   const g = o.geometry; if (!g || !g.attributes.position || !g.attributes.normal || g.attributes.position.count > 12000) return false;
   if (o.renderOrder || !o.frustumCulled || o.onBeforeRender !== THREE.Object3D.prototype.onBeforeRender || o.layers.mask !== 1) return false;
   for (let x = o; x; x = x.parent) if (x === crow.group || (x.userData && x.userData.noBatch)) return false;
@@ -8587,7 +8613,7 @@ function sbSame(o, s) {
   if (o.material !== s.mat || o.geometry !== s.geo || o.parent !== s.p || !sbVisible(o) || o.material.color.getHex() !== s.c || (o.material.emissive && o.material.emissive.getHex() !== s.em)) return false;
   const e = o.matrixWorld.elements; for (let i = 0; i < 16; i++) if (Math.abs(e[i] - s.e[i]) > 1e-4) return false; return true;
 }
-function sbSig(m) { const k = m.customProgramCacheKey ? m.customProgramCacheKey() : ''; if (k !== 'paint-v6') return 'own:' + m.uuid;
+function sbSig(m) { const k = m.customProgramCacheKey ? m.customProgramCacheKey() : ''; if (k.replace(/-lo$/, '') !== 'paint-v6' || m.polygonOffset) return 'own:' + m.uuid;
   const u = m.userData || {}; return ['p', m.emissive.getHex(), m.side, m.flatShading ? 1 : 0, m.fog ? 1 : 0, m.vertexColors ? 'v' : '', u.paint ?? 1, u.rimG ?? 0, u.rimK ?? 0, u.spec ?? 0, m.gradientMap ? m.gradientMap.uuid : ''].join('|'); }
 function sbMat(src, sig) { // one shared, vertex-coloured toon material per paint signature
   if (sig.startsWith('own:')) return src; let m = SB.mats.get(sig); if (m) return m;
@@ -8595,13 +8621,14 @@ function sbMat(src, sig) { // one shared, vertex-coloured toon material per pain
   for (const k of ['paint', 'rimG', 'rimK', 'spec', 'rimA', 'rimB']) if (src.userData[k] !== undefined) m.userData[k] = src.userData[k];
   SB.mats.set(sig, m); return m;
 }
-function sbStart() { SB.cand = []; scene.traverse(o => { if (sbEligible(o)) SB.cand.push([o, sbSnap(o)]); }); }
+function sbStart() { const lo = gfxLevel() === 'low'; SB.cell = lo ? 240 : 90; SB.noSh = lo; // v7q: Low (no shadows) uses big cells and ignores shadow flags → far fewer chunks
+  for (const p of peds) p.g.userData.noBatch = true; if (typeof cops !== 'undefined') for (const c of cops) if (c.g) c.g.userData.noBatch = true; SB.cand = []; scene.traverse(o => { if (sbEligible(o)) SB.cand.push([o, sbSnap(o)]); }); }
 function sbBuild() {
   const groups = new Map(); let n = 0; const _c = new THREE.Color(), _v = new THREE.Vector3();
   for (const [o, s] of SB.cand) { if (!sbSame(o, s) || !sbEligible(o)) continue;
     const sig = sbSig(o.material); o.geometry.computeBoundingSphere && o.geometry.boundingSphere || o.geometry.computeBoundingSphere();
     _v.copy(o.geometry.boundingSphere.center).applyMatrix4(o.matrixWorld);
-    const key = sig + '#' + Math.floor(_v.x / SB.cell) + ',' + Math.floor(_v.z / SB.cell) + '#' + (o.castShadow ? 1 : 0) + (o.receiveShadow ? 1 : 0);
+    const key = sig + '#' + Math.floor(_v.x / SB.cell) + ',' + Math.floor(_v.z / SB.cell) + '#' + (SB.noSh ? '' : (o.castShadow ? 1 : 0) + '' + (o.receiveShadow ? 1 : 0));
     let G2 = groups.get(key); if (!G2) groups.set(key, G2 = { sig, src: o.material, list: [], cast: o.castShadow, recv: o.receiveShadow }); G2.list.push([o, s]); }
   for (const G2 of groups.values()) {
     if (G2.list.length < 2) continue; const own = G2.sig.startsWith('own:'); const geos = [];
@@ -8627,6 +8654,16 @@ function sbUpdate(rdt) {
   while (budget-- > 0) { const ch = all[SB.i % all.length]; SB.j = (SB.j || 0); if (!ch.alive) { SB.i++; SB.j = 0; continue; }
     const pair = ch.list[SB.j]; if (!pair) { SB.i++; SB.j = 0; continue; } SB.j++;
     const [o, s] = pair; if (!sbSame(o, s)) sbDissolve(ch); }
+}
+// v7q: Auto sharpness. Holds the preset's resolution while the game keeps up; steps down 0.25x after ~3 s under 48 FPS (floor 1x),
+// back up after ~10 s at 56+ FPS. Only while actually playing and visible.
+var RA = { lo: 0, hi: 0, acc: 0, steps: 0 };
+function resAdapt(rdt) {
+  if (!RA || RES.pref !== 'auto' || document.hidden || !started) return; RA.acc += rdt; if (RA.acc < 0.5) return; const dtp = RA.acc; RA.acc = 0;
+  const f = fpsMeter.fps || 60, dpr = window.devicePixelRatio || 1, cap = Math.min(dpr, gfx().pr), cur = Math.min(cap, RES.dyn);
+  if (f < 48) { RA.lo += dtp; RA.hi = 0; } else if (f >= 56) { RA.hi += dtp; RA.lo = 0; } else { RA.lo = RA.hi = 0; }
+  if (RA.lo > 3 && cur > 1.01) { RES.dyn = Math.max(1, cur - 0.25); RA.lo = 0; RA.steps++; onResize(); }
+  else if (RA.hi > 10 && cur < cap - 0.01) { RES.dyn = Math.min(cap, cur + 0.25); RA.hi = 0; RA.steps++; onResize(); }
 }
 function sbOff() { for (const ch of SB.chunks) sbDissolve(ch); SB.on = false; }
 
@@ -8665,8 +8702,9 @@ $('saveFile').addEventListener('change', e => { const f = e.target.files && e.ta
 // Offline + installable: register the service worker (http/https only)
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
 const v7p = { SB, sbUpdate, sbOff, sbBuild, KroSave, exportSave, importSaveText, haptic, updateCtxHud };
+const v7q = { RES, RA, kroPR, setRes, resAdapt, netters, NET_SEEN, shadowMat, droneShMat, get lowMat() { return KRO_LOWMAT; }, LEVELS, get groundLayers() { return groundLayers; }, IS_PHONE, GFX_AUTO };
 const v7n = { CASH, cash, CLS_COST, get clsOwned() { return clsOwned; }, clsHas, unlockClass, setClass, ach, migrateCashToCoins, cage, cageKro, releaseCage, drawCashHud };
-window.__crowGame = { v7p, v7o, v7n, v7m, v7l, v7k, v7g, v7e, v7d, v7b, v7, v6d, v6c: { ...v6c, THREE, HILLS, hillAt: (x, z) => hillAt(x, z), groundAt, heal, questHeartReward, DIFF }, v6b: { ach, ACH_TRACKS, achAdvance, achHas, netBust, heist, heistRac, HEIST_SITES, startHeist, heistSave, heistActive, gust, GUST, startGust, trashCans, TREES, gdrops, spawnDrop, FP, onFootpath, parkProps, renderAch, showAch, banQ, stats: v6b.stats, knockPed, megaDur, saveAch, get dogfightOn() { return dogfight.on; }, pond, goose, gooseG, GZ, gooseHit, defeatGoose, respawnGoose, gustGoose, pigeons, flock, FLOCKS, scatterAt, fisher, FISH, crumbs, tossCrumbs, inLeash, crowCrown, syncCrown }, cameo: { state: cameo, gears, bot, skins, cstats, grantAllGears, resetCameo, talkToBot, closeDialog, applySkin, BOT_POS, TOWER, gearCar, get dialogOpen() { return dialogOpen; }, get skinCur() { return skinCur; }, circFx, CIRC_U, circParts }, colliders, colliderAt, groundAt, groundLayers, grassFx, skyDome, enemy: { dogfight, chaseMusic, startDogfight, endDogfight, hawkCrash, losBlocked, DF_DIFF, hitPed, movingCars, hawk, netters, hurt, heal, knockOut, respawn, resetEnemies, gameSet, ens, ko, setHawkWarn, get hp() { return crow.hp; } }, airFx, musStats, get mus() { return mus; }, get megaTime() { return megaTime; }, setMega(v) { megaTime = v; }, fxSet, get actx() { return actx; }, renderer, camera, scene, crow, peds, items, projectiles, input, dropBomb, restart, get score() { return score; }, get phonesHit() { return phonesHit; }, get paused() { return paused; }, get quest() { return quest; }, get carry() { return carry; }, NEST, movingCars, colliders, questProgress, newQuest, get qTarget() { return qTarget; }, air, streams, raccoons, get layout() { return layout; }, applyLayout, openMenu, closeMenu, menuPage, get menuOpen() { return menuOpen; }, get customizing() { return customizing; }, start() { $('start').style.display = 'none'; started = true; }, roll, ROLL, startRoll, flick, FLICK, flickCheck };
+window.__crowGame = { v7q, v7p, v7o, v7n, v7m, v7l, v7k, v7g, v7e, v7d, v7b, v7, v6d, v6c: { ...v6c, THREE, HILLS, hillAt: (x, z) => hillAt(x, z), groundAt, heal, questHeartReward, DIFF }, v6b: { ach, ACH_TRACKS, achAdvance, achHas, netBust, heist, heistRac, HEIST_SITES, startHeist, heistSave, heistActive, gust, GUST, startGust, trashCans, TREES, gdrops, spawnDrop, FP, onFootpath, parkProps, renderAch, showAch, banQ, stats: v6b.stats, knockPed, megaDur, saveAch, get dogfightOn() { return dogfight.on; }, pond, goose, gooseG, GZ, gooseHit, defeatGoose, respawnGoose, gustGoose, pigeons, flock, FLOCKS, scatterAt, fisher, FISH, crumbs, tossCrumbs, inLeash, crowCrown, syncCrown }, cameo: { state: cameo, gears, bot, skins, cstats, grantAllGears, resetCameo, talkToBot, closeDialog, applySkin, BOT_POS, TOWER, gearCar, get dialogOpen() { return dialogOpen; }, get skinCur() { return skinCur; }, circFx, CIRC_U, circParts }, colliders, colliderAt, groundAt, groundLayers, grassFx, skyDome, enemy: { dogfight, chaseMusic, startDogfight, endDogfight, hawkCrash, losBlocked, DF_DIFF, hitPed, movingCars, hawk, netters, hurt, heal, knockOut, respawn, resetEnemies, gameSet, ens, ko, setHawkWarn, get hp() { return crow.hp; } }, airFx, musStats, get mus() { return mus; }, get megaTime() { return megaTime; }, setMega(v) { megaTime = v; }, fxSet, get actx() { return actx; }, renderer, camera, scene, crow, peds, items, projectiles, input, dropBomb, restart, get score() { return score; }, get phonesHit() { return phonesHit; }, get paused() { return paused; }, get quest() { return quest; }, get carry() { return carry; }, NEST, movingCars, colliders, questProgress, newQuest, get qTarget() { return qTarget; }, air, streams, raccoons, get layout() { return layout; }, applyLayout, openMenu, closeMenu, menuPage, get menuOpen() { return menuOpen; }, get customizing() { return customizing; }, start() { $('start').style.display = 'none'; started = true; }, roll, ROLL, startRoll, flick, FLICK, flickCheck };
 </script>
 </body>
 </html>
