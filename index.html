@@ -2234,20 +2234,52 @@ async function kgLoad() {
       if (t) { const q0 = new THREE.Quaternion().fromArray(t.values, 0), qi = new THREE.Quaternion(); let best = 0; for (let i = 0; i < t.values.length; i += 4) { qi.fromArray(t.values, i); const a = q0.angleTo(qi); if (a > best) { best = a; KG.jawOpen = qi.clone(); } } } }
     // the coded add-ons that hang off crow.group (class parts, circuit board, eye glows, crown) move under the legacy rig so only the GLB's own versions show
     const mv = o => { if (o && o.parent !== crow.coded) crow.coded.add(o); };
-    mv(crowCrown); mv(circParts); eyeGlows.forEach(mv); for (const k of ['mayhem', 'lovely', 'hunter', 'scavenger']) mv(clsParts[k]);
+    mv(crowCrown); mv(circParts); eyeGlows.forEach(mv); for (const k of ['mayhem', 'hunter', 'scavenger']) mv(clsParts[k]); mv(clsParts.halo); crow.group.add(clsParts.lovely); if (arcLine.parent !== crow.group) crow.group.add(arcLine);   // v7t: lovely hearts keep orbiting (coded hearts, shared); GLB halo shows instead of the coded one
+    kgBuildAnchors();
     KG.loaded = true; KG.loading = false; kgEnable(KG.want); return true;
   } catch (e) { console.warn('Kro raven GLB unavailable, using the coded Kro', e && e.message); KG.failed = true; KG.loading = false; KG.on = false; return false; }
 }
-function kgEnable(on) { KG.want = on; KG.on = !!(on && KG.loaded); if (KG.holder) KG.holder.visible = KG.on; crow.coded.visible = !KG.on; KG.lowApplied = null; if (KG.on) kgApplySkin(); }
+const _kgA = new THREE.Vector3(), _kgQ = new THREE.Quaternion();
+function kgBuildAnchors() { // v7t: bone-attached locators found in the bind pose: wing tips (trails/sparks), eyes (circuit glow), back (circuit chips)
+  const mesh = KG.root.getObjectByName('Kro_Raven'); crow.group.updateMatrixWorld(true); const inv = crow.group.matrixWorld.clone().invert();
+  const g = mesh.geometry, pos = g.attributes.position, si = g.attributes.skinIndex, sw = g.attributes.skinWeight, bones = mesh.skeleton.bones, W = new THREE.Vector3(), Lc = new THREE.Vector3();
+  const sh = { 1: null, '-1': null }; KG.tips = {}; KG.wingBones = { 1: [], '-1': [] };
+  for (const sd of ['L', 'R']) { const b = KG.bones['shoulder_' + sd]; b.getWorldPosition(_kgA); Lc.copy(_kgA).applyMatrix4(inv); const side = Lc.x > 0 ? 1 : -1; sh[side] = _kgA.clone(); KG.wingBones[side] = ['upperarm', 'forearm', 'hand'].map(n => KG.bones[n + '_' + sd]); KG.tips[side] = { sd, d: -1, b: null, w: new THREE.Vector3() }; }
+  let hc = 0; const hv = []; let back = null, bdy = -9;
+  for (let i = 0; i < pos.count; i++) {
+    let k = 0; for (let j = 1; j < 4; j++) if (sw.getComponent(i, j) > sw.getComponent(i, k)) k = j; const bn = bones[si.getComponent(i, k)].name;
+    W.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld); Lc.copy(W).applyMatrix4(inv);
+    const m = /^pri\d+_([LR])$/.exec(bn); if (m) { const side = (KG.tips[1].sd === m[1]) ? 1 : -1, t = KG.tips[side], d = W.distanceTo(sh[side]); if (d > t.d) { t.d = d; t.b = KG.bones[bn]; t.w.copy(W); } }
+    if (bn === 'head') hv.push(Lc.clone());
+    if (bn === 'body' && Math.abs(Lc.x) < 0.12 && Lc.z > -0.7 && Lc.z < 0.2 && Lc.y > bdy) { bdy = Lc.y; back = Lc.clone(); }
+  }
+  for (const side of [1, -1]) { const t = KG.tips[side]; const o = new THREE.Object3D(); t.b.add(o); o.position.copy(t.b.worldToLocal(t.w.clone())); KG.tips[side] = o; }
+  const c = new THREE.Vector3(); for (const v of hv) c.add(v); c.divideScalar(hv.length || 1);
+  KG.eyes = [];
+  for (const side of [1, -1]) { let bv = null, bx = 0; for (const v of hv) if (v.z < c.z + 0.02 && v.y > c.y && v.x * side > bx) { bx = v.x * side; bv = v; }
+    const sp = new THREE.Sprite(eyeGlows[0].material); sp.visible = false; const wp = bv.clone().applyMatrix4(crow.group.matrixWorld); KG.bones.head.add(sp); sp.position.copy(KG.bones.head.worldToLocal(wp));
+    sp.userData.k = 0.32 * crow.group.scale.x; KG.eyes.push(sp); }
+  // the board hardware (IC + capacitors) clones, sat on the back and carried by the body bone
+  const chips = new THREE.Group(); const ic0 = circParts.children[0]; for (const ch of circParts.children) if (!ch.isLine) { const k = ch.clone(true); k.position.sub(ic0.position); chips.add(k); }
+  KG.bones.body.add(chips); const wp = back.clone().applyMatrix4(crow.group.matrixWorld); chips.position.copy(KG.bones.body.worldToLocal(wp));
+  KG.bones.body.getWorldQuaternion(_kgQ); crow.group.getWorldQuaternion(_kgA2); chips.quaternion.copy(_kgQ).invert().multiply(_kgA2); chips.userData.k = 0.9 * crow.group.scale.x; chips.visible = false; KG.chips = chips; KG.back = back;
+  KG.baseEI = null;
+}
+const _kgA2 = new THREE.Quaternion();
+function kgTip(side, out) { const o = KG.tips && KG.tips[side]; if (!o) return false; o.getWorldPosition(out); return true; }
+function kgWingPoint(out) { const side = Math.random() < 0.5 ? 1 : -1, b = pick(KG.wingBones[side]); b.getWorldPosition(out); out.x += rand(-0.15, 0.15); out.y += rand(0, 0.15); out.z += rand(-0.15, 0.15); }
+function kgEnable(on) { KG.want = on; KG.on = !!(on && KG.loaded); if (KG.holder) KG.holder.visible = KG.on; crow.coded.visible = !KG.on; KG.lowApplied = null; if (KG.on) kgApplySkin(); else if (KG.loaded) { for (const e of KG.eyes) e.visible = false; if (KG.chips) KG.chips.visible = false; if (clsParts.halo) clsParts.halo.visible = true; } }
 function kgApplySkin() {
   if (!KG.loaded) return; const skin = skinCur === 'circuit' ? 'circuit' : (kroClass || 'classic'); KG.lowApplied = KRO_LOWMAT;
   KG.root.traverse(o => { if (o.isMesh && o.userData.kgBase) { const m = o.userData.kgVar[skin] || o.userData.kgBase; o.material = KRO_LOWMAT ? kgLowMat(m) : m; } });
-  for (const a of KG.acc) a.o.visible = a.k === kroClass || (a.k === 'cos:crown' && crowCrown.visible);
+  for (const a of KG.acc) a.o.visible = (a.k === kroClass && !/lovely_heart/.test(a.o.name)) || (a.k === 'cos:crown' && crowCrown.visible);
+  const circ = skinCur === 'circuit'; if (KG.chips) KG.chips.visible = circ; if (KG.eyes) for (const e of KG.eyes) e.visible = circ;
+  if (clsParts.halo) clsParts.halo.visible = !KG.on;
 }
 function kgPlay(name, ts, fade) { const a = KG.acts[name]; if (!a) return; if (KG.cur === name) { a.setEffectiveTimeScale(ts); return; }
   a.reset().setEffectiveTimeScale(ts).setEffectiveWeight(1).fadeIn(fade).play(); if (KG.act) KG.act.fadeOut(fade); KG.act = a; KG.cur = name; }
 function kgCaw() { if (KG.on) KG.cawT = 0.7; }
-const _kgJ = new THREE.Quaternion();
+const _kgJ = new THREE.Quaternion(), _kgS = new THREE.Vector3();
 function kgUpdate(dt, time) {
   if (!KG.on) return; if (KG.lowApplied !== KRO_LOWMAT) kgApplySkin();
   const gh = groundAt(crow.pos.x, crow.pos.z), h = crow.pos.y - gh, sp = crow.speed || 0, hov = typeof hover !== 'undefined' && hover.on;
@@ -2264,6 +2296,11 @@ function kgUpdate(dt, time) {
   const B = KG.bones; if (B.thigh_R) B.thigh_R.scale.setScalar(kroClass === 'mayhem' ? 0.001 : 1); if (B.beak) B.beak.scale.setScalar(kroClass === 'scavenger' ? 1.3 : 1);   // Mayhem's lost leg, Scavenger's big beak
   if (KG.cawT > 0 && want !== 'caw' && B.jaw && KG.jawOpen) B.jaw.quaternion.slerp(KG.jawOpen, Math.sin(Math.min(1, KG.cawT / 0.7) * Math.PI));   // caw while flying: beak opens
   KG.holder.position.y = KG.yFly + (KG.yGnd - KG.yFly) * Math.min(1, Math.max(0, crow.legT || 0));
+  for (const a of KG.acc) if (a.k === 'cos:crown') a.o.visible = crowCrown.visible;
+  if (skinCur === 'circuit') { const p = 0.85 + 0.15 * Math.sin(time * 3), ei = 1.3 + 0.9 * (0.5 + 0.5 * Math.sin(time * 2.6)), hue = 0.44 + 0.03 * Math.sin(time * 1.7);   // pulsing traces + eye glow
+    KG.root.traverse(o => { if (o.isMesh && o.userData.kgBase) { const m = o.material; m.emissiveIntensity = ei; m.emissive.setHSL(hue, 0.55, 0.88); } });
+    for (const e of KG.eyes) e.scale.setScalar(e.userData.k / (KG.bones.head.getWorldScale(_kgS).x / crow.group.scale.x) * p);
+    if (KG.chips) KG.chips.scale.setScalar(KG.chips.userData.k / (KG.bones.body.getWorldScale(_kgS).x / crow.group.scale.x) / crow.group.scale.x); }
   if (kroClass === 'lovely') for (const a of KG.acc) if (a.k === 'lovely') a.o.position.y = a.base.y + 0.02 * Math.sin(time * 2.2 + a.base.x * 9);
 }
 window.__kg = KG;
@@ -3793,7 +3830,7 @@ function updateRibbons(dt) {
   for (const r of ribbons) {
     r.m.visible = on;
     if (!on) { r.primed = false; continue; }
-    r.w.tipPivot.localToWorld(_tip.set(1.55 * r.w.s, 0, 0.0));
+    if (!(KG.on && kgTip(r.w.s, _tip))) r.w.tipPivot.localToWorld(_tip.set(1.55 * r.w.s, 0, 0.0));   // v7t: trails follow the raven's wing-tip bones
     if (!r.primed) { for (const h of r.hist) h.copy(_tip); r.primed = true; }
     if (dt > 0) { for (let i = r.hist.length - 1; i > 0; i--) r.hist[i].copy(r.hist[i - 1]); r.hist[0].copy(_tip); }
     // resample the tip history by arc length so the ribbon is always <= RIB_LEN long (independent of frame rate)
@@ -5352,7 +5389,7 @@ function updateCircuitFx(dt, time) {
   circFx.arcCd -= dt; circFx.sparkCd -= dt;
   if (circFx.arcCd <= 0) { zapArc(); circFx.arcCd = rand(0.5, 1.6); }
   circFx.arcT -= dt; arcMat.opacity = circFx.arcT > 0 ? 0.6 + 0.4 * Math.random() : 0;
-  if (circFx.sparkCd <= 0 && typeof sparkBurst === 'function') { const w = pick(crow.wings); _cw.set(rand(0.2, 0.9) * w.s, 0.08, rand(-0.1, 0.2)); w.pivot.localToWorld(_cw); sparkBurst(_cw, 2, 0x9ffff4); circFx.sparkCd = rand(0.7, 1.8); circFx.sparks++; }
+  if (circFx.sparkCd <= 0 && typeof sparkBurst === 'function') { if (KG.on && KG.wingBones) kgWingPoint(_cw); else { const w = pick(crow.wings); _cw.set(rand(0.2, 0.9) * w.s, 0.08, rand(-0.1, 0.2)); w.pivot.localToWorld(_cw); } sparkBurst(_cw, 2, 0x9ffff4); circFx.sparkCd = rand(0.7, 1.8); circFx.sparks++; }
 }
 const SKIN_NAMES = { default: 'Default', circuit: 'Circuit Crow' };
 function setMatLook(m, L) {
