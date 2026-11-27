@@ -1,12 +1,15 @@
 // Kro service worker: offline play. App shell is precached (bypassing the HTTP cache). The game page itself is network-first
 // (3.5 s timeout, then the cached copy) so a new build shows up on the very next launch when online; everything else is
 // cache-first and refreshed in the background (stale-while-revalidate). Bump VERSION with each release.
-const VERSION = 'kro-v7r2-1';
+const VERSION = 'kro-v7s-1';
 const CORE = [
   './', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png',
   './vendor/three/build/three.module.min.js',
   './vendor/three/examples/jsm/utils/BufferGeometryUtils.js',
+  './vendor/three/examples/jsm/loaders/GLTFLoader.js', './vendor/three/examples/jsm/loaders/DRACOLoader.js',
+  './vendor/three/examples/jsm/libs/draco/gltf/draco_wasm_wrapper.js', './vendor/three/examples/jsm/libs/draco/gltf/draco_decoder.wasm',
+  './models/kro-raven-draco.glb',
   './vendor/three/examples/jsm/postprocessing/EffectComposer.js', './vendor/three/examples/jsm/postprocessing/RenderPass.js',
   './vendor/three/examples/jsm/postprocessing/ShaderPass.js', './vendor/three/examples/jsm/postprocessing/UnrealBloomPass.js',
   './vendor/three/examples/jsm/postprocessing/OutputPass.js', './vendor/three/examples/jsm/postprocessing/MaskPass.js',

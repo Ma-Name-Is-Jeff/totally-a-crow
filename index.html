@@ -716,6 +716,7 @@ window.KroSave = (() => {
     <button class="mbtn" id="mDiff">🎚 Difficulty: Normal</button>
     <button class="mbtn" id="mEnemies">⚔ Enemies: On</button>
     <button class="mbtn" id="mSkin">🎨 Skin: Default</button>
+    <button class="mbtn" id="mModel">🐦 Kro model: Raven</button>
     <button class="mbtn" id="mCam">🎥 Camera: Normal</button>
     <button class="mbtn" id="mFrame">🎯 Frame bosses: On</button>
     <button class="mbtn" id="mCustom">✥ Customize controls</button>
@@ -738,7 +739,8 @@ window.KroSave = (() => {
       <h4>Kro</h4><p>Created and directed by <b>Bran</b>. All characters, places and names are original. Any resemblance to real businesses is unintended.</p>
       <h4>Made with AI</h4><p>Kro was made with the help of AI tools, directed, chosen and edited by Bran: the artwork (intro storybook panels, 3D logo, in-game 3D models, textures and UI), the game code, the story and dialogue, and the sound and music code. The How to Play pictures are screenshots captured from the game.</p>
       <h4>Sound &amp; music</h4><p>All sound effects and music are synthesized live in your browser by the game's own (AI-assisted) code. No recorded samples.</p>
-      <h4>Open-source software</h4><p><b>three.js</b> r160 (3D engine and add-ons: BufferGeometryUtils, EffectComposer, RenderPass, ShaderPass, UnrealBloomPass, OutputPass, CopyShader, LuminosityHighPassShader, OutputShader). MIT License.</p>
+      <h4>Open-source software</h4><p><b>three.js</b> r160 (3D engine and add-ons: BufferGeometryUtils, EffectComposer, RenderPass, ShaderPass, UnrealBloomPass, OutputPass, CopyShader, LuminosityHighPassShader, OutputShader, GLTFLoader, DRACOLoader). MIT License.</p>
+      <p><b>Draco</b> 3D geometry decompression library (Google), used to load Kro's 3D model. Apache License 2.0.</p>
       <pre id="lic3">The MIT License
 
 Copyright © 2010-2023 three.js authors
@@ -2085,8 +2087,8 @@ const talonMat = M(0x101014, { accent: true });
 const outlineMat = new THREE.MeshBasicMaterial({ color: 0x2e2744, side: THREE.BackSide });
 const OUTLINE_K = 0.45; // thickness vs the v5 ink hulls
 const addOutline = (mesh, k = 1.07) => { const o = new THREE.Mesh(mesh.geometry, outlineMat); o.scale.setScalar(1 + (k - 1) * OUTLINE_K); mesh.add(o); return o; };
-{
-  const g = crow.group, rig = makeRig(outlineMat), A = rig.add.bind(rig), PI = Math.PI;
+function buildCodedKro() { // v7s: the original coded crow, kept as the legacy/fallback Kro (lives under crow.coded)
+  const g = crow.coded = new THREE.Group(), rig = makeRig(outlineMat), A = rig.add.bind(rig), PI = Math.PI;
     // v5b naturalistic crow (proportions only, original geometry): small head on a sleek elongated body, long heavy hooked beak with
   // nasal bristles, shaggy pointed throat hackles, long fingered wings, long wedge tail, slender legs + talons. All parts are
   // smooth lofted (tapered elliptical cross-section) BufferGeometry, no boxes. Outlines are normal-inflated hulls + the ink pass.
@@ -2193,10 +2195,79 @@ const addOutline = (mesh, k = 1.07) => { const o = new THREE.Mesh(mesh.geometry,
     crow.wings.push({ pivot, tipPivot, s });
   }
   rig.build();
-  g.rotation.order = 'YXZ';
-  g.scale.setScalar(0.96);   // v6d: Kro is a raven, ~17% bigger than before (the other birds are unchanged)
-  scene.add(g);
+  crow.group.rotation.order = 'YXZ';
+  crow.group.scale.setScalar(0.96);   // v6d: Kro is a raven, ~17% bigger than before (the other birds are unchanged)
+  crow.group.add(g); scene.add(crow.group);
 }
+buildCodedKro();
+// ---------------------------------------------------------------- v7s: Kro = the Blender raven (GLB). The coded crow above is kept as `buildCodedKro()` (legacy) and is the
+// fallback: it stays in the scene graph as crow.coded and shows if the GLB can't load, with ?model=coded, or via Pause > "Kro model". Class skins = the GLB's own
+// material variants + bone-parented add-ons (never the coded shapes). Orientation: the GLB faces +Z, the game faces -Z, so the model sits in a holder turned by PI.
+const KRO_MODEL = (() => { try { const q = new URLSearchParams(location.search).get('model'); if (q === 'coded' || q === 'raven') return q; const v = KroSave.getItem('totallyACrow.kroModel'); return v === 'coded' ? 'coded' : 'raven'; } catch (_) { return 'raven'; } })();
+const KG = { on: false, loaded: false, failed: false, want: KRO_MODEL === 'raven', root: null, holder: null, mixer: null, acts: {}, cur: '', act: null, cawT: 0, jawOpen: null,
+  bones: {}, acc: [], S: 2.8, yGnd: -0.86, yFly: -0.82, lowApplied: null, state: '', gltf: null, crownAcc: null };
+const _kgLow = new WeakMap();
+function kgLowMat(m) { let l = _kgLow.get(m); if (!l) { l = new THREE.MeshLambertMaterial({ map: m.map || null, color: m.color, emissive: m.emissive, emissiveMap: m.emissiveMap || null, emissiveIntensity: m.emissiveIntensity, side: m.side, transparent: m.transparent, opacity: m.opacity, alphaTest: m.alphaTest }); l.name = m.name + '_low'; _kgLow.set(m, l); } return l; }
+async function kgLoad() {
+  if (KG.loaded || KG.failed || KG.loading) return KG.loaded; KG.loading = true;
+  try {
+    const [{ GLTFLoader }, { DRACOLoader }] = await Promise.all([import('three/addons/loaders/GLTFLoader.js'), import('three/addons/loaders/DRACOLoader.js')]);
+    const L = new GLTFLoader(), dr = new DRACOLoader(); dr.setDecoderPath('./vendor/three/examples/jsm/libs/draco/gltf/'); L.setDRACOLoader(dr);
+    let gltf; try { gltf = await L.loadAsync('./models/kro-raven-draco.glb'); } catch (e) { console.warn('Kro raven: Draco GLB failed, trying plain GLB', e && e.message); gltf = await L.loadAsync('./models/kro-raven.glb'); }
+    dr.dispose(); KG.gltf = gltf; const root = gltf.scene; KG.root = root;
+    const names = ((gltf.parser.json.extensions || {}).KHR_materials_variants || { variants: [] }).variants.map(v => v.name);
+    root.traverse(o => {
+      if (o.isMesh) { o.frustumCulled = false; o.castShadow = false; o.receiveShadow = false; }
+      if (o.isBone) KG.bones[o.name] = o;
+      const k = o.userData && o.userData.kro_skin; if (k) KG.acc.push({ o, k, base: o.position.clone(), bs: o.scale.clone() });
+    });
+    // pre-resolve every variant material per mesh so a skin swap is a synchronous material assignment
+    const jobs = [];
+    root.traverse(o => { const ext = o.isMesh && o.userData.gltfExtensions && o.userData.gltfExtensions.KHR_materials_variants; if (!ext) return; o.userData.kgBase = o.material; o.userData.kgVar = {};
+      for (const mp of ext.mappings) jobs.push(gltf.parser.getDependency('material', mp.material).then(mat => { o.material = mat; gltf.parser.assignFinalMaterial(o); for (const vi of mp.variants) o.userData.kgVar[names[vi]] = o.material; })); });
+    await Promise.all(jobs);
+    root.traverse(o => { if (o.isMesh && o.userData.kgBase) o.material = o.userData.kgBase; });
+    const holder = new THREE.Group(); holder.rotation.y = Math.PI; holder.scale.setScalar(KG.S); holder.add(root); holder.visible = false; crow.group.add(holder); KG.holder = holder;
+    KG.mixer = new THREE.AnimationMixer(root);
+    for (const c of gltf.animations) { const a = KG.mixer.clipAction(c); KG.acts[c.name] = a; if (c.name === 'caw') { a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = false; } }
+    { const c = gltf.animations.find(x => x.name === 'caw'), t = c && c.tracks.find(x => x.name === 'jaw.quaternion'); // the caw clip's most-open jaw pose, reused as an overlay while flying
+      if (t) { const q0 = new THREE.Quaternion().fromArray(t.values, 0), qi = new THREE.Quaternion(); let best = 0; for (let i = 0; i < t.values.length; i += 4) { qi.fromArray(t.values, i); const a = q0.angleTo(qi); if (a > best) { best = a; KG.jawOpen = qi.clone(); } } } }
+    // the coded add-ons that hang off crow.group (class parts, circuit board, eye glows, crown) move under the legacy rig so only the GLB's own versions show
+    const mv = o => { if (o && o.parent !== crow.coded) crow.coded.add(o); };
+    mv(crowCrown); mv(circParts); eyeGlows.forEach(mv); for (const k of ['mayhem', 'lovely', 'hunter', 'scavenger']) mv(clsParts[k]);
+    KG.loaded = true; KG.loading = false; kgEnable(KG.want); return true;
+  } catch (e) { console.warn('Kro raven GLB unavailable, using the coded Kro', e && e.message); KG.failed = true; KG.loading = false; KG.on = false; return false; }
+}
+function kgEnable(on) { KG.want = on; KG.on = !!(on && KG.loaded); if (KG.holder) KG.holder.visible = KG.on; crow.coded.visible = !KG.on; KG.lowApplied = null; if (KG.on) kgApplySkin(); }
+function kgApplySkin() {
+  if (!KG.loaded) return; const skin = skinCur === 'circuit' ? 'circuit' : (kroClass || 'classic'); KG.lowApplied = KRO_LOWMAT;
+  KG.root.traverse(o => { if (o.isMesh && o.userData.kgBase) { const m = o.userData.kgVar[skin] || o.userData.kgBase; o.material = KRO_LOWMAT ? kgLowMat(m) : m; } });
+  for (const a of KG.acc) a.o.visible = a.k === kroClass || (a.k === 'cos:crown' && crowCrown.visible);
+}
+function kgPlay(name, ts, fade) { const a = KG.acts[name]; if (!a) return; if (KG.cur === name) { a.setEffectiveTimeScale(ts); return; }
+  a.reset().setEffectiveTimeScale(ts).setEffectiveWeight(1).fadeIn(fade).play(); if (KG.act) KG.act.fadeOut(fade); KG.act = a; KG.cur = name; }
+function kgCaw() { if (KG.on) KG.cawT = 0.7; }
+const _kgJ = new THREE.Quaternion();
+function kgUpdate(dt, time) {
+  if (!KG.on) return; if (KG.lowApplied !== KRO_LOWMAT) kgApplySkin();
+  const gh = groundAt(crow.pos.x, crow.pos.z), h = crow.pos.y - gh, sp = crow.speed || 0, hov = typeof hover !== 'undefined' && hover.on;
+  const grounded = h < 1.25 && crow.vy < 1 && sp < 11 && !hov; if (KG.cawT > 0) KG.cawT -= dt;
+  let want, ts = 1, fade = 0.22;
+  if (KG.cawT > 0 && grounded) { want = 'caw'; ts = 1.3; }
+  else if (grounded) { if (sp < 1.2) want = 'idle'; else if (sp < 6) { want = 'walk'; ts = Math.min(1.8, Math.max(0.7, sp / 3)); } else { want = 'hop'; ts = Math.min(1.5, Math.max(0.8, sp / 8)); } }
+  else if (hov) { want = 'flap'; ts = 1.1; }
+  else if (crow.soaring || input.dive || crow.vy < -12 || crow.flapRate < 0.2) { want = 'glide'; fade = 0.35; }
+  else { want = 'flap'; ts = 0.7 + crow.flapRate * 1.1; }
+  if (KG.cur === 'caw' && want !== 'caw' && KG.acts.caw.isRunning() && KG.cawT > -0.5 && grounded) want = 'caw';   // let a started caw finish
+  kgPlay(want, ts, fade); KG.state = want;
+  KG.mixer.update(dt);
+  const B = KG.bones; if (B.thigh_R) B.thigh_R.scale.setScalar(kroClass === 'mayhem' ? 0.001 : 1); if (B.beak) B.beak.scale.setScalar(kroClass === 'scavenger' ? 1.3 : 1);   // Mayhem's lost leg, Scavenger's big beak
+  if (KG.cawT > 0 && want !== 'caw' && B.jaw && KG.jawOpen) B.jaw.quaternion.slerp(KG.jawOpen, Math.sin(Math.min(1, KG.cawT / 0.7) * Math.PI));   // caw while flying: beak opens
+  KG.holder.position.y = KG.yFly + (KG.yGnd - KG.yFly) * Math.min(1, Math.max(0, crow.legT || 0));
+  if (kroClass === 'lovely') for (const a of KG.acc) if (a.k === 'lovely') a.o.position.y = a.base.y + 0.02 * Math.sin(time * 2.2 + a.base.x * 9);
+}
+window.__kg = KG;
+if (KG.want) kgLoad();
 // blob shadow (fades out with height)
 const blob = new THREE.Mesh(new THREE.CircleGeometry(1.1, 16), new THREE.MeshBasicMaterial({ color: 0x1a2a20, transparent: true, opacity: 0.3, depthWrite: false }));
 blob.rotation.x = -Math.PI / 2; scene.add(blob);
@@ -2636,7 +2707,7 @@ function env(g, t, a, peak, dec) { g.gain.setValueAtTime(0.0001, t); g.gain.expo
 function noiseSrc() { const s = actx.createBufferSource(); s.buffer = noiseBuf; s.loop = true; return s; }
 const sfx = {
   ok() { return actx && !muted && actx.state === 'running'; },
-  caw(n) { if (!this.ok()) return; crowCaw(n || (Math.random() < 0.35 ? 1 : Math.random() < 0.6 ? 2 : 3), CAW_VOL); window.__cawLast = 'synth'; },
+  caw(n) { kgCaw(); if (!this.ok()) return; crowCaw(n || (Math.random() < 0.35 ? 1 : Math.random() < 0.6 ? 2 : 3), CAW_VOL); window.__cawLast = 'synth'; },
   flap() {
     if (!this.ok()) return; const t = actx.currentTime, s = noiseSrc(), f = actx.createBiquadFilter(), g = actx.createGain();
     f.type = 'lowpass'; f.frequency.setValueAtTime(900, t); f.frequency.exponentialRampToValueAtTime(250, t + 0.12);
@@ -4212,6 +4283,7 @@ function updateCrow(dt, time) {
   // legs: tucked back in flight, lowered with talons out when braking or close to the ground
   const legsDown = (braking && !diving && !hover.on) || crow.pos.y - groundAt(crow.pos.x, crow.pos.z) < 2.5;
   crow.legT = lerp(crow.legT, legsDown ? 1 : 0, damp(6, dt));
+  kgUpdate(dt, time);
   crow.legs.rotation.x = lerp(-1.5, 0.12, crow.legT); crow.legs.scale.setScalar(lerp(0.6, 1, crow.legT)); crow.legs.visible = crow.legT > 0.12;
   flapSoundCd -= dt;
   if (flapping && !hover.on && flapSoundCd <= 0) { sfx.flap(); flapSoundCd = 0.28; }
@@ -5382,6 +5454,7 @@ let skinCur = 'default';
 function applySkin(id) {
   if (!SKIN_DEF[id]) id = 'default';
   skinCur = id;
+  setTimeout(kgApplySkin, 0);
   SKIN_MATS.forEach((m, i) => setMatLook(m, id === 'default' ? (CLASS_LOOK[kroClass] ? CLASS_LOOK[kroClass][i] : skinDefaults[i]) : SKIN_DEF[id][i]));
   applyClassLook();
   if (irisMat) irisMat.color.set(id === 'circuit' ? 0x7dfff2 : irisDefault);
@@ -5395,6 +5468,9 @@ onTap('mSkin', () => {
 });
 if (!skins.unlocked.includes(skins.sel)) skins.sel = 'default';
 applySkin(skins.sel); syncSkinLabel();
+function syncModelLabel() { $('mModel').textContent = '🐦 Kro model: ' + (KG.want ? (KG.failed ? 'Classic (Raven unavailable)' : 'Raven') : 'Classic (coded)'); }
+onTap('mModel', () => { const w = !KG.want; KG.want = w; try { KroSave.setItem('totallyACrow.kroModel', w ? 'raven' : 'coded'); } catch (_) {} if (w && !KG.loaded) kgLoad().then(syncModelLabel); else kgEnable(w); syncModelLabel(); });
+syncModelLabel();
 function updateCameo(dt, time) {
   updateBot(dt, time); updateGears(dt, time);
   if (skinCur === 'circuit') { const p = 0.85 + 0.15 * Math.sin(time * 3); for (const s of eyeGlows) s.scale.setScalar(0.3 * p); crowEdge.emissive.setHSL(0.45, 0.9, 0.02 + 0.03 * Math.sin(time * 2.2)); }
