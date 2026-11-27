@@ -351,7 +351,14 @@ window.KroSave = (() => {
   .msubHead{grid-column:1/-1;display:flex;align-items:center;gap:10px;margin-bottom:2px}
   .msubHead b{font:800 16px system-ui,sans-serif;letter-spacing:.03em;color:#ffe229} .msubHead .mback{padding:8px 14px}
   #menuMain:not([data-page=""]) > .mtop, #menuMain:not([data-page=""]) > .mcat{display:none}
-  #menuMain[data-page="sound"] #subSound, #menuMain[data-page="gameplay"] #subGameplay, #menuMain[data-page="display"] #subDisplay, #menuMain[data-page="friends"] #subFriends{display:grid}
+  #menuMain[data-page="sound"] #subSound, #menuMain[data-page="gameplay"] #subGameplay, #menuMain[data-page="display"] #subDisplay, #menuMain[data-page="friends"] #subFriends, #menuMain[data-page="credits"] #subCredits{display:grid}
+  #subCredits{grid-template-columns:1fr!important} #creditsBox{grid-column:1/-1;max-height:min(58vh,420px);overflow:auto;text-align:left;font:13px/1.4 system-ui,sans-serif;color:#fff9f0;padding:4px 6px} #creditsBox h4{margin:8px 0 2px;color:#ffe229;font-size:14px} #creditsBox p{margin:0 0 4px}
+  #creditsBox pre{white-space:pre-wrap;font:10.5px/1.35 ui-monospace,monospace;background:rgba(0,0,0,.28);border:2px solid #160526;border-radius:10px;padding:8px;color:#cbb8e8}
+  #coach{position:fixed;z-index:12;left:50%;top:64px;transform:translateX(-50%);display:none;pointer-events:none;background:#ffe229;color:#331257;font:800 13px system-ui,sans-serif;padding:6px 12px;border-radius:12px;border:2.5px solid #160526;box-shadow:0 3px 0 #160526;white-space:nowrap}
+  #coach b{margin-right:6px} #coach.on{display:block;animation:coachB .9s ease-in-out infinite alternate} @keyframes coachB{from{transform:translateX(-50%) translateY(0)}to{transform:translateX(-50%) translateY(-5px)}}
+  #coach::before{content:'';position:absolute;left:50%;top:-9px;margin-left:-8px;border:8px solid transparent;border-top:0;border-bottom:9px solid #160526}
+  #quest.coachRing{outline:3px solid #ffe229;outline-offset:3px;border-radius:14px;animation:coachR .9s ease-in-out infinite alternate} @keyframes coachR{from{outline-color:#ffe229}to{outline-color:rgba(255,226,41,.25)}}
+  #econLine{font:12px system-ui,sans-serif;color:#9ff4ff;text-align:center;padding:2px 4px}
   #menu:has(#menuMain:not([data-page=""])) .keys{display:none}
   #menu .panel:has(#menuMain:not([data-page=""])) .menuHead{display:none}
   #menu .panel{width:min(560px,92vw);box-sizing:border-box}
@@ -684,6 +691,7 @@ window.KroSave = (() => {
   <div class="tbtns"><button id="tutSkip">Skip tutorial</button><button id="tutGo">Continue ▸</button></div></div></div></div>
 <canvas id="minimap"></canvas>
 <div id="msg"></div>
+<div id="coach" aria-hidden="true"><b>👆 Your goal</b> Follow the yellow ➤ arrow</div>
 <div id="menu"><div class="panel"><div class="menuHead"><img class="menuLogo" id="menuLogo" alt="Kro"><h2>⏸ Paused</h2></div>
   <div id="menuMain" data-page="">
     <button class="mbtn primary mtop" id="mResume">▶ Resume</button>
@@ -692,6 +700,7 @@ window.KroSave = (() => {
     <button class="mbtn mcat" data-go="display">🖼 Display &amp; Extras<small>Graphics · Save backup · Achievements</small></button>
     <button class="mbtn mcat" id="mStory">📖 Story &amp; Family<small>Chapters · Crow family · Nest</small></button>
     <button class="mbtn mtop" id="mGuide">📘 How to Play</button>
+    <button class="mbtn mcat" data-go="credits" id="mCredits">📜 Credits &amp; Licenses<small>Who made Kro · Open-source notices</small></button>
     <button class="mbtn mtop" id="mUpg">🌿 Nest Upgrades</button>
     <button class="mbtn mtop" id="mCls">🎭 Class</button>
     <button class="mbtn mtop" id="mRestart">↻ Restart</button>
@@ -722,7 +731,38 @@ window.KroSave = (() => {
     <button class="mbtn" id="mExport">💾 Export save</button>
     <button class="mbtn" id="mImport">📂 Import save</button><input type="file" id="saveFile" accept=".json,application/json" style="display:none">
     <button class="mbtn mwide" id="mAch">🏆 Achievements</button>
+    <div id="econLine"></div>
     </div>
+    <div class="msub" id="subCredits"><div class="msubHead"><button class="mbtn mback">◂ Back</button><b>📜 Credits &amp; Licenses</b></div>
+    <div id="creditsBox">
+      <h4>Kro</h4><p>Created by <b>Bran</b>. Game design, code, story, sound and art direction made for this game. All characters, places and names are original. Any resemblance to real businesses is unintended.</p>
+      <h4>Artwork</h4><p>The intro storybook panels and the 3D Kro logo were made with AI image tools from Bran's own concepts and banner art, then edited for the game. In-game 3D models, textures, UI and the How to Play screenshots are built in code or captured from the game.</p>
+      <h4>Sound &amp; music</h4><p>All sound effects and music are synthesized live in your browser by the game's own code. No recorded samples.</p>
+      <h4>Open-source software</h4><p><b>three.js</b> r160 (3D engine and add-ons: BufferGeometryUtils, EffectComposer, RenderPass, ShaderPass, UnrealBloomPass, OutputPass, CopyShader, LuminosityHighPassShader, OutputShader). MIT License.</p>
+      <pre id="lic3">The MIT License
+
+Copyright © 2010-2023 three.js authors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.</pre>
+      <h4>Fonts &amp; emoji</h4><p>Text and emoji use your device's own system fonts; none are bundled.</p>
+      <h4>Your data</h4><p>Kro has no accounts, ads or tracking. Your progress is saved only on this device (Settings → Display → Export save to back it up).</p>
+    </div></div>
     <div class="msub" id="subFriends"><div class="msubHead"><button class="mbtn mback">◂ Back</button><b>🐦 Friends</b></div>
     <div id="friendsBox"><div class="fslots"><i></i><i></i><i></i><i></i></div><p>No friends have visited yet.</p><small>Crow family friends will drop by the nest with quests in a future update.</small></div>
     </div>
@@ -874,7 +914,7 @@ window.KroSave = (() => {
     const last = i === PAGES.length - 1, started = document.getElementById('start') && document.getElementById('start').style.display === 'none';
     nx.textContent = last ? (replay || started ? 'Back to the game' : 'Let’s fly!') : 'Next ›'; };
   const close = (go) => { el.classList.remove('on'); mark(); window.__intro.open = false;
-    if (!replay && window.__guide && !window.__guide.seen()) { window.__guide.show({ from: 'intro' }); return; } // first launch: How to Play next
+    // v7r: no 10-page How to Play dump on first launch; the game teaches in context (guide stays on the start screen and in the menu)
     if (go && !replay) { const b = document.getElementById('btnGo'); if (b && document.getElementById('start').style.display !== 'none') b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true })); } };
   const next = () => { if (i < PAGES.length - 1) { i++; show(); } else close(true); };
   const stop = e => { e.preventDefault(); e.stopPropagation(); };
@@ -3084,11 +3124,11 @@ function addScore(n) { score += n; if (n > 0) lvlGain(n); }
 const LVL_KEY = 'totallyACrow.level.v1';
 const LEVELS = [
   { at: 0, name: 'Fledgling', unlock: '' },
-  { at: 3000, name: 'Rooftop Rookie', unlock: '🦅 The hawk is awake. Watch the skies over his turf!' },
-  { at: 10000, name: 'Alley Ace', unlock: '🦝 Raccoons get bolder and raid snacks more often.' },
-  { at: 25000, name: 'Block Boss', unlock: '🔥 Heat builds a little faster.' },
-  { at: 50000, name: 'Skyline Shade', unlock: '🛸 Drone waves bring an extra drone.' },
-  { at: 90000, name: 'Sky Legend', unlock: '🦅 The hawk rests less after you escape him.' },
+  { at: 6000, name: 'Rooftop Rookie', unlock: '🦅 The hawk is awake. Watch the skies over his turf!' },
+  { at: 18000, name: 'Alley Ace', unlock: '🦝 Raccoons get bolder and raid snacks more often.' },
+  { at: 40000, name: 'Block Boss', unlock: '🔥 Heat builds a little faster.' },
+  { at: 75000, name: 'Skyline Shade', unlock: '🛸 Drone waves bring an extra drone.' },
+  { at: 120000, name: 'Sky Legend', unlock: '🦅 The hawk rests less after you escape him.' },
 ];
 var lvl = (() => {
   const st = { xp: 0, lv: 1, seeded: '' };
@@ -3101,7 +3141,7 @@ var lvl = (() => {
     const veteran = (tutS && tutS.done) || nUpg > 0 || nAch > 0 || (cashS && cashS.bank > 0);
     if (veteran) { st.xp = Math.min(25000, 3000 + nUpg * 2500 + nAch * 1000); st.seeded = 'legacy'; }
   } } catch (_) {}
-  st.lv = lvlFor(st.xp); return st;
+  st.lv = lvlFor(st.xp); try { const v = JSON.parse(KroSave.getItem(LVL_KEY) || 'null'); if (v && v.lv > st.lv) st.lv = Math.min(LEVELS.length, v.lv | 0); } catch (_) {} return st; // v7r: new thresholds never demote a saved level
 })();
 function lvlFor(xp) { let l = 1; for (let i = 0; i < LEVELS.length; i++) if (xp >= LEVELS[i].at) l = i + 1; return l; }
 function kroLevel() { return lvl.lv; }
@@ -3111,9 +3151,9 @@ function lvlGain(n) { lvl.xp += n; const L = lvlFor(lvl.xp); if (L > lvl.lv) { c
 function lvlHud() {
   const i = lvl.lv - 1, cur = LEVELS[i], nx = LEVELS[i + 1];
   document.getElementById('lvlN').textContent = 'LV ' + lvl.lv; document.getElementById('lvlNm').textContent = cur.name;
-  document.getElementById('lvlBar').style.width = (nx ? Math.min(100, (lvl.xp - cur.at) / (nx.at - cur.at) * 100) : 100) + '%';
+  document.getElementById('lvlBar').style.width = (nx ? Math.max(0, Math.min(100, (lvl.xp - cur.at) / (nx.at - cur.at) * 100)) : 100) + '%';
   document.getElementById('lvlPill').title = nx ? `${Math.round(lvl.xp).toLocaleString()} / ${nx.at.toLocaleString()} XP to LV ${lvl.lv + 1}` : 'Max level';
-  const xe = document.getElementById('lvlXp'); if (xe) xe.textContent = nx ? `${Math.round(lvl.xp - cur.at).toLocaleString()}/${(nx.at - cur.at).toLocaleString()} XP` : 'MAX';
+  const xe = document.getElementById('lvlXp'); if (xe) xe.textContent = nx ? `${Math.max(0, Math.round(lvl.xp - cur.at)).toLocaleString()}/${(nx.at - cur.at).toLocaleString()} XP` : 'MAX';
 }
 let lvlUpTO = 0;
 function lvlUpCard(L) {
@@ -5263,7 +5303,7 @@ const KCLASSES = [
   { id: 'scavenger', icon: '🍂', name: 'Scavenger', col: '#ff8a1f', tag: 'Finders keepers',
     perk: 'Pickup reach +30%. Coin pouches worth +20%.', trade: 'Soar is 10% slower (full pockets).', skin: 'Grungy feathers with leaves and twigs, a bigger beak.' },
 ];
-const CLS_OWN_KEY = 'totallyACrow.classOwn.v1', CLS_COST = { classic: 0, mayhem: 150, lovely: 150, scavenger: 200, hunter: 250 };
+const CLS_OWN_KEY = 'totallyACrow.classOwn.v1', CLS_COST = { classic: 0, mayhem: 200, lovely: 200, scavenger: 300, hunter: 400 }; // v7r economy pass (was 150/150/200/250)
 var clsOwned = (() => { try { const v = JSON.parse(KroSave.getItem(CLS_OWN_KEY) || 'null'); if (Array.isArray(v)) return v; } catch (_) {} return null; })();
 var kroClass = (() => { try { const v = KroSave.getItem(CLS_KEY); return KCLASSES.some(c => c.id === v) ? v : 'classic'; } catch (_) { return 'classic'; } })();
 if (!clsOwned) { clsOwned = ['classic']; if (kroClass !== 'classic') clsOwned.push(kroClass); try { KroSave.setItem(CLS_OWN_KEY, JSON.stringify(clsOwned)); } catch (_) {} } // v7n migration: keep the class you already use
@@ -5982,7 +6022,7 @@ function gooseHit(dmg, how) {
 }
 function defeatGoose() {
   storyEv('goose'); const Gs = goose; Gs.state = 'down'; Gs.t = 0; Gs.stats.defeats++; ach.geese++; Gs.respawnT = GZ.respawn;
-  const R = 2500, C = 150; addScore(R); ach.coins += C; saveAch(); camShake = Math.max(camShake, 0.35); sfx.gooseDown(); sfx.fanfare();
+  const R = 2500, C = Gs.stats.defeats > 1 ? 40 : 150; addScore(R); ach.coins += C; // v7r: repeat goose kills pay less (no coin farming) saveAch(); camShake = Math.max(camShake, 0.35); sfx.gooseDown(); sfx.fanfare();
   bigBanner('REIGN OF TERROR ENDED!', `+${R} · +${C} 🪙 · ${GZ.name} flees the pond!`, '#7fd0ff');
   sparkBurst(new THREE.Vector3(Gs.x, 2.5, Gs.z), 22, 0xfff0b0); achAdvance('goose');
 }
@@ -6277,7 +6317,7 @@ function taggerHit(dmg, how) {
 }
 function defeatTagger() {
   storyEv('tagger'); const T = tagger; T.state = 'run'; T.t = 0; T.noReward = false; T.stats.defeats++; ach.tags = (ach.tags || 0) + 1; T.respawnT = TAG.respawn;
-  const saved = Math.round((1 - T.paint) * 100), R = 3000 + Math.round(2000 * (1 - T.paint)), C = 200;
+  const saved = Math.round((1 - T.paint) * 100), R = 3000 + Math.round(2000 * (1 - T.paint)), C = T.stats.defeats > 1 ? 50 : 200; // v7r: repeat kills pay less
   addScore(R); ach.coins += C; saveAch(); camShake = Math.max(camShake, 0.3); sfx.fanfare();
   bigBanner('TAGGER TAMED!', `+${R} · +${C} 🪙 · Rattlecan Rudy bolts! ${saved}% of the wall saved`, '#ff8fe0');
   sparkBurst(new THREE.Vector3(T.x, 2, T.z), 22, 0xffd0f4); achAdvance('tagger');
@@ -6615,6 +6655,7 @@ function syncViewUi() {
   $('mFrame').textContent = '🎯 Frame bosses: ' + (viewSet.autoFrame ? 'On' : 'Off');
   const L = gfxLevel(); $('mGfx').textContent = viewSet.gfx === 'auto' ? 'Auto: ' + L[0].toUpperCase() + L.slice(1) : L[0].toUpperCase() + L.slice(1); for (const b of document.querySelectorAll('#gfxSeg button')) b.classList.toggle('on', b.dataset.q === viewSet.gfx);
   { const pr = renderer.getPixelRatio(); $('mRes').textContent = (RES.pref === 'auto' ? 'Auto ' : '') + pr.toFixed(2).replace(/0$/, '').replace(/\.0?$/, '') + 'x'; for (const b of document.querySelectorAll('#resSeg button')) b.classList.toggle('on', b.dataset.r === RES.pref); }
+  if (typeof econText === 'function' && econ && $('econLine')) $('econLine').textContent = econText();
   $('mFps').textContent = '⏱ FPS counter: ' + (viewSet.fps ? 'On' : 'Off'); $('fpsBox').classList.toggle('on', !!viewSet.fps);
 }
 onTap('btnCam', cycleCam);
@@ -7378,6 +7419,7 @@ function syncCagePanel() {
   $('cageWait').textContent = `${can ? 'Or wait it out' : 'Can\u2019t afford bail? Sit tight'}: released in ${left}s` + (lost.length ? ` (confiscated: ${lost.join(' + ')})` : '') + '.';
 }
 function cageKro(lvl) { // called from knockOut while heat > 0
+  if (typeof tut !== 'undefined' && tut.open) { const k = tut.open; tutHide(); if (!tut.catchup && !TUT_INTRO.includes(k)) tut.force = k; tut.catchup = false; } // v7r: never leave a tutorial card over the cage panel
   cage.on = true; cage.lvl = lvl; cage.price = bailPrice(lvl); cage.t = 0; cage.stats.cages++; cage.jbUsed = false;
   $('caged').classList.add('show'); syncCagePanel(); sfx.cageClank();
 }
@@ -7639,8 +7681,8 @@ const v7j = { JB, jb, startBreak, endBreak, jbStep, jbSees, JB_SOLID, JB_LOW, JB
 const v7b = { v7j, setCarry(n) { carry = n; }, nearMissAward, CASH, cash, cashItems, placeCash, saveCash, cage, bailPrice, cageKro, releaseCage, NEAR, nearStats, carGap, hillBumps, pigSnd, HEAT, puffs, tossPuff, setVolume, get volPref() { return volPref; } };
 
 // ================================================================ v7d: TUTORIAL + ONBOARDING (intro cards, contextual cards, calm enemies, objective banner, phone markers)
-const TUT_KEY = 'totallyACrow.tut.v1', TUT_FREE = 120, TUT_HAWK_HOLD = 120; // seconds of free exploring that also completes it; hawk hold after completion
-const TUT_INTRO = ['up', 'down', 'soar', 'gust', 'roll']; // v7d1: + barrel roll
+const TUT_KEY = 'totallyACrow.tut.v1', TUT_FREE = 300, TUT_HAWK_HOLD = 120; // seconds of free exploring that also completes it; hawk hold after completion
+const TUT_INTRO = ['up']; // v7r: ONE card before flying; dive/soar/gust/roll/brake are taught when they first matter (TUT_MOVES)
 const TUT_CTX = ['fries', 'lock', 'phones', 'cars', 'trinket', 'cash', 'raccoon', 'cops', 'goose'];
 function loadTut() { try { const v = JSON.parse(KroSave.getItem(TUT_KEY) || 'null'); if (v && typeof v === 'object') return { intro: v.intro ? 1 : 0, done: v.done ? 1 : 0, all: v.all ? 1 : 0, seen: v.seen && typeof v.seen === 'object' ? v.seen : {} }; } catch (_) {} return { intro: 0, done: 0, all: 0, seen: {} }; }
 const tut = { st: loadTut(), open: '', introI: -1, freeT: 0, moved: 0, scanT: 0, hold: 0, force: '', objShown: false, goAt: 0, stats: { shown: [], finished: '' } };
@@ -7659,8 +7701,8 @@ const tEmoji = (e, x = 56, y = 60, fs = 44) => `<text x="${x}" y="${y}" font-siz
 const tPhoneMark = (x, y, s = 1) => `<g transform="translate(${x} ${y}) scale(${s})"><circle r="11" fill="#20c9e0" stroke="#10303a" stroke-width="2.5"/><rect x="-4.5" y="-7" width="9" height="14" rx="2" fill="#fff"/><rect x="-3" y="-5" width="6" height="9" fill="#7ff6ff"/></g>`;
 const tPerson = (x, y) => `<g transform="translate(${x} ${y})"><rect x="-5" y="-8" width="10" height="16" rx="4" fill="#d06a4a"/><circle cy="-14" r="5.5" fill="#f2c9a0"/><rect x="-4" y="8" width="3.5" height="12" fill="#3a4a6a"/><rect x="0.5" y="8" width="3.5" height="12" fill="#3a4a6a"/><rect x="2" y="-9" width="4" height="6" rx="1" fill="#111"/></g>`;
 const TUT_CARDS = {
-  up: { t: 'Flap up', art: () => tScene(tArrow(46, 72, 46, 16, '#3ca0ff') + tCrow(46, 80, -70)) + tBtn('up'), glow: 'btnFlap',
-    p: 'Tap or hold <b>▲ FLAP</b> to climb. Steer with the stick on the left side of the screen.', s: 'Each flap uses a little 🪶 stamina. It refills while you glide.' },
+  up: { t: 'Fly!', art: () => tScene(tArrow(46, 72, 46, 16, '#3ca0ff') + tCrow(46, 80, -70)) + tBtn('up'), glow: 'btnFlap',
+    p: 'Steer with the <b>stick</b> on the left. Tap or hold <b>▲ FLAP</b> to climb.', s: 'Your goal is at the <b>top of the screen</b>. Follow the yellow <b>➤ arrow</b>.' },
   down: { t: 'Dive down', art: () => tScene(tArrow(34, 30, 64, 66, '#8c5fff') + tCrow(26, 22, 40)) + tBtn('down'), glow: 'btnDive',
     p: 'Hold <b>▼ DIVE</b> to swoop down fast. Diving builds speed.', s: 'Fly low to scoop up fries, shiny trinkets and coin pouches.' },
   brake: { t: 'Brake & hover', art: () => tScene(tCrow(56, 50, 0) + '<path d="M20 50 h20 M92 50 h-20" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M36 50 l-8 -6 M36 50 l-8 6 M76 50 l8 -6 M76 50 l8 6" stroke="#fff" stroke-width="4" stroke-linecap="round"/>') + tBtn('brake'), glow: 'btnBrake',
@@ -7691,7 +7733,7 @@ const TUT_CARDS = {
     p: 'The goose guards the pond. <b>Stay above 14 m</b> and he ignores you.', s: 'Fight him with drops and Gusts.' },
 };
 const tutEl = $('tut');
-function canCard() { return started && !paused && !stCardOpen && !nestHubOpen && !ko.on && !(cage && cage.on) && !dfActive && !(window.__intro && window.__intro.open) && !(window.__guide && window.__guide.open) && !menuOpen && !upgOpen; }
+function canCard() { return started && !paused && !stCardOpen && !nestHubOpen && !dialogOpen && !ko.on && !(cage && cage.on) && !(typeof jb !== 'undefined' && (jb.on || jb.ending)) && !$('caged').classList.contains('show') && !dfActive && !(window.__intro && window.__intro.open) && !(window.__guide && window.__guide.open) && !menuOpen && !upgOpen; }
 function tutShow(k) {
   const C = TUT_CARDS[k]; if (!C) return; tut.open = k; tut.stats.shown.push(k);
   const intro = TUT_INTRO.includes(k) && !tut.catchup;
@@ -7705,14 +7747,14 @@ function tutShow(k) {
   if (C.glow === 'joyBase') { const jb = $('joyBase'); if (tut.joyOp == null) tut.joyOp = jb.style.opacity; jb.style.opacity = 1; if (!jb.querySelector('.tflick')) jb.insertAdjacentHTML('beforeend', '<i class="tflick"></i>'); }
   tutEl.classList.add('on'); tutCardOpen = true; updatePaused(); tut.goAt = performance.now() + 450; // short guard so a held tap can't skip the card
 }
-function tutHide() { tutEl.classList.remove('on'); tutCardOpen = false; tut.open = ''; document.body.classList.remove('tutRaiseBtns', 'tutRaiseJoy'); tutEl.classList.remove('top'); for (const e of document.querySelectorAll('.tflick')) e.remove(); if (tut.joyOp != null) { $('joyBase').style.opacity = tut.joyOp; tut.joyOp = null; } for (const e of document.querySelectorAll('.tutGlow')) e.classList.remove('tutGlow'); updatePaused(); }
+function tutHide() { tutEl.classList.remove('on'); tutCardOpen = false; tut.open = ''; if (FTUE) FTUE.lastAt = gameTime; document.body.classList.remove('tutRaiseBtns', 'tutRaiseJoy'); tutEl.classList.remove('top'); for (const e of document.querySelectorAll('.tflick')) e.remove(); if (tut.joyOp != null) { $('joyBase').style.opacity = tut.joyOp; tut.joyOp = null; } for (const e of document.querySelectorAll('.tutGlow')) e.classList.remove('tutGlow'); updatePaused(); }
 function tutContinue() {
   if (!tut.open || performance.now() < tut.goAt) return;
   const k = tut.open; tut.st.seen[k] = 1; tutHide();
   if (tut.catchup) { tut.catchup = false; saveTut(); return; } // v7d1: one-off card for players who finished before the roll card existed
   if (TUT_INTRO.includes(k)) { tut.introI = TUT_INTRO.indexOf(k) + 1;
     if (tut.introI < TUT_INTRO.length) { tutShow(TUT_INTRO[tut.introI]); return; }
-    tut.st.intro = 1; tut.freeT = 0; tut.moved = 0; showMsg('Explore a bit! We’ll explain new things as you find them.', 2.6); tut.objShown = true; tut.pendObj = true; }
+    tut.st.intro = 1; tut.freeT = 0; tut.moved = 0; tut.objShown = true; tut.pendObj = false; storyBanner(); FTUE.coachPend = true; } // v7r: goal card first, then the coach mark (never both)
   if (TUT_CTX.every(tutSeen) && !tut.st.done) tutFinish('all cards');
   saveTut();
 }
@@ -7741,16 +7783,18 @@ function tutUpdate(dt) {
   if (!started) return;
   if (tut.hold > 0) tut.hold -= dt;
   if (tut.open) return;
-  if (!tut.st.intro) { if (canCard()) { tut.introI = 0; tutShow(TUT_INTRO[0]); } return; }
-  if (!tut.st.seen.roll && canCard()) { tut.catchup = true; tutShow('roll'); return; } // v7d1: finished the tutorial before the barrel-roll card existed -> show it once
-  if (!tut.st.seen.brake && canCard()) { tut.catchup = true; tutShow('brake'); return; } // v7g: new brake-hover card, shown once to current players
+  if (!FTUE) return; // v7r module not initialised yet
+  if (!tut.st.intro) { if (canCard() && ftueStoryReady()) { tut.introI = 0; tutShow(TUT_INTRO[0]); } return; } // v7r: after the prologue card + Mama's lines
+  ftueTick(dt);
+  if (!tut.st.done && typeof story !== 'undefined' && story && (story.done || story.ci >= 1)) tutFinish('prologue'); // v7r: enemies wake when the prologue is cleared
+  { const mv = ftueMoveDue(); if (mv && canCard() && ftueGap(18)) { tut.catchup = true; tutShow(mv); return; } } // v7r: one new move at a time, spaced out
   if (!tut.objShown && canCard()) { tut.objShown = true; storyBanner(); }
   if (tut.pendObj && msgTimer <= 0 && canCard()) { tut.pendObj = false; storyBanner(); }
   if (!tut.st.done) { tut.freeT += dt; if (tut.freeT >= TUT_FREE) tutFinish('time'); }
   if (tut.st.all) return;
   tut.moved += dt; tut.scanT -= dt; if (tut.scanT > 0 || !canCard()) return; tut.scanT = 0.25;
-  if (tut.force && !tutSeen(tut.force)) { const k = tut.force; tut.force = ''; tutShow(k); return; }
-  if (tut.moved < 6) return; // let the player fly around a little first
+  if (tut.force && !tutSeen(tut.force) && ftueGap(5)) { const k = tut.force; tut.force = ''; tutShow(k); return; }
+  if (tut.moved < 6 || !ftueGap(18)) return; // let the player fly around a little first; never stack cards
   const k = tutNearby(); if (k) tutShow(k);
 }
 // ---- objective banner + quest 'why' (Kro is a raven raised by crows, out to prove he's TOTALLY a crow)
@@ -7823,22 +7867,22 @@ function hoverDrainRate() {
 // ---- Nest Upgrades (spends saved 🪙 coins). Original names; 3 branches, 4 tiers, buy in order.
 const UPG_TREE = [
   { id: 'flight', name: 'Flight', icon: '🪶', items: [
-    { id: 'bigBreath', name: 'Big Breath', cost: 40, d: 'Bigger lungs: stamina goes to 125.' },
-    { id: 'easyFlap', name: 'Easy Flap', cost: 90, d: 'Flapping costs less stamina.' },
-    { id: 'earlyRise', name: 'Early Rise', cost: 180, d: 'Soar from 12 m up (was 15 m).' },
-    { id: 'trailWind', name: 'Trail Wind', cost: 320, d: 'Soaring drains slower and runs a bit faster.' },
+    { id: 'bigBreath', name: 'Big Breath', cost: 50, d: 'Bigger lungs: stamina goes to 125.' },
+    { id: 'easyFlap', name: 'Easy Flap', cost: 120, d: 'Flapping costs less stamina.' },
+    { id: 'earlyRise', name: 'Early Rise', cost: 220, d: 'Soar from 12 m up (was 15 m).' },
+    { id: 'trailWind', name: 'Trail Wind', cost: 360, d: 'Soaring drains slower and runs a bit faster.' },
   ]},
   { id: 'stealth', name: 'Stealth', icon: '🌙', items: [
-    { id: 'slowSimmer', name: 'Slow Simmer', cost: 40, d: 'Heat from cop splats rises a little slower.' },
-    { id: 'watchful', name: 'Watchful Crow', cost: 90, d: 'The hawk starts stalking from a tighter range.' },
-    { id: 'wideGlance', name: 'Wide Glance', cost: 180, d: 'Cop nets and drone blasts telegraph longer.' },
-    { id: 'duskFeathers', name: 'Dusk Feathers', cost: 320, d: 'Drones arm later. Hovering drains less stamina.' },
+    { id: 'slowSimmer', name: 'Slow Simmer', cost: 50, d: 'Heat from cop splats rises a little slower.' },
+    { id: 'watchful', name: 'Watchful Crow', cost: 120, d: 'The hawk starts stalking from a tighter range.' },
+    { id: 'wideGlance', name: 'Wide Glance', cost: 220, d: 'Cop nets and drone blasts telegraph longer.' },
+    { id: 'duskFeathers', name: 'Dusk Feathers', cost: 360, d: 'Drones arm later. Hovering drains less stamina.' },
   ]},
   { id: 'scavenge', name: 'Scavenging', icon: '🪙', items: [
-    { id: 'keenBeak', name: 'Keen Beak', cost: 40, d: 'Fries, coin pouches and trinkets are easier to scoop.' },
-    { id: 'fatPouch', name: 'Fat Pouch', cost: 90, d: 'Coin pouches are worth about a quarter more.' },
-    { id: 'homeStash', name: 'Home Stash', cost: 180, d: 'Banking at the nest pays a 20% stash bonus.' },
-    { id: 'oddBits', name: 'Odd Bits', cost: 320, d: 'Gusted trees drop more often, and coin pouches come back sooner.' },
+    { id: 'keenBeak', name: 'Keen Beak', cost: 50, d: 'Fries, coin pouches and trinkets are easier to scoop.' },
+    { id: 'fatPouch', name: 'Fat Pouch', cost: 120, d: 'Coin pouches are worth about a quarter more.' },
+    { id: 'homeStash', name: 'Home Stash', cost: 220, d: 'Banking at the nest pays a 20% stash bonus.' },
+    { id: 'oddBits', name: 'Odd Bits', cost: 360, d: 'Gusted trees drop more often, and coin pouches come back sooner.' },
   ]},
 ];
 const upgState = { bought: {} };
@@ -8292,7 +8336,7 @@ function frame() {
   updateV6b(dt, rdt, gameTime);
   updateHeat(dt, rdt, gameTime); // v7 Heat / police
   updateCash(dt, gameTime); // v7b cash + cage
-  sbUpdate(rdt); updateCtxHud(); resAdapt(rdt); // v7p, v7q
+  sbUpdate(rdt); updateCtxHud(); resAdapt(rdt); if (typeof econTick === 'function' && econ) econTick(rdt); // v7p, v7q, v7r
   if (typeof updateGrandma === 'function') updateGrandma(dt, gameTime);
   updateSquirrelWorld(dt, gameTime); // v7l
   if (typeof updateNestUpgBtn === 'function') updateNestUpgBtn();
@@ -8471,7 +8515,7 @@ function storyCard(mode, C, cb) {
   el.classList.add('show'); stCardOpen = true; updatePaused(); try { sfx.fanfare && mode === 'done' ? sfx.fanfare() : sfx.chime(); } catch (_) {}
 }
 function closeStoryCard() {
-  if (!stCardOpen) return; const mode = $('stCard').dataset.mode; $('stCard').classList.remove('show'); stCardOpen = false; updatePaused();
+  if (!stCardOpen) return; if (FTUE) FTUE.lastAt = gameTime; const mode = $('stCard').dataset.mode; $('stCard').classList.remove('show'); stCardOpen = false; updatePaused();
   const cb = stCardCb; stCardCb = null;
   if (mode === 'intro') { const C = stCh(); story.shown = story.ci; saveStory(); syncFamily(); openDialog(C.lines.map((t, i) => ({ t, e: 'happy', btn: i === C.lines.length - 1 ? 'On it!' : undefined })), () => { storyBanner(); if (cb) cb(); }, 'happy', FAM[C.who]); }
   else if (cb) cb();
@@ -8581,7 +8625,7 @@ let stSqPend = false;
 function updateStory(dt, time) {
   updateFamily(dt, time); drawStoryHud();
   if (!started || !story) return;
-  const ready = canCard() && !stCardOpen && !dialogOpen && !tutCardOpen && !nestHubOpen && !window.__clsOpen && tut.st.intro && !sqr.on && !(jb && jb.on);
+  const ready = canCard() && !stCardOpen && !dialogOpen && !tutCardOpen && !nestHubOpen && !window.__clsOpen && !sqr.on && !(jb && jb.on); // v7r: the prologue card comes FIRST (it says why), then the one flight card
   if (ready && !story.done && story.shown < story.ci) { storyCard('intro', stCh()); return; }
   if (ready && stSqPend) { stSqPend = false; openDialog([{ t: 'See that glow in the park? A Spirit Squirrel. Old crows say it picks a helper to guard the trees.', e: 'happy' }, { t: 'It comes and goes like the wind, same as that hawk. When it shows up, go see it.', e: 'happy', btn: 'Got it' }], null, 'happy', FAM.rook); return; }
   const g = stGoal();
@@ -8702,9 +8746,45 @@ $('saveFile').addEventListener('change', e => { const f = e.target.files && e.ta
 // Offline + installable: register the service worker (http/https only)
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
 const v7p = { SB, sbUpdate, sbOff, sbBuild, KroSave, exportSave, importSaveText, haptic, updateCtxHud };
+// ================================================================ v7r: FIRST 10 MINUTES + ECONOMY PASS + CREDITS
+// FTUE: prologue card (why) → Mama's lines → ONE "Fly!" card → play. The tracker gets a coach mark. Every other move is taught
+// the first time it matters, one card at a time with at least ~18 s of play between cards; contextual "new thing" cards
+// share the same spacing. Enemies stay calm until the prologue is cleared (or 5 min of play).
+var FTUE = { lastAt: -99, playT: 0, highT: 0, coachT: 0, shown: [] };
+function ftueStoryReady() { return !story || story.done || story.shown >= story.ci; }
+function ftueGap(s) { return gameTime - FTUE.lastAt >= s && !(msgTimer > 0.6) && !stCardOpen && !dialogOpen; }
+function ftueTick(dt) {
+  FTUE.playT += dt; const alt = crow.pos.y - groundAt(crow.pos.x, crow.pos.z); FTUE.highT = alt > 9 ? FTUE.highT + dt : 0;
+  if (FTUE.coachPend && !$('objCard').classList.contains('on') && !tutCardOpen) { FTUE.coachPend = false; ftueCoach(); }
+  if (FTUE.coachT > 0) { FTUE.coachT -= dt; if (FTUE.coachT <= 0) ftueCoach(false); }
+}
+var TUT_MOVES = [ // [card, when it first matters]
+  ['down', () => FTUE.highT > 2.5 || FTUE.playT > 35],
+  ['soar', () => crow.pos.y - groundAt(crow.pos.x, crow.pos.z) >= soarMinY() - 0.5 || FTUE.playT > 160],
+  ['gust', () => (story && story.ci >= 1) || FTUE.playT > 240],
+  ['roll', () => tut.st.done || heat.lvl > 0],
+  ['brake', () => tutSeen('roll') && FTUE.playT > 330]];
+function ftueMoveDue() { for (const [k, f] of TUT_MOVES) if (!tutSeen(k)) { if (f()) return k; return ''; } return ''; } // strictly in order
+function ftueCoach(on = true) { const el = $('coach'), q = $('quest'); if (!el) return;
+  if (on) { const r = q.getBoundingClientRect(); el.style.top = Math.round(r.bottom + 10) + 'px'; FTUE.coachT = 7; }
+  el.classList.toggle('on', on); q.classList.toggle('coachRing', on); }
+// Economy: achievement payouts were 2-10x any price in the shop (one goose = most of the upgrades). Scale them to a quarter.
+var ECON = { achK: 0.25 };
+for (const T of Object.values(ACH_TRACKS)) for (const t of T.tiers) if (!t.coins0) { t.coins0 = t.coins; t.coins = Math.max(5, Math.round(t.coins * ECON.achK / 5) * 5); }
+// Economy log: play time, coins earned/spent and XP gained per save, so beta pacing can be read off real phones (Settings → Display).
+const ECON_KEY = 'kro.econ';
+var econ = (() => { try { return Object.assign({ playS: 0, earned: 0, spent: 0, xp: 0 }, JSON.parse(KroSave.getItem(ECON_KEY) || '{}')); } catch (_) { return { playS: 0, earned: 0, spent: 0, xp: 0 }; } })();
+let econLast = null, econSaveT = 0;
+function econTick(dt) {
+  if (!started || paused) return; const c = ach.coins | 0, x = lvl.xp;
+  if (econLast) { const dc = c - econLast.c, dx = x - econLast.x; if (dc > 0) econ.earned += dc; else if (dc < 0) econ.spent -= dc; if (dx > 0) econ.xp += dx; }
+  econLast = { c, x }; econ.playS += dt; econSaveT += dt; if (econSaveT > 10) { econSaveT = 0; try { KroSave.setItem(ECON_KEY, JSON.stringify(econ)); } catch (_) {} }
+}
+function econText() { const m = Math.max(1 / 60, econ.playS / 60); return `📊 This save: ${Math.round(econ.playS / 60)} min played · ${Math.round(econ.earned / m)} 🪙/min earned · ${Math.round(econ.xp / m).toLocaleString()} XP/min`; }
+const v7r = { FTUE, TUT_MOVES, ftueMoveDue, ftueGap, ftueCoach, ECON, get econ() { return econ; }, econText, CLS_COST, CASH, LEVELS, ACH_TRACKS, UPG_COSTS: () => UPG_TREE.map(b => b.tiers ? b.tiers.map(t => t.cost) : (b.items || b.list || []).map(t => t.cost)), get gameTime() { return gameTime; }, openMenu, menuPage, get dialogOpen() { return dialogOpen; }, lvl };
 const v7q = { RES, RA, kroPR, setRes, resAdapt, netters, NET_SEEN, shadowMat, droneShMat, get lowMat() { return KRO_LOWMAT; }, LEVELS, get groundLayers() { return groundLayers; }, IS_PHONE, GFX_AUTO };
 const v7n = { CASH, cash, CLS_COST, get clsOwned() { return clsOwned; }, clsHas, unlockClass, setClass, ach, migrateCashToCoins, cage, cageKro, releaseCage, drawCashHud };
-window.__crowGame = { v7q, v7p, v7o, v7n, v7m, v7l, v7k, v7g, v7e, v7d, v7b, v7, v6d, v6c: { ...v6c, THREE, HILLS, hillAt: (x, z) => hillAt(x, z), groundAt, heal, questHeartReward, DIFF }, v6b: { ach, ACH_TRACKS, achAdvance, achHas, netBust, heist, heistRac, HEIST_SITES, startHeist, heistSave, heistActive, gust, GUST, startGust, trashCans, TREES, gdrops, spawnDrop, FP, onFootpath, parkProps, renderAch, showAch, banQ, stats: v6b.stats, knockPed, megaDur, saveAch, get dogfightOn() { return dogfight.on; }, pond, goose, gooseG, GZ, gooseHit, defeatGoose, respawnGoose, gustGoose, pigeons, flock, FLOCKS, scatterAt, fisher, FISH, crumbs, tossCrumbs, inLeash, crowCrown, syncCrown }, cameo: { state: cameo, gears, bot, skins, cstats, grantAllGears, resetCameo, talkToBot, closeDialog, applySkin, BOT_POS, TOWER, gearCar, get dialogOpen() { return dialogOpen; }, get skinCur() { return skinCur; }, circFx, CIRC_U, circParts }, colliders, colliderAt, groundAt, groundLayers, grassFx, skyDome, enemy: { dogfight, chaseMusic, startDogfight, endDogfight, hawkCrash, losBlocked, DF_DIFF, hitPed, movingCars, hawk, netters, hurt, heal, knockOut, respawn, resetEnemies, gameSet, ens, ko, setHawkWarn, get hp() { return crow.hp; } }, airFx, musStats, get mus() { return mus; }, get megaTime() { return megaTime; }, setMega(v) { megaTime = v; }, fxSet, get actx() { return actx; }, renderer, camera, scene, crow, peds, items, projectiles, input, dropBomb, restart, get score() { return score; }, get phonesHit() { return phonesHit; }, get paused() { return paused; }, get quest() { return quest; }, get carry() { return carry; }, NEST, movingCars, colliders, questProgress, newQuest, get qTarget() { return qTarget; }, air, streams, raccoons, get layout() { return layout; }, applyLayout, openMenu, closeMenu, menuPage, get menuOpen() { return menuOpen; }, get customizing() { return customizing; }, start() { $('start').style.display = 'none'; started = true; }, roll, ROLL, startRoll, flick, FLICK, flickCheck };
+window.__crowGame = { v7r, v7q, v7p, v7o, v7n, v7m, v7l, v7k, v7g, v7e, v7d, v7b, v7, v6d, v6c: { ...v6c, THREE, HILLS, hillAt: (x, z) => hillAt(x, z), groundAt, heal, questHeartReward, DIFF }, v6b: { ach, ACH_TRACKS, achAdvance, achHas, netBust, heist, heistRac, HEIST_SITES, startHeist, heistSave, heistActive, gust, GUST, startGust, trashCans, TREES, gdrops, spawnDrop, FP, onFootpath, parkProps, renderAch, showAch, banQ, stats: v6b.stats, knockPed, megaDur, saveAch, get dogfightOn() { return dogfight.on; }, pond, goose, gooseG, GZ, gooseHit, defeatGoose, respawnGoose, gustGoose, pigeons, flock, FLOCKS, scatterAt, fisher, FISH, crumbs, tossCrumbs, inLeash, crowCrown, syncCrown }, cameo: { state: cameo, gears, bot, skins, cstats, grantAllGears, resetCameo, talkToBot, closeDialog, applySkin, BOT_POS, TOWER, gearCar, get dialogOpen() { return dialogOpen; }, get skinCur() { return skinCur; }, circFx, CIRC_U, circParts }, colliders, colliderAt, groundAt, groundLayers, grassFx, skyDome, enemy: { dogfight, chaseMusic, startDogfight, endDogfight, hawkCrash, losBlocked, DF_DIFF, hitPed, movingCars, hawk, netters, hurt, heal, knockOut, respawn, resetEnemies, gameSet, ens, ko, setHawkWarn, get hp() { return crow.hp; } }, airFx, musStats, get mus() { return mus; }, get megaTime() { return megaTime; }, setMega(v) { megaTime = v; }, fxSet, get actx() { return actx; }, renderer, camera, scene, crow, peds, items, projectiles, input, dropBomb, restart, get score() { return score; }, get phonesHit() { return phonesHit; }, get paused() { return paused; }, get quest() { return quest; }, get carry() { return carry; }, NEST, movingCars, colliders, questProgress, newQuest, get qTarget() { return qTarget; }, air, streams, raccoons, get layout() { return layout; }, applyLayout, openMenu, closeMenu, menuPage, get menuOpen() { return menuOpen; }, get customizing() { return customizing; }, start() { $('start').style.display = 'none'; started = true; }, roll, ROLL, startRoll, flick, FLICK, flickCheck };
 </script>
 </body>
 </html>
