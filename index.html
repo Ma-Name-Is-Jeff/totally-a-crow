@@ -2270,11 +2270,12 @@ function kgTip(side, out) { const o = KG.tips && KG.tips[side]; if (!o) return f
 function kgWingPoint(out) { const side = Math.random() < 0.5 ? 1 : -1, b = pick(KG.wingBones[side]); b.getWorldPosition(out); out.x += rand(-0.15, 0.15); out.y += rand(0, 0.15); out.z += rand(-0.15, 0.15); }
 function kgEnable(on) { KG.want = on; KG.on = !!(on && KG.loaded); if (KG.holder) KG.holder.visible = KG.on; crow.coded.visible = !KG.on; KG.lowApplied = null; if (KG.on) kgApplySkin(); else if (KG.loaded) { for (const e of KG.eyes) e.visible = false; if (KG.chips) KG.chips.visible = false; if (clsParts.halo) clsParts.halo.visible = true; } }
 function kgApplySkin() {
-  if (!KG.loaded) return; const skin = skinCur === 'circuit' ? 'circuit' : (kroClass || 'classic'); KG.lowApplied = KRO_LOWMAT;
+  if (!KG.loaded) return; const skin = (skinCur === 'circuit' || skinCur === 'tagged') ? skinCur : (kroClass || 'classic'); KG.lowApplied = KRO_LOWMAT;
   KG.root.traverse(o => { if (o.isMesh && o.userData.kgBase) { const m = o.userData.kgVar[skin] || o.userData.kgBase; o.material = KRO_LOWMAT ? kgLowMat(m) : m; } });
-  for (const a of KG.acc) a.o.visible = (a.k === kroClass && !/lovely_heart/.test(a.o.name)) || (a.k === 'cos:crown' && crowCrown.visible);
+  for (const a of KG.acc) a.o.visible = (a.k === kroClass && !/lovely_heart/.test(a.o.name)) || (a.k === 'tagged' && skinCur === 'tagged') || (a.k === 'cos:crown' && crowCrown.visible) || (a.k === 'cos:feather' && crowCrown.visible);
   const circ = skinCur === 'circuit'; if (KG.chips) KG.chips.visible = circ; if (KG.eyes) for (const e of KG.eyes) e.visible = circ;
   if (clsParts.halo) clsParts.halo.visible = !KG.on;
+  PFX.wet = false; if (typeof pondSync === 'function') pondSync();
 }
 function kgPlay(name, ts, fade) { const a = KG.acts[name]; if (!a) return; if (KG.cur === name) { a.setEffectiveTimeScale(ts); return; }
   a.reset().setEffectiveTimeScale(ts).setEffectiveWeight(1).fadeIn(fade).play(); if (KG.act) KG.act.fadeOut(fade); KG.act = a; KG.cur = name; }
@@ -2296,11 +2297,13 @@ function kgUpdate(dt, time) {
   const B = KG.bones; if (B.thigh_R) B.thigh_R.scale.setScalar(kroClass === 'mayhem' ? 0.001 : 1); if (B.beak) B.beak.scale.setScalar(kroClass === 'scavenger' ? 1.3 : 1);   // Mayhem's lost leg, Scavenger's big beak
   if (KG.cawT > 0 && want !== 'caw' && B.jaw && KG.jawOpen) B.jaw.quaternion.slerp(KG.jawOpen, Math.sin(Math.min(1, KG.cawT / 0.7) * Math.PI));   // caw while flying: beak opens
   KG.holder.position.y = KG.yFly + (KG.yGnd - KG.yFly) * Math.min(1, Math.max(0, crow.legT || 0));
-  for (const a of KG.acc) if (a.k === 'cos:crown') a.o.visible = crowCrown.visible;
-  const molten = kroClass === 'mayhem' && skinCur !== 'circuit';
+  for (const a of KG.acc) { if (a.k === 'cos:crown' || a.k === 'cos:feather') a.o.visible = crowCrown.visible; }
+  const molten = kroClass === 'mayhem' && skinCur !== 'circuit' && skinCur !== 'tagged';
   if (molten) { const ei = 0.5 + 0.6 * (0.5 + 0.5 * Math.sin(time * 1.7)) + 0.12 * Math.sin(time * 5.3);   // slow lava pulse + a little flicker
     KG.root.traverse(o => { if (o.isMesh && o.userData.kgBase) o.material.emissiveIntensity = ei; }); }
   embUpdate(dt, molten && crow.group.visible && (KG.state === 'flap' || KG.state === 'glide'));
+  paintUpdate(dt, skinCur === 'tagged' && crow.group.visible && (KG.state === 'flap' || KG.state === 'glide'));
+  pondTick(dt, time);
   if (skinCur === 'circuit') { const p = 0.85 + 0.15 * Math.sin(time * 3), ei = 1.3 + 0.9 * (0.5 + 0.5 * Math.sin(time * 2.6)), hue = 0.44 + 0.03 * Math.sin(time * 1.7);   // pulsing traces + eye glow
     KG.root.traverse(o => { if (o.isMesh && o.userData.kgBase) { const m = o.material; m.emissiveIntensity = ei; m.emissive.setHSL(hue, 0.55, 0.88); } });
     for (const e of KG.eyes) e.scale.setScalar(e.userData.k / (KG.bones.head.getWorldScale(_kgS).x / crow.group.scale.x) * p);
@@ -2326,7 +2329,77 @@ function embUpdate(dt, emit) {
     const k = u.life / u.max; p.position.x += u.vx * dt; p.position.y += u.vy * dt; p.position.z += u.vz * dt; u.vy += (add ? 0.8 : 0.5) * dt;
     p.material.opacity = add ? k * 0.95 : Math.sin(k * Math.PI) * 0.32; p.scale.setScalar(add ? u.s0 * (0.35 + 0.65 * k) : u.s0 * (1 + (1 - k) * 2.2)); } }
 }
-KG.emb = EMB; window.__kg = KG;
+KG.emb = EMB; // v7v Pond Crown FX (wet sheen, drips, landing ripple) + Tagged paint drips. Cheap pooled sprites; Low = fewer.
+const PFX = { ready: false, wet: false, drops: [], acc: 0, n: 0, rip: null, ripT: -1, wasAir: true };
+const PAINT = { ready: false, d: [], acc: 0, n: 0, side: 1, cols: [0xff14b8, 0x73ff14, 0x0af0ff, 0xff7310] };
+const _pfxV = new THREE.Vector3();
+function pondOn() { return typeof achHas === 'function' && achHas('crown') && ach.crown !== false && crow.group.visible; }
+function pondInit() {
+  const mk = (n, col, add) => Array.from({ length: n }, () => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: sparkTex, color: col, transparent: true, opacity: 0, depthWrite: false, blending: add ? THREE.AdditiveBlending : THREE.NormalBlending }));
+    sp.visible = false; sp.userData = { life: 0, max: 1, vx: 0, vy: 0, vz: 0, s0: 0.12 }; sp.userData.noBatch = true; scene.add(sp); return sp; });
+  PFX.drops = mk(KRO_LOWMAT ? 8 : 18, 0xd8eefc, false);
+  const g = new THREE.RingGeometry(0.2, 0.7, 40); const m = new THREE.MeshBasicMaterial({ color: 0xc5e8f8, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide });
+  const mesh = new THREE.Mesh(g, m); mesh.rotation.x = -Math.PI / 2; mesh.visible = false; mesh.renderOrder = 5; mesh.userData.noBatch = true; scene.add(mesh); PFX.rip = mesh;
+  PFX.ready = true;
+}
+function pondWet(on) {
+  if (!KG.loaded) return;
+  KG.root.traverse(o => { if (!(o.isMesh && o.material)) return; const m = o.material;
+    if (on) {
+      if (!m.userData.dry) m.userData.dry = { rough: m.roughness, sheen: m.sheen, sheenCol: m.sheenColor && m.sheenColor.clone(), sheenR: m.sheenRoughness, coat: m.clearcoat, coatR: m.clearcoatRoughness };
+      if ('sheen' in m) { m.sheen = 0.9; m.sheenColor.set(0xb7d8ee); m.sheenRoughness = 0.16; }   // lighter blue, not saturated
+      if ('clearcoat' in m) { m.clearcoat = 0.55; m.clearcoatRoughness = 0.12; }
+      if (m.roughness != null) m.roughness = Math.min(m.userData.dry.rough ?? m.roughness, 0.22);
+    } else if (m.userData.dry) {
+      const d = m.userData.dry; if ('sheen' in m) { m.sheen = d.sheen; if (d.sheenCol) m.sheenColor.copy(d.sheenCol); m.sheenRoughness = d.sheenR; }
+      if ('clearcoat' in m) { m.clearcoat = d.coat; m.clearcoatRoughness = d.coatR; } if (d.rough != null) m.roughness = d.rough;
+    }
+  });
+  for (const a of KG.acc) if (a.k === 'cos:crown') a.o.traverse(o => { if (!o.isMesh || !o.material) return;
+    if (!o.material.userData.pondBase) { o.material = o.material.clone(); o.material.userData.pondBase = true; }
+    o.material.color.set(0x9ecfe8); if (o.material.emissive) o.material.emissive.set(0x2a5670);
+    o.material.roughness = 0.12; if ('metalness' in o.material) o.material.metalness = 0.22;
+    if ('clearcoat' in o.material) { o.material.clearcoat = 0.85; o.material.clearcoatRoughness = 0.08; }
+    if ('sheen' in o.material) { o.material.sheen = 1; o.material.sheenColor.set(0xd8f0ff); }
+  });
+  PFX.wet = on;
+}
+function pondSync() { const on = pondOn(); if (KG.loaded && on !== PFX.wet) pondWet(on); if (KG.loaded) for (const a of KG.acc) if (a.k === 'cos:feather') a.o.visible = on; }
+function pondSpawnDrop() {
+  const p = PFX.drops.find(q => q.userData.life <= 0); if (!p) return; const u = p.userData;
+  if (KG.on && KG.bones.body) {
+    const crown = Math.random() < 0.35 && KG.bones.head; (crown ? KG.bones.head : KG.bones.body).getWorldPosition(_pfxV);
+    if (crown) { _pfxV.y += 0.12; _pfxV.x += rand(-0.1, 0.1); _pfxV.z += rand(-0.08, 0.08); } else { _pfxV.x += rand(-0.35, 0.35); _pfxV.y += rand(0.02, 0.22); _pfxV.z += rand(-0.3, 0.25); }
+  } else crow.group.localToWorld(_pfxV.set(rand(-0.3, 0.3), rand(0.15, 0.7), rand(-0.7, 0.4)));
+  p.position.copy(_pfxV); u.max = u.life = rand(0.45, 0.85); u.vx = rand(-0.15, 0.15); u.vz = rand(-0.15, 0.15); u.vy = rand(-1.6, -2.6); u.s0 = rand(0.07, 0.13); p.visible = true; PFX.n++;
+}
+function pondTick(dt) {
+  const on = pondOn(); if (!PFX.ready) { if (!on) return; pondInit(); }
+  pondSync();
+  if (on && dt > 0) { PFX.acc += dt * (KRO_LOWMAT ? 5 : 11); while (PFX.acc >= 1) { PFX.acc--; pondSpawnDrop(); } } else PFX.acc = 0;
+  if (PFX.n) for (const p of PFX.drops) { const u = p.userData; if (u.life <= 0) continue; u.life -= dt;
+    if (u.life <= 0) { p.visible = false; p.material.opacity = 0; PFX.n--; continue; }
+    const k = u.life / u.max; p.position.x += u.vx * dt; p.position.y += u.vy * dt; p.position.z += u.vz * dt; u.vy -= 6 * dt;
+    p.material.opacity = k * 0.85; p.scale.setScalar(u.s0 * (0.7 + 0.5 * k)); }
+  const gh = groundAt(crow.pos.x, crow.pos.z), air = crow.pos.y - gh > 2.4;
+  if (PFX.wasAir && !air && on) { PFX.ripT = 0; PFX.rip.visible = true; PFX.rip.position.set(crow.pos.x, gh + 0.05, crow.pos.z); PFX.rip.scale.setScalar(1); }
+  PFX.wasAir = air;
+  if (PFX.ripT >= 0) { PFX.ripT += dt; const u = Math.min(1, PFX.ripT / 0.95); PFX.rip.scale.setScalar(1 + u * 7); PFX.rip.material.opacity = 0.75 * (1 - u) * (1 - u); if (u >= 1) { PFX.rip.visible = false; PFX.ripT = -1; } }
+}
+function paintInit() { PAINT.d = Array.from({ length: KRO_LOWMAT ? 8 : 16 }, () => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: sparkTex, color: 0xff14b8, transparent: true, opacity: 0, depthWrite: false }));
+    sp.visible = false; sp.userData = { life: 0, max: 1, vx: 0, vy: 0, vz: 0, s0: 0.16 }; sp.userData.noBatch = true; scene.add(sp); return sp; }); PAINT.ready = true; }
+function paintUpdate(dt, emit) {
+  if (!PAINT.ready) { if (!emit) return; paintInit(); }
+  if (emit && dt > 0) { PAINT.acc += dt * (KRO_LOWMAT ? 5 : 10); while (PAINT.acc >= 1) { PAINT.acc--; const p = PAINT.d.find(q => q.userData.life <= 0); if (!p) break; const u = p.userData, side = (PAINT.side = -PAINT.side);
+    if (!(KG.on && kgTip(side, _pfxV))) { if (KG.on && KG.wingBones) KG.wingBones[side][1].getWorldPosition(_pfxV); else crow.group.localToWorld(_pfxV.set(side * 0.8, 0.1, -0.2)); }
+    p.position.copy(_pfxV).add(new THREE.Vector3(rand(-0.1, 0.1), rand(-0.05, 0.08), rand(-0.1, 0.1))); p.material.color.setHex(pick(PAINT.cols));
+    u.max = u.life = rand(0.5, 0.9); u.vx = rand(-0.25, 0.25); u.vz = rand(-0.25, 0.25); u.vy = rand(-1.4, -2.4); u.s0 = rand(0.12, 0.22); p.visible = true; PAINT.n++; } } else PAINT.acc = 0;
+  if (!PAINT.n) return;
+  for (const p of PAINT.d) { const u = p.userData; if (u.life <= 0) continue; u.life -= dt; if (u.life <= 0) { p.visible = false; p.material.opacity = 0; PAINT.n--; continue; }
+    const k = u.life / u.max; p.position.x += u.vx * dt; p.position.y += u.vy * dt; p.position.z += u.vz * dt; u.vy -= 5 * dt; p.material.opacity = k * 0.95; p.scale.setScalar(u.s0 * (0.5 + 0.7 * k)); }
+}
+window.__pond = PFX; window.__paint = PAINT;
+window.__kg = KG;
 if (KG.want) kgLoad();
 // blob shadow (fades out with height)
 const blob = new THREE.Mesh(new THREE.CircleGeometry(1.1, 16), new THREE.MeshBasicMaterial({ color: 0x1a2a20, transparent: true, opacity: 0.3, depthWrite: false }));
@@ -4343,7 +4416,7 @@ function updateCrow(dt, time) {
   // legs: tucked back in flight, lowered with talons out when braking or close to the ground
   const legsDown = (braking && !diving && !hover.on) || crow.pos.y - groundAt(crow.pos.x, crow.pos.z) < 2.5;
   crow.legT = lerp(crow.legT, legsDown ? 1 : 0, damp(6, dt));
-  kgUpdate(dt, time);
+  kgUpdate(dt, time); if (!KG.on) pondTick(dt);
   crow.legs.rotation.x = lerp(-1.5, 0.12, crow.legT); crow.legs.scale.setScalar(lerp(0.6, 1, crow.legT)); crow.legs.visible = crow.legT > 0.12;
   flapSoundCd -= dt;
   if (flapping && !hover.on && flapSoundCd <= 0) { sfx.flap(); flapSoundCd = 0.28; }
@@ -5414,7 +5487,7 @@ function updateCircuitFx(dt, time) {
   circFx.arcT -= dt; arcMat.opacity = circFx.arcT > 0 ? 0.6 + 0.4 * Math.random() : 0;
   if (circFx.sparkCd <= 0 && typeof sparkBurst === 'function') { if (KG.on && KG.wingBones) kgWingPoint(_cw); else { const w = pick(crow.wings); _cw.set(rand(0.2, 0.9) * w.s, 0.08, rand(-0.1, 0.2)); w.pivot.localToWorld(_cw); } sparkBurst(_cw, 2, 0x9ffff4); circFx.sparkCd = rand(0.7, 1.8); circFx.sparks++; }
 }
-const SKIN_NAMES = { default: 'Default', circuit: 'Circuit Crow' };
+const SKIN_NAMES = { default: 'Default', circuit: 'Circuit Crow', tagged: 'Tagged' };
 function setMatLook(m, L) {
   m.color.copy(L.c instanceof THREE.Color ? L.c : new THREE.Color(L.c)); m.emissive.copy(L.e instanceof THREE.Color ? L.e : new THREE.Color(L.e));
   m.userData.rimA.copy(L.a instanceof THREE.Color ? L.a : new THREE.Color(L.a)); m.userData.rimB.copy(L.b instanceof THREE.Color ? L.b : new THREE.Color(L.b));
@@ -5512,10 +5585,10 @@ function updateClassFx(dt, time) {
 }
 let skinCur = 'default';
 function applySkin(id) {
-  if (!SKIN_DEF[id]) id = 'default';
+  if (!SKIN_NAMES[id]) id = 'default';
   skinCur = id;
   setTimeout(kgApplySkin, 0);
-  SKIN_MATS.forEach((m, i) => setMatLook(m, id === 'default' ? (CLASS_LOOK[kroClass] ? CLASS_LOOK[kroClass][i] : skinDefaults[i]) : SKIN_DEF[id][i]));
+  SKIN_MATS.forEach((m, i) => setMatLook(m, (id === 'default' || !SKIN_DEF[id]) ? (CLASS_LOOK[kroClass] ? CLASS_LOOK[kroClass][i] : skinDefaults[i]) : SKIN_DEF[id][i]));
   applyClassLook();
   if (irisMat) irisMat.color.set(id === 'circuit' ? 0x7dfff2 : irisDefault);
   for (const s of eyeGlows) s.visible = id === 'circuit';
@@ -5593,7 +5666,7 @@ const ACH_TRACKS = {
     { n: 3, title: 'Honk Hush', score: 6000, coins: 600 },
     { n: 5, title: 'Pond Sovereign', score: 10000, coins: 1000, cos: 'gold', extra: 'Cosmetic: Golden Feather Trail' }] },
   tagger: { name: 'Wall Saver', icon: '🎨', unit: 'taggers tamed', how: 'Stop Rattlecan Rudy behind the gas station: drops hit for 1, Mega Drops for 3, Gust blows him back. Barrel-roll through his paint spray!', tiers: [
-    { n: 1, title: 'Tagger Tamed', score: 4000, coins: 400, cos: 'paint', extra: 'Cosmetic: Rainbow Drip Trail' },
+    { n: 1, title: 'Tagger Tamed', score: 4000, coins: 400, cos: 'paint', extra: 'Cosmetic: Rainbow Drip Trail + Tagged skin' },
     { n: 3, title: 'Clean Wall Crew', score: 6000, coins: 600 },
     { n: 5, title: 'Mural Marshal', score: 10000, coins: 1000 }] } };
 const achCount = k => ({ bust: ach.busts, fries: ach.saved, pigeon: ach.scatters, goose: ach.geese, tagger: ach.tags, swarm: ach.swarms, ghost: ach.ghosts, cool: ach.cools, spin: ach.spins, near: ach.nears })[k] || 0;
@@ -5612,6 +5685,7 @@ function achAdvance(k) {
   while (ach.got[k] < T.tiers.length && achCount(k) >= T.tiers[ach.got[k]].n) {
     const t = T.tiers[ach.got[k]++]; addScore(t.score); ach.coins += t.coins;
     if (t.cos === 'storm' || t.cos === 'ringtail' || t.cos === 'gold' || t.cos === 'paint') ach.trail = t.cos;
+    if (t.cos === 'paint' && skins && !skins.unlocked.includes('tagged')) { skins.unlocked.push('tagged'); skins.sel = 'tagged'; saveSkins(); applySkin('tagged'); if (typeof syncSkinLabel === 'function') syncSkinLabel(); }
     bigBanner('🏆 ' + t.title + '!', `+${t.score} · +${t.coins} 🪙` + (t.extra ? ' · ' + t.extra.replace(/^\w+: /, '') : ''), '#ffd36a', 'ach');
   }
   saveAch(); syncBadge(); syncCrown(); if ($('menuAch').style.display !== 'none') renderAch();
@@ -6255,7 +6329,8 @@ Object.assign(sfx, {
 // ---- royal cosmetic: the Pond Crown (perched on the crow's head)
 const crowCrown = new THREE.Mesh(propGeo([[G.cyl(0.13, 0.12, 0.09, 10), 0xffc93c, [0, 0, 0]], ...[0, 1, 2, 3, 4].map(i => [G.cone(0.04, 0.12, 4), 0xffd86a, [Math.cos(i * 1.2566) * 0.11, 0.09, Math.sin(i * 1.2566) * 0.11]]), [G.ball(0.03, 0), 0xe63946, [0, 0.01, -0.125]], [G.ball(0.03, 0), 0x4dd8ff, [0.12, 0.01, -0.03]], [G.ball(0.03, 0), 0x4dd8ff, [-0.12, 0.01, -0.03]]]), sheen(M(0xffffff, { accent: true, vertexColors: true, emissive: 0x3a2a00 }), 0xfff0b0, 0xffffff, 0.5, 0.9));
 crowCrown.position.set(0, 0.63, -1.1); crowCrown.rotation.x = -0.12; crowCrown.visible = false; crow.group.add(crowCrown);
-function syncCrown() { crowCrown.visible = achHas('crown') && ach.crown !== false; }
+function syncCrown() { crowCrown.visible = achHas('crown') && ach.crown !== false; if (typeof pondSync === 'function') pondSync(); }
+if (typeof achHas === 'function' && achHas('paint') && skins && !skins.unlocked.includes('tagged')) { skins.unlocked.push('tagged'); saveSkins(); }
 function resetPond() { if (goose.state !== 'gone' && goose.state !== 'down') { goose.hp = GZ.hpMax; } else respawnGoose(); goose.aggro = 0; goose.tgtPed = null; bossClaim('goose', false); syncCrown(); }
 function updatePond(dt, time) { updateFisher(dt, time); updatePigeons(dt, time); updateGoose(dt, time); }
 syncCrown();

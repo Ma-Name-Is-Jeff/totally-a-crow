@@ -1,7 +1,7 @@
 // Kro service worker: offline play. App shell is precached (bypassing the HTTP cache). The game page itself is network-first
 // (3.5 s timeout, then the cached copy) so a new build shows up on the very next launch when online; everything else is
 // cache-first and refreshed in the background (stale-while-revalidate). Bump VERSION with each release.
-const VERSION = 'kro-v7u-1';
+const VERSION = 'kro-v7w-1';
 const CORE = [
   './', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png',
